@@ -78,47 +78,47 @@ const TIMELINE_QUOTES: TimelineQuote[] = [
   {
     period: "8th c. BCE",
     source: "Homer, Iliad",
-    tag: "Life > scores",
+    tag: "Life > Scores",
     quote: "“I would rather be a paid servant in a poor man’s house… than king of kings among the dead.”"
   },
   {
     period: "c. 6th–3rd c. BCE",
     source: "Katha Upanishad",
-    tag: "Life > speed",
+    tag: "Life > tech",
     quote: "“When the five senses and the mind are still… then begins the highest path.”"
   },
   {
-    period: "c. 6th–3rd c. BCE",
+    period: "4th c. BCE",
     source: "Tao Te Ching",
-    tag: "Life > tech",
+    tag: "Life > Data",
     quote: "“The way that can be told is not the eternal way.”"
   },
   {
     period: "4th c. BCE",
     source: "Aristotle, Metaphysics I.2",
-    tag: "Life > quantifiable",
+    tag: "Life > Quantifiable",
     quote: "“It is owing to their wonder that men both now begin and at first began to philosophize.”"
   },
   {
     period: "3rd c. BCE",
     source: "Ecclesiastes",
-    tag: "Life > time",
+    tag: "Life > Speed",
     quote: "“He has made everything beautiful in its time… He has also set eternity in the human heart…” (3:11)"
   },
   {
     period: "3rd–1st c. BCE",
     source: "Dhammapada",
-    tag: "Life > data",
+    tag: "Life > money",
     quote: "“Health is the greatest gift, contentment the greatest wealth, faithfulness the best relationship.”"
   },
   {
     period: "2nd–1st c. BCE",
     source: "Bhagavad Gita",
-    tag: "Life > age",
+    tag: "Life > Age",
     quote: "“For the soul there is neither birth nor death at any time.” (2:20)"
   },
   {
-    period: "Unknown Period",
+    period: "—",
     source: "Proverbs 3:15",
     tag: "Life > money",
     quote: "“She [wisdom] is more precious than rubies; nothing you desire can compare with her.”"
@@ -136,8 +136,7 @@ function App() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Tabbed Navigation state for Capsule view
-  const [activeTab, setActiveTab] = useState<'reflections' | 'gatherings' | 'practices'>('reflections');
+  // Tabbed Navigation state for Capsule view is managed in parent/components
 
   // Custom Video Player states
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -161,18 +160,19 @@ function App() {
 
   // Interactive Capsule Forms states
   const [reflectionAnswer, setReflectionAnswer] = useState('');
-  const [reflectionEmail, setReflectionEmail] = useState('');
-  const [submitReflectionLgn, setSubmitReflectionLgn] = useState(false);
+  const reflectionEmail = '';
+  const submitReflectionLgn = false;
   const [reflectionSuccess, setReflectionSuccess] = useState(false);
   
-  const [gatherChecked, setGatherChecked] = useState([false, false, false]);
   const [gatherSuccess, setGatherSuccess] = useState(false);
 
-  const [practiceChecked, setPracticeChecked] = useState([false, false, false, false]);
   const [practiceSuccess, setPracticeSuccess] = useState(false);
 
   const [aboutMenuOpen, setAboutMenuOpen] = useState(false);
-
+  const [activeTimelineEra, setActiveTimelineEra] = useState<string>('Before the Common Era');
+  const [investExpandedRow, setInvestExpandedRow] = useState<string | null>(null);
+  const [capsuleTopTab, setCapsuleTopTab] = useState<'story' | 'storyboard'>('story');
+  const [capsuleActiveAction, setCapsuleActiveAction] = useState<'reflect' | 'gather' | 'practice' | null>(null);
   // Fetch active capsule and all capsules
   const fetchData = async (capsuleId?: number) => {
     setLoading(true);
@@ -224,9 +224,7 @@ function App() {
     }
     setReflectionAnswer('');
     setReflectionSuccess(false);
-    setGatherChecked([false, false, false]);
     setGatherSuccess(false);
-    setPracticeChecked([false, false, false, false]);
     setPracticeSuccess(false);
     fetchData(id);
   };
@@ -353,16 +351,13 @@ function App() {
     }
 
     const film = activeCapsule.film;
-    const currentReflection = activeCapsule.reflections[0];
-    const currentGathering = activeCapsule.gatherings[0];
-    const currentPractice = activeCapsule.practices[0];
 
     switch (currentView) {
       case 'home':
         return (
           <div className="home-view-wrapper">
             <div className="home-definition-block">
-              LGN (n.) A community platform that offers one short film each month as common ground for reflection, discussion, and practice.
+              LGN (n.)&nbsp; A community platform that offers one short film each month as common ground for reflection, discussion, and practice.
             </div>
             
             <div className="home-hero-center">
@@ -392,8 +387,18 @@ function App() {
               <div className="capsule-title-row">
                 <h1 className="capsule-main-title">{film ? film.title : 'Lorem Ipsum Title'}</h1>
                 <div className="capsule-title-pills">
-                  <button className="capsule-pill active">The Story</button>
-                  <button className="capsule-pill">Storyboard</button>
+                  <button 
+                    className={`capsule-pill ${capsuleTopTab === 'story' ? 'active' : ''}`}
+                    onClick={() => setCapsuleTopTab('story')}
+                  >
+                    The Story
+                  </button>
+                  <button 
+                    className={`capsule-pill ${capsuleTopTab === 'storyboard' ? 'active' : ''}`}
+                    onClick={() => setCapsuleTopTab('storyboard')}
+                  >
+                    Storyboard
+                  </button>
                 </div>
               </div>
 
@@ -428,47 +433,87 @@ function App() {
                 )}
               </div>
 
-              <div className="capsule-three-col-grid">
-                {/* Column 1: Reflect */}
-                <div className="capsule-col">
-                  <h2>Reflect</h2>
-                  <ul className="capsule-list">
-                    <li>A small set of reflection questions</li>
-                    <li>Space to write privately</li>
-                    <li>Option to email/text reflections to oneself</li>
-                    <li>Optional submission to LGN (for review)</li>
-                  </ul>
-                  <button className="capsule-btn">Button</button>
+              {capsuleTopTab === 'storyboard' ? (
+                <div style={{padding: '40px 0', textAlign: 'center', color: 'var(--text-muted)'}}>
+                  <p>Storyboard content for {film?.title || 'this capsule'} is not available yet.</p>
                 </div>
+              ) : (
+                <div className="capsule-action-card">
+                  {/* Column 1: Reflect */}
+                  <div className="capsule-action-col">
+                    <h3>Reflect</h3>
+                    <ul>
+                      <li>A small set of reflection questions</li>
+                      <li>Space to write privately</li>
+                      <li>Option to email/text reflections to oneself</li>
+                      <li>Optional submission to LGN (for review)</li>
+                    </ul>
+                    <button className="capsule-action-btn" onClick={() => setCapsuleActiveAction(capsuleActiveAction === 'reflect' ? null : 'reflect')}>
+                      {capsuleActiveAction === 'reflect' ? 'Close' : 'Button'}
+                    </button>
+                    {capsuleActiveAction === 'reflect' && (
+                      <div className="capsule-form-container">
+                        <form onSubmit={handleReflectionSubmit}>
+                          <textarea 
+                            placeholder="Your reflection..." 
+                            style={{width: '100%', minHeight: '80px', marginBottom: '8px', padding: '8px', background: 'var(--bg-darker)', color: 'white', border: '1px solid var(--border)', borderRadius: '4px', fontFamily: 'var(--font-sans)'}}
+                            value={reflectionAnswer}
+                            onChange={(e) => setReflectionAnswer(e.target.value)}
+                          />
+                          <button type="submit" className="capsule-action-btn" style={{width: '100%', background: 'var(--primary)', color: 'black'}}>Submit</button>
+                          {reflectionSuccess && <p style={{color: 'green', fontSize: '12px', marginTop: '4px'}}>Success!</p>}
+                        </form>
+                      </div>
+                    )}
+                  </div>
 
-                {/* Column 2: Gather */}
-                <div className="capsule-col">
-                  <h2>Gather</h2>
-                  <ul className="capsule-list">
-                    <li>Discussion guide/resources (not downloadable just on the web)</li>
-                    <li>Option to share discussion takeaways with LGN Community</li>
-                    <li>Tell us you gathered</li>
-                    <li>Share a glimpse of your gathering</li>
-                    <li>Let us know where the story traveled</li>
-                  </ul>
-                  <button className="capsule-btn">Button</button>
-                </div>
+                  {/* Column 2: Gather */}
+                  <div className="capsule-action-col">
+                    <h3>Gather</h3>
+                    <ul>
+                      <li>Discussion guide/resources (not downloadable just on the web)</li>
+                      <li>Option to share discussion takeaways with LGN Community</li>
+                      <li>Tell us you gathered</li>
+                      <li>Share a glimpse of your gathering</li>
+                      <li>Let us know where the story traveled</li>
+                    </ul>
+                    <button className="capsule-action-btn" onClick={() => setCapsuleActiveAction(capsuleActiveAction === 'gather' ? null : 'gather')}>
+                      {capsuleActiveAction === 'gather' ? 'Close' : 'Button'}
+                    </button>
+                    {capsuleActiveAction === 'gather' && (
+                      <div className="capsule-form-container">
+                        <p style={{fontSize: '12px', color: 'var(--text-muted)'}}>Check-in your gathering here...</p>
+                        <button className="capsule-action-btn" style={{width: '100%', background: 'var(--primary)', color: 'black', marginTop: '8px'}} onClick={() => setGatherSuccess(true)}>Mark Gathered</button>
+                        {gatherSuccess && <p style={{color: 'green', fontSize: '12px', marginTop: '4px'}}>Success!</p>}
+                      </div>
+                    )}
+                  </div>
 
-                {/* Column 3: Practice */}
-                <div className="capsule-col">
-                  <h2>Practice</h2>
-                  <ul className="capsule-list">
-                    <li>A shared monthly practice: One accessible invitation connected to the capsule.</li>
-                    <li>Further pathways: Additional ways to learn, serve, create, connect, or continue.</li>
-                    <li>One clear practice invitation</li>
-                    <li>A few alternate pathways for different people or contexts</li>
-                    <li>Related organizations, readings, or resources</li>
-                    <li>A way to privately choose a next step</li>
-                    <li>Option to share what happened afterward with LGN Community</li>
-                  </ul>
-                  <button className="capsule-btn">Button</button>
+                  {/* Column 3: Practice */}
+                  <div className="capsule-action-col">
+                    <h3>Practice</h3>
+                    <ul>
+                      <li>A shared monthly practice: One accessible invitation connected to the capsule.</li>
+                      <li>Further pathways: Additional ways to learn, serve, create, connect, or continue.</li>
+                      <li>One clear practice invitation</li>
+                      <li>A few alternate pathways for different people or contexts</li>
+                      <li>Related organizations, readings, or resources</li>
+                      <li>A way to privately choose a next step</li>
+                      <li>Option to share what happened afterward with LGN Community</li>
+                    </ul>
+                    <button className="capsule-action-btn" onClick={() => setCapsuleActiveAction(capsuleActiveAction === 'practice' ? null : 'practice')}>
+                      {capsuleActiveAction === 'practice' ? 'Close' : 'Button'}
+                    </button>
+                    {capsuleActiveAction === 'practice' && (
+                      <div className="capsule-form-container">
+                        <p style={{fontSize: '12px', color: 'var(--text-muted)'}}>Record your practice...</p>
+                        <button className="capsule-action-btn" style={{width: '100%', background: 'var(--primary)', color: 'black', marginTop: '8px'}} onClick={() => setPracticeSuccess(true)}>Mark Practiced</button>
+                        {practiceSuccess && <p style={{color: 'green', fontSize: '12px', marginTop: '4px'}}>Success!</p>}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         );
@@ -484,22 +529,57 @@ function App() {
               </p>
             </div>
 
-            <div className="vertical-timeline-container">
-              {TIMELINE_QUOTES.map((q, idx) => (
-                <div className="timeline-card-item" key={idx}>
-                  <div className="timeline-dot-connector">
-                    <div className="timeline-pulsing-dot"></div>
-                  </div>
-                  <div className="timeline-card-content">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
-                      <span className="timeline-period-badge">{q.period}</span>
-                      <span className="timeline-tag-badge">{q.tag}</span>
-                    </div>
-                    <blockquote className="timeline-quote-text">{q.quote}</blockquote>
-                    <cite className="timeline-quote-source">— {q.source}</cite>
-                  </div>
-                </div>
-              ))}
+            <div className="timeline-split-layout">
+              <div className="timeline-sidebar">
+                {['Before the Common Era', '1st–6th centuries', 'Medieval & early Renaissance', '17th–18th centuries (early modern)', '19th century', 'Early–mid 20th century', 'Late 20th century', '21st century'].map(era => (
+                  <button 
+                    key={era} 
+                    className={`timeline-era-btn ${activeTimelineEra === era ? 'active' : ''}`}
+                    onClick={() => setActiveTimelineEra(era)}
+                  >
+                    {era}
+                  </button>
+                ))}
+              </div>
+
+              <div className="timeline-table-container">
+                <table className="timeline-table">
+                  <thead>
+                    <tr>
+                      <th style={{width: '15%'}}>[Period]</th>
+                      <th style={{width: '15%'}}>[Source]</th>
+                      <th style={{width: '15%'}}>[Recorded]</th>
+                      <th style={{width: '40%'}}>[Witness]</th>
+                      <th style={{width: '15%'}}>[Tag]</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {TIMELINE_QUOTES.length > 0 ? (
+                      TIMELINE_QUOTES.filter(q => {
+                        if (activeTimelineEra === 'Before the Common Era') return q.period.includes('BCE') || q.period === '—';
+                        return false;
+                      }).length > 0 ? (
+                        TIMELINE_QUOTES.filter(q => {
+                          if (activeTimelineEra === 'Before the Common Era') return q.period.includes('BCE') || q.period === '—';
+                          return false;
+                        }).map((q, idx) => (
+                          <tr key={idx}>
+                            <td className="col-period">{q.period}</td>
+                            <td className="col-source">{q.source}</td>
+                            <td className="col-recorded"></td>
+                            <td className="col-witness">{q.quote}</td>
+                            <td className="col-tag">{q.tag}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} style={{padding: '32px 0', color: 'var(--text-muted)'}}>No quotes recorded for this era yet.</td>
+                        </tr>
+                      )
+                    ) : null}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         );
@@ -545,48 +625,48 @@ function App() {
               {aboutSubView === 'board-staff' && (
                 <div className="animate-fade">
                   <div className="team-section">
-                    <h2 className="team-label">Staff</h2>
-                    <div className="team-grid">
-                      <div className="person-card">
-                        <h3 className="person-name">Karson Utzinger</h3>
-                        <p className="person-title">Founder and Executive Director</p>
-                        <p className="person-bio">I love jo. She's my love.</p>
-                      </div>
-                      <div className="person-card">
-                        <h3 className="person-name">Stephen Brown</h3>
-                        <p className="person-title">Pipeline Producer</p>
+                    <h2 className="team-label">Board</h2>
+                    <div className="team-list-layout">
+                      <div className="team-list-item">
+                        <h3 className="person-name">Kirk Utzinger</h3>
+                        <p className="person-title">Board Chair</p>
                         <p className="person-bio">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vitae consequat lectus. Morbi pulvinar mauris nec leo ultricies rutrum.</p>
                       </div>
-                      <div className="person-card">
-                        <h3 className="person-name">Joëlle Utzinger</h3>
-                        <p className="person-title">Brand Designer</p>
+                      <div className="team-list-item">
+                        <h3 className="person-name">Lorem Ipsum</h3>
+                        <p className="person-title">Secretary</p>
                         <p className="person-bio">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vitae consequat lectus. Morbi pulvinar mauris nec leo ultricies rutrum.</p>
+                      </div>
+                      <div className="team-list-item">
+                        <h3 className="person-name">Dean Kato</h3>
+                        <p className="person-title">Director of Board Development</p>
+                        <p className="person-bio">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vitae consequat lectus. Morbi pulvinar mauris nec leo ultricies rutrum.</p>
+                      </div>
+                      <div className="team-list-item">
+                        <h3 className="person-name">Lorem Ipsum</h3>
+                        <p className="person-title">Director of Community Engagement</p>
+                        <p className="person-bio">Bio: </p>
                       </div>
                     </div>
                   </div>
 
                   <div className="team-section">
-                    <h2 className="team-label">Board</h2>
-                    <div className="team-grid">
-                      <div className="person-card">
-                        <h3 className="person-name">Kirk Utzinger</h3>
-                        <p className="person-title">Board Chair</p>
+                    <h2 className="team-label">Staff</h2>
+                    <div className="team-list-layout">
+                      <div className="team-list-item">
+                        <h3 className="person-name">Karson Utzinger</h3>
+                        <p className="person-title">Founder and Executive Director</p>
+                        <p className="person-bio">I love jo. She's my love.</p>
+                      </div>
+                      <div className="team-list-item">
+                        <h3 className="person-name">Stephen Brown</h3>
+                        <p className="person-title">Pipeline Producer</p>
                         <p className="person-bio">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vitae consequat lectus. Morbi pulvinar mauris nec leo ultricies rutrum.</p>
                       </div>
-                      <div className="person-card">
-                        <h3 className="person-name">Lorem Ipsum</h3>
-                        <p className="person-title">Secretary</p>
+                      <div className="team-list-item">
+                        <h3 className="person-name">Joëlle Utzinger</h3>
+                        <p className="person-title">Brand Designer</p>
                         <p className="person-bio">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vitae consequat lectus. Morbi pulvinar mauris nec leo ultricies rutrum.</p>
-                      </div>
-                      <div className="person-card">
-                        <h3 className="person-name">Dean Kato</h3>
-                        <p className="person-title">Director of Board Development</p>
-                        <p className="person-bio">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vitae consequat lectus. Morbi pulvinar mauris nec leo ultricies rutrum.</p>
-                      </div>
-                      <div className="person-card">
-                        <h3 className="person-name">Lorem Ipsum</h3>
-                        <p className="person-title">Director of Community Engagement</p>
-                        <p className="person-bio">Bio: </p>
                       </div>
                     </div>
                   </div>
@@ -599,38 +679,56 @@ function App() {
       case 'invest':
         return (
           <div className="invest-container animate-fade">
-            <div className="invest-header-row">
-              <h1 className="invest-title">How you can invest in this vision:</h1>
-              <p className="invest-disclaimer">
-                As a registered 501(c)(3), donations to Life is Greater than Numbers, Inc. are tax-deductible to the fullest extent allowed by law. Charitable disclosure & state registration info will be added here as we complete our national registration process. This page is not intended as a solicitation in jurisdictions where Life is Greater than Numbers, Inc. is not yet registered or exempt from registration.
-              </p>
+            <div className="invest-header-row" style={{marginBottom: '60px'}}>
+              <h1 className="invest-title" style={{fontSize: '32px', color: 'var(--primary)', marginBottom: '16px'}}>How you can invest in this vision:</h1>
             </div>
             
-            <ul className="invest-list">
-              <li>— Share this vision with your network</li>
-              <li>— Join the LGN discourse (in beta)</li>
-              <li>— Partner with us to kickstart a peer-to-peer fundraising campaign</li>
-            </ul>
-
-            <div className="invest-grid">
-              <div className="invest-option">
-                <div className="invest-option-header">
+            <div className="invest-accordion">
+              <div className="invest-accordion-row">
+                <button className="invest-accordion-header" onClick={() => setInvestExpandedRow(investExpandedRow === 'time' ? null : 'time')}>
                   <span>Time</span>
-                  <button className="invest-option-btn">+</button>
+                  <span className="invest-accordion-icon">{investExpandedRow === 'time' ? '−' : '+'}</span>
+                </button>
+                <div className={`invest-accordion-content ${investExpandedRow === 'time' ? 'expanded' : ''}`}>
+                  <div className="invest-accordion-inner">
+                    <ul style={{ listStyle: 'none', color: 'var(--text-muted)' }}>
+                      <li style={{ marginBottom: '8px' }}>— Share this vision with your network</li>
+                      <li style={{ marginBottom: '8px' }}>— Join the LGN discourse (in beta)</li>
+                      <li>— Partner with us to kickstart a peer-to-peer fundraising campaign</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
-              <div className="invest-option">
-                <div className="invest-option-header">
+
+              <div className="invest-accordion-row">
+                <button className="invest-accordion-header" onClick={() => setInvestExpandedRow(investExpandedRow === 'talent' ? null : 'talent')}>
                   <span>Talent</span>
-                  <button className="invest-option-btn">+</button>
+                  <span className="invest-accordion-icon">{investExpandedRow === 'talent' ? '−' : '+'}</span>
+                </button>
+                <div className={`invest-accordion-content ${investExpandedRow === 'talent' ? 'expanded' : ''}`}>
+                  <div className="invest-accordion-inner" style={{ color: 'var(--text-muted)' }}>
+                    <p>Contribute your skills to our platform. We are currently seeking volunteers with experience in web development, design, and content writing.</p>
+                  </div>
                 </div>
               </div>
-              <div className="invest-option">
-                <div className="invest-option-header">
+
+              <div className="invest-accordion-row">
+                <button className="invest-accordion-header" onClick={() => setInvestExpandedRow(investExpandedRow === 'treasure' ? null : 'treasure')}>
                   <span>Treasure</span>
-                  <button className="invest-option-btn">+</button>
+                  <span className="invest-accordion-icon">{investExpandedRow === 'treasure' ? '−' : '+'}</span>
+                </button>
+                <div className={`invest-accordion-content ${investExpandedRow === 'treasure' ? 'expanded' : ''}`}>
+                  <div className="invest-accordion-inner" style={{ color: 'var(--text-muted)' }}>
+                    <p>Your financial support helps us license great films, maintain the platform, and grow the community.</p>
+                  </div>
                 </div>
               </div>
+              
+              <button className="invest-give-btn">Give Here</button>
+              
+              <p className="invest-disclaimer" style={{marginTop: '60px', color: 'var(--text-dark)', fontSize: '12px'}}>
+                As a registered 501(c)(3), donations to Life is Greater than Numbers, Inc. are tax-deductible to the fullest extent allowed by law. Charitable disclosure & state registration info will be added here as we complete our national registration process. This page is not intended as a solicitation in jurisdictions where Life is Greater than Numbers, Inc. is not yet registered or exempt from registration.
+              </p>
             </div>
           </div>
         );
@@ -843,7 +941,7 @@ function App() {
             <nav className="footer-nav">
               <button onClick={() => setCurrentView('capsule')}>Lightpoles</button>
               <button onClick={() => setCurrentView('about')}>About</button>
-              <button onClick={() => { setCurrentView('about'); setAboutSubView('invest'); }}>Invest</button>
+              <button onClick={() => setCurrentView('invest')}>Invest</button>
               <button onClick={() => setCurrentView('submit-film')}>Submit a film</button>
               <button onClick={() => setCurrentView('contact')}>Contact</button>
             </nav>
@@ -867,7 +965,7 @@ function App() {
               <input type="email" placeholder="Email Address" required />
               <button type="submit">Submit</button>
             </form>
-            <div className="footer-bottom-text">A witness through time</div>
+            <div className="footer-bottom-text" style={{ cursor: 'pointer' }} onClick={() => setCurrentView('timeline')}>A witness through time</div>
           </div>
         </div>
       </footer>

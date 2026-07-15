@@ -1,0 +1,463 @@
+============================================================
+FILE: A witness through time.json
+============================================================
+- A witness through time (FRAME) [1920x2702, fill=#f5f5f5]
+  - LGN-Logo_Registered_Black 1 (RECTANGLE) [353x39]
+  - + Menu (TEXT) [86x24, fill=#000000]: "+ Menu"
+  - A Witness through Time (TEXT) [290x72, fill=#000000]: "A Witness through Time\n"
+  - Before the Common Era (TEXT) [290x48, fill=#000000]: "Before the Common Era"
+  - 1st–6th centuries (TEXT) [290x24, fill=#000000]: "1st–6th centuries"
+  - Medieval & early Renaissance (TEXT) [290x48, fill=#000000]: "Medieval & early Renaissance"
+  - 17th–18th centuries (early modern) (TEXT) [290x48, fill=#000000]: "17th–18th centuries (early modern)"
+  - 19th century (TEXT) [290x24, fill=#000000]: "19th century"
+  - Early–mid 20th century (TEXT) [290x48, fill=#000000]: "Early–mid 20th century"
+  - Late 20th century (TEXT) [290x24, fill=#000000]: "Late 20th century"
+  - 21st century (TEXT) [290x24, fill=#000000]: "21st century"
+  - [Period] (TEXT) [290x48, fill=#000000]: "[Period]\n"
+  - [Source] (TEXT) [290x24, fill=#000000]: "[Source]"
+  - [Recorded] (TEXT) [290x24, fill=#000000]: "[Recorded]"
+  - [Witness] (TEXT) [290x24, fill=#000000]: "[Witness]"
+  - [Tag] (TEXT) [290x24, fill=#000000]: "[Tag]"
+  - Ancient Sumerian Proverb (TEXT) [290x48, fill=#000000]: "Ancient Sumerian Proverb"
+  - Katha Upanishad (TEXT) [290x24, fill=#000000]: "Katha Upanishad"
+  - Tao Te Ching (TEXT) [290x24, fill=#000000]: "Tao Te Ching"
+  - Aristotle, Metaphysics I.2 (TEXT) [290x48, fill=#000000]: "Aristotle, Metaphysics I.2"
+  - Bhagavad Gita (TEXT) [290x24, fill=#000000]: "Bhagavad Gita"
+  - Ecclesiastes (TEXT) [290x24, fill=#000000]: "Ecclesiastes"
+  - Proverbs 3:15 (TEXT) [290x24, fill=#000000]: "Proverbs 3:15"
+  - Dhammapada (TEXT) [290x24, fill=#000000]: "Dhammapada"
+  - Homer, Iliad (TEXT) [290x24, fill=#000000]: "Homer, Iliad"
+  - [c. 2000 BCE] (TEXT) [290x24, fill=#000000]: "[c. 2000 BCE]"
+  - [c. 6th–3rd c. BCE] (TEXT) [290x24, fill=#000000]: "[c. 6th–3rd c. BCE]"
+  - [4th c. BCE] (TEXT) [290x24, fill=#000000]: "[4th c. BCE]"
+  - [4th c. BCE] (TEXT) [290x24, fill=#000000]: "[4th c. BCE]"
+  - [2nd–1st c. BCE] (TEXT) [290x24, fill=#000000]: "[2nd–1st c. BCE]"
+  - [3rd c. BCE] (TEXT) [290x24, fill=#000000]: "[3rd c. BCE]"
+  - [—] (TEXT) [290x24, fill=#000000]: "[—]"
+  - [3rd–1st c. BCE] (TEXT) [290x24, fill=#000000]: "[3rd–1st c. BCE]"
+  - [8th c. BCE] (TEXT) [290x24, fill=#000000]: "[8th c. BCE]"
+  - “Although the number of unhappy days is endless, life is better than death.” (TEXT) [599x48, fill=#000000]: "“Although the number of unhappy days is endless, life is better than death.”"
+  - “When the five senses and the mind are still… then begins the highest path.” (TEXT) [599x48, fill=#000000]: "“When the five senses and the mind are still… then begins the highest path.”"
+  - “The way that can be told is not the eternal way. (TEXT) [599x48, fill=#000000]: "“The way that can be told is not the eternal way."
+  - “It is owing to their wonder that men both now begin and at first began to philosophize. (TEXT) [599x72, fill=#000000]: "“It is owing to their wonder that men both now begin and at first began to philosophize."
+  - “For the soul there is neither birth nor death at any time.” (2:20) (TEXT) [599x48, fill=#000000]: "“For the soul there is neither birth nor death at any time.” (2:20)"
+  - “He has made everything beautiful in its time… He has also set eternity in the human heart…” (3:11) (TEXT) [599x72, fill=#000000]: "“He has made everything beautiful in its time… He has also set eternity in the human heart…” (3:11)"
+  - “She [wisdom] is more precious than rubies; nothing you desire can compare with her.” (TEXT) [599x72, fill=#000000]: "“She [wisdom] is more precious than rubies; nothing you desire can compare with her.”"
+  - “Health is the greatest gift, contentment the greatest wealth, faithfulness the best relationship.” (TEXT) [599x72, fill=#000000]: "“Health is the greatest gift, contentment the greatest wealth, faithfulness the best relationship.”"
+  - “I would rather be a paid servant in a poor man’s house… than king of kings among the dead.” (TEXT) [599x72, fill=#000000]: "“I would rather be a paid servant in a poor man’s house… than king of kings among the dead.”"
+  - Life > odds (TEXT) [290x43, fill=#000000]: "Life > odds"
+  - Life > tech (TEXT) [290x43, fill=#000000]: "Life > tech"
+  - Life > Data (TEXT) [290x43, fill=#000000]: "Life > Data"
+  - Life > Quantifiable (TEXT) [290x43, fill=#000000]: "Life > Quantifiable"
+  - Life > Age (TEXT) [290x43, fill=#000000]: "Life > Age"
+  - Life > Speed (TEXT) [290x43, fill=#000000]: "Life > Speed"
+  - Life > money (TEXT) [290x43, fill=#000000]: "Life > money"
+  - Life > money (TEXT) [290x43, fill=#000000]: "Life > money"
+  - Life > Scores (TEXT) [290x43, fill=#000000]: "Life > Scores"
+  - A chronological chorus affirming the  Life > Numbers Tenet. (TEXT) [731x48, fill=#666666]: "A chronological chorus affirming the  Life > Numbers Tenet."
+  - Arrow 1 (VECTOR)
+  - FOOTER (GROUP) [1920x377]
+    - Rectangle 8 (RECTANGLE) [1920x377, fill=#e1e1e1]
+    - Contact info@lgncinema.org (TEXT) [290x57, fill=#000000]: "Contact\n\ninfo@lgncinema.org"
+    - About Mission + Vision Purpose Board + Staff Invest (TEXT) [290x159, fill=#000000]: "About\n\nMission + Vision\nPurpose\nBoard + Staff\n\nInvest\n"
+    - Platform (TEXT) [290x24, fill=#000000]: "Platform"
+    - Mailing Life is Greater than Numbers, Inc. 1950 W Corporate Way, STE 31556 Anaheim, CA 92801 (TEXT) [290x108, fill=#000000]: "Mailing\n\nLife is Greater than Numbers, Inc. 1950 W Corporate Way, STE 31556 Anaheim, CA 92801\n"
+    - YT Vimeo (TEXT) [78x18, fill=#666666]: "YT Vimeo"
+    - A witness through time (TEXT) [185x18, fill=#666666]: "A witness through time"
+    - 5501(c)(3) EIN: 33-2376438 (TEXT) [220x18, fill=#666666]: "5501(c)(3) EIN: 33-2376438"
+    - ©2026 Life is Greater than Numbers, Inc. (TEXT) [330x18, fill=#666666]: "©2026 Life is Greater than Numbers, Inc."
+    - LGN-Icon_Black 1 (RECTANGLE) [75x77]
+    - Rectangle 9 (RECTANGLE) [445x67, fill=#ffffff]
+    - Updates (TEXT) [90x18, fill=#000000]: "Updates"
+    - Email Address (TEXT) [116x18, fill=#666666]: "Email Address"
+    - Rectangle 10 (RECTANGLE) [98x49, fill=#000000]
+    - Submit (TEXT) [58x13, fill=#ffffff]: "Submit"
+
+============================================================
+FILE: A witness through time—alt DARK.json
+============================================================
+- A witness through time—alt DARK (FRAME) [1920x2702, fill=#000000]
+  - A Witness through Time (TEXT) [290x72, fill=#f5f5f5]: "A Witness through Time\n"
+  - Before the Common Era (TEXT) [290x48, fill=#ffffff]: "Before the Common Era"
+  - 1st–6th centuries (TEXT) [290x24, fill=#ffffff]: "1st–6th centuries"
+  - Medieval & early Renaissance (TEXT) [290x48, fill=#ffffff]: "Medieval & early Renaissance"
+  - 17th–18th centuries (early modern) (TEXT) [290x48, fill=#ffffff]: "17th–18th centuries (early modern)"
+  - 19th century (TEXT) [290x24, fill=#ffffff]: "19th century"
+  - Early–mid 20th century (TEXT) [290x48, fill=#ffffff]: "Early–mid 20th century"
+  - Late 20th century (TEXT) [290x24, fill=#ffffff]: "Late 20th century"
+  - 21st century (TEXT) [290x24, fill=#ffffff]: "21st century"
+  - [Period] (TEXT) [290x48, fill=#ffffff]: "[Period]\n"
+  - [Source] (TEXT) [290x24, fill=#ffffff]: "[Source]"
+  - [Recorded] (TEXT) [290x24, fill=#ffffff]: "[Recorded]"
+  - [Witness] (TEXT) [290x24, fill=#ffffff]: "[Witness]"
+  - [Tag] (TEXT) [290x24, fill=#ffffff]: "[Tag]"
+  - Ancient Sumerian Proverb (TEXT) [290x48, fill=#ffffff]: "Ancient Sumerian Proverb"
+  - Katha Upanishad (TEXT) [290x24, fill=#ffffff]: "Katha Upanishad"
+  - Tao Te Ching (TEXT) [290x24, fill=#ffffff]: "Tao Te Ching"
+  - Aristotle, Metaphysics I.2 (TEXT) [290x48, fill=#ffffff]: "Aristotle, Metaphysics I.2"
+  - Bhagavad Gita (TEXT) [290x24, fill=#ffffff]: "Bhagavad Gita"
+  - Ecclesiastes (TEXT) [290x24, fill=#ffffff]: "Ecclesiastes"
+  - Proverbs 3:15 (TEXT) [290x24, fill=#ffffff]: "Proverbs 3:15"
+  - Dhammapada (TEXT) [290x24, fill=#ffffff]: "Dhammapada"
+  - Homer, Iliad (TEXT) [290x24, fill=#ffffff]: "Homer, Iliad"
+  - [c. 2000 BCE] (TEXT) [290x24, fill=#ffffff]: "[c. 2000 BCE]"
+  - [c. 6th–3rd c. BCE] (TEXT) [290x24, fill=#ffffff]: "[c. 6th–3rd c. BCE]"
+  - [4th c. BCE] (TEXT) [290x24, fill=#ffffff]: "[4th c. BCE]"
+  - [4th c. BCE] (TEXT) [290x24, fill=#ffffff]: "[4th c. BCE]"
+  - [2nd–1st c. BCE] (TEXT) [290x24, fill=#ffffff]: "[2nd–1st c. BCE]"
+  - [3rd c. BCE] (TEXT) [290x24, fill=#ffffff]: "[3rd c. BCE]"
+  - [—] (TEXT) [290x24, fill=#ffffff]: "[—]"
+  - [3rd–1st c. BCE] (TEXT) [290x24, fill=#ffffff]: "[3rd–1st c. BCE]"
+  - [8th c. BCE] (TEXT) [290x24, fill=#ffffff]: "[8th c. BCE]"
+  - “Although the number of unhappy days is endless, life is better than death.” (TEXT) [599x48, fill=#ffffff]: "“Although the number of unhappy days is endless, life is better than death.”"
+  - “When the five senses and the mind are still… then begins the highest path.” (TEXT) [599x48, fill=#ffffff]: "“When the five senses and the mind are still… then begins the highest path.”"
+  - “The way that can be told is not the eternal way. (TEXT) [599x48, fill=#ffffff]: "“The way that can be told is not the eternal way."
+  - “It is owing to their wonder that men both now begin and at first began to philosophize. (TEXT) [599x72, fill=#ffffff]: "“It is owing to their wonder that men both now begin and at first began to philosophize."
+  - “For the soul there is neither birth nor death at any time.” (2:20) (TEXT) [599x48, fill=#ffffff]: "“For the soul there is neither birth nor death at any time.” (2:20)"
+  - “He has made everything beautiful in its time… He has also set eternity in the human heart…” (3:11) (TEXT) [599x72, fill=#ffffff]: "“He has made everything beautiful in its time… He has also set eternity in the human heart…” (3:11)"
+  - “She [wisdom] is more precious than rubies; nothing you desire can compare with her.” (TEXT) [599x72, fill=#ffffff]: "“She [wisdom] is more precious than rubies; nothing you desire can compare with her.”"
+  - “Health is the greatest gift, contentment the greatest wealth, faithfulness the best relationship.” (TEXT) [599x72, fill=#ffffff]: "“Health is the greatest gift, contentment the greatest wealth, faithfulness the best relationship.”"
+  - “I would rather be a paid servant in a poor man’s house… than king of kings among the dead.” (TEXT) [599x72, fill=#ffffff]: "“I would rather be a paid servant in a poor man’s house… than king of kings among the dead.”"
+  - Life > odds (TEXT) [290x43, fill=#ffffff]: "Life > odds"
+  - Life > tech (TEXT) [290x43, fill=#ffffff]: "Life > tech"
+  - Life > Data (TEXT) [290x43, fill=#ffffff]: "Life > Data"
+  - Life > Quantifiable (TEXT) [290x43, fill=#ffffff]: "Life > Quantifiable"
+  - Life > Age (TEXT) [290x43, fill=#ffffff]: "Life > Age"
+  - Life > Speed (TEXT) [290x43, fill=#ffffff]: "Life > Speed"
+  - Life > money (TEXT) [290x43, fill=#ffffff]: "Life > money"
+  - Life > money (TEXT) [290x43, fill=#ffffff]: "Life > money"
+  - Life > Scores (TEXT) [290x43, fill=#ffffff]: "Life > Scores"
+  - A chronological chorus affirming the  Life > Numbers Tenet. (TEXT) [731x48, fill=#878787]: "A chronological chorus affirming the  Life > Numbers Tenet."
+  - Arrow 1 (VECTOR) [fill=#ffffff]
+  - Header (INSTANCE) [386x49, fill=#242424]
+  - Button (INSTANCE) [118x44, fill=#454545]
+  - Footer (INSTANCE) [1920x377, fill=#ffffff]
+
+============================================================
+FILE: About Nav.json
+============================================================
+- About Nav (COMPONENT) [206x132, fill=#ffffff]
+  - Frame 42 (INSTANCE) [206x44]
+  - Frame 40 (INSTANCE) [110x44]
+  - Frame 41 (INSTANCE) [163x44]
+
+============================================================
+FILE: About—Board + Staff.json
+============================================================
+- About—Board + Staff (FRAME) [1920x2397, fill=#000000]
+  - Staff Karson Utzinger Founder and Executive Director  I love jo. She’s my love. Stephen Brown Pipeline Producer  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vitae consequat lectus. Morbi pulvinar mauris nec leo ultricies rutrum.  Joëlle Utzinger Brand Designer  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vitae consequat lectus. Morbi pulvinar mauris nec leo ultricies rutrum.  (TEXT) [1221x649]: "Staff\n\nKarson Utzinger\n\nFounder and Executive Director \nI love jo. She’s my love.\n\nStephen..."
+  - Board Kirk Utzinger Board Chair  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vitae consequat lectus. Morbi pulvinar mauris nec leo ultricies rutrum.  Lorem Ipsum Secretary  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vitae consequat lectus. Morbi pulvinar mauris nec leo ultricies rutrum.  Dean Kato Director of Board Development  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vitae consequat lectus. Morbi pulvinar mauris nec leo ultricies rutrum.  Lorem Ipsum Director of Community Engagement Bio:  (TEXT) [1221x865]: "Board\n\nKirk Utzinger\n\nBoard Chair\n Lorem ipsum dolor sit amet, consectetur adipiscing elit. ..."
+  - Header (INSTANCE) [386x49, fill=#242424]
+  - Button (INSTANCE) [118x44, fill=#454545]
+  - About Nav (INSTANCE) [206x132, fill=#ffffff]
+  - Footer (INSTANCE) [1920x377, fill=#ffffff]
+
+============================================================
+FILE: About—Mission + Vision.json
+============================================================
+- About—Mission + Vision (FRAME) [1920x1457, fill=#000000]
+  - Mission To equip short films with pathways for reflection, discussion, and practice. Vision A culture of common ground, where life is greater than numbers. (TEXT) [1199x387]: "Mission\n\nTo equip short films with pathways for reflection, discussion, and practice.\n\n\nVisi..."
+  - Rectangle 23 (VECTOR) [1920x1457]
+  - Header (INSTANCE) [386x49, fill=#242424]
+  - Button (INSTANCE) [118x44, fill=#454545]
+  - About Nav (INSTANCE) [206x132, fill=#ffffff]
+  - Footer (INSTANCE) [1920x377, fill=#ffffff]
+
+============================================================
+FILE: About—Purpose.json
+============================================================
+- About—Purpose (FRAME) [1920x1457, fill=#000000]
+  - Purpose LGN stands for Life > Numbers—a reminder that people are more than metrics, outcomes, opinions, identities, and categories. We gather people around great stories that help us see life more fully. Each month, LGN offers one film as common ground, with simple pathways for reflection, discussion, and practice that help the story move beyond the screen and into greater living. (TEXT) [1220x504]: "Purpose\n\nLGN stands for Life > Numbers—a reminder that people are more than metrics, outcomes, ..."
+  - Header (INSTANCE) [386x49, fill=#242424]
+  - Button (INSTANCE) [118x44, fill=#454545]
+  - About Nav (INSTANCE) [206x132, fill=#ffffff]
+  - Footer (INSTANCE) [1920x377, fill=#ffffff]
+
+============================================================
+FILE: Button.json
+============================================================
+- Button (INSTANCE) [118x44, fill=#454545]
+
+============================================================
+FILE: Footer.json
+============================================================
+- Footer (COMPONENT) [1920x377, fill=#ffffff]
+  - Rectangle 8 (RECTANGLE) [1920x377, fill=#242424]
+  - 5501(c)(3) EIN: 33-2376438 (TEXT) [220x18, fill=#878787]: "5501(c)(3) EIN: 33-2376438"
+  - ©2026 Life is Greater than Numbers, Inc. (TEXT) [330x18, fill=#878787]: "©2026 Life is Greater than Numbers, Inc."
+  - Rectangle 9 (RECTANGLE) [445x67, fill=#000000]
+  - Email Address (TEXT) [116x18, fill=#878787]: "Email Address"
+  - Mailing Life is Greater than Numbers, Inc. 1950 W Corporate Way, STE 31556 Anaheim, CA 92801 (TEXT) [290x108, fill=#878787]: "Mailing\n\nLife is Greater than Numbers, Inc. 1950 W Corporate Way, STE 31556 Anaheim, CA 92801\n"
+  - Join (TEXT) [47x18, fill=#878787]: "Join"
+  - Group 5 (GROUP) [353x39.07734298706055]
+    - Layer_1 (FRAME) [353x39.07734298706055, fill=#ffffff]
+      - Group (GROUP) [85.45237731933594x39.03425598144531]
+        - Vector (VECTOR) [27.112852096557617x38.32899475097656, fill=#ffffff]
+        - Vector (VECTOR) [7.624074935913086x38.331260681152344, fill=#ffffff]
+        - Vector (VECTOR) [17.878700256347656x38.3289909362793, fill=#ffffff]
+        - Vector (VECTOR) [27.691293716430664x29.210493087768555, fill=#ffffff]
+      - Vector (VECTOR) [30.94983673095703x31.7117919921875, fill=#ffffff]
+      - Group (GROUP) [215.32675170898438x39.031982421875]
+        - Vector (VECTOR) [32.37396240234375x38.32899475097656, fill=#ffffff]
+        - Vector (VECTOR) [26.040225982666016x28.453075408935547, fill=#ffffff]
+        - Vector (VECTOR) [42.417686462402344x28.51203727722168, fill=#ffffff]
+        - Vector (VECTOR) [27.970043182373047x39.02745056152344, fill=#ffffff]
+        - Vector (VECTOR) [27.69075584411621x29.210493087768555, fill=#ffffff]
+        - Vector (VECTOR) [17.878692626953125x28.505231857299805, fill=#ffffff]
+        - Vector (VECTOR) [25.7159423828125x29.19915771484375, fill=#ffffff]
+      - Vector (VECTOR) [6.676179885864258x6.62627649307251, fill=#ffffff]
+  - Frame 40 (INSTANCE) [41x28]
+  - Frame 41 (INSTANCE) [69x28]
+  - Frame 42 (INSTANCE) [203x28]
+  - Button (INSTANCE) [110x44, fill=#454545]
+  - Frame 43 (INSTANCE) [70x28]
+  - Frame 34 (INSTANCE) [108x28]
+  - Frame 33 (INSTANCE) [70x28]
+  - Frame 44 (INSTANCE) [131x28]
+  - Frame 45 (INSTANCE) [87x28]
+
+============================================================
+FILE: Frame 31.json
+============================================================
+- Frame 31 (COMPONENT_SET) [176.95045471191406x119.9009017944336]
+  - Property 1=Default (COMPONENT) [114x28]
+    - Written Link (TEXT) [96x18, fill=#878787]: "Written Link"
+  - Property 1=Hover (COMPONENT) [136.95045471191406x29.95046043395996, fill=#000000]
+    - Written Link (TEXT) [96x18, fill=#878787]: "Written Link"
+    - Arrow 4 (Stroke) (VECTOR) [19.01020622253418x9.204007148742676, fill=#878787]
+
+============================================================
+FILE: Frame 32.json
+============================================================
+- Frame 32 (COMPONENT_SET) [176.95045471191406x119.9009017944336]
+  - Property 1=Default (COMPONENT) [122x28]
+    - Written Link (TEXT) [104x18, fill=#878787]: "Written Link"
+  - Property 1=Hover (COMPONENT) [144.95045471191406x29.95046043395996, fill=#000000]
+    - Written Link (TEXT) [104x18, fill=#878787]: "Written Link"
+    - Arrow 4 (Stroke) (VECTOR) [19.01020622253418x9.204007148742676, fill=#878787]
+
+============================================================
+FILE: Frame 39.json
+============================================================
+- Frame 39 (COMPONENT_SET) [240x212]
+  - Property 1=Default (COMPONENT) [189x44]
+    - Side Navigation (TEXT) [169x24, fill=#878787]: "Side Navigation"
+  - Property 1=Hover (COMPONENT) [200x44]
+    - Side Navigation (TEXT) [180x24, fill=#878787]: "Side Navigation"
+  - Property 1=Selected (COMPONENT) [200x44]
+    - Side Navigation (TEXT) [180x24, fill=#ffffff]: "Side Navigation"
+
+============================================================
+FILE: HOME LIGHT.json
+============================================================
+- HOME LIGHT (GROUP) [1920x1457]
+  - Rectangle 43 (RECTANGLE) [1920x1457, fill=#f5f5f5]
+  - Group 3 (GROUP) [1920x377]
+    - Rectangle 8 (RECTANGLE) [1920x377, fill=#e1e1e1]
+    - Content/Capsule About Invest Contact (TEXT) [290x120, fill=#000000]: "Content/Capsule \nAbout\nInvest\nContact"
+    - Mailing Life is Greater than Numbers, Inc. 1950 W Corporate Way, STE 31556 Anaheim, CA 92801 (TEXT) [290x108, fill=#000000]: "Mailing\n\nLife is Greater than Numbers, Inc. 1950 W Corporate Way, STE 31556 Anaheim, CA 92801\n"
+    - YT Vimeo (TEXT) [78x18, fill=#666666]: "YT Vimeo"
+    - A witness through time (TEXT) [185x18, fill=#666666]: "A witness through time"
+    - 5501(c)(3) EIN: 33-2376438 (TEXT) [220x18, fill=#666666]: "5501(c)(3) EIN: 33-2376438"
+    - ©2026 Life is Greater than Numbers, Inc. (TEXT) [330x18, fill=#666666]: "©2026 Life is Greater than Numbers, Inc."
+    - LGN-Icon_Black 1 (RECTANGLE) [75x77]
+    - Rectangle 9 (RECTANGLE) [445x67, fill=#ffffff]
+    - Join (TEXT) [45x18, fill=#000000]: "Join"
+    - Email Address (TEXT) [116x18, fill=#666666]: "Email Address"
+    - Rectangle 10 (RECTANGLE) [98x49, fill=#000000]
+    - Submit (TEXT) [58x13, fill=#ffffff]: "Submit"
+  - Rectangle 9 (RECTANGLE) [102x55, fill=#d9d9d9]
+  - Rectangle 27 (RECTANGLE) [179x55, fill=#d9d9d9]
+  - Rectangle 26 (RECTANGLE) [240x55, fill=#d9d9d9]
+  - Rectangle 10 (RECTANGLE) [102x55, fill=#d9d9d9]
+  - Great stories for greater living. (TEXT) [688x48, fill=#000000]: "Great stories for greater living."
+  - LGN-Logo_Registered_Black 1 (RECTANGLE) [958x106]
+  - Rectangle 7 (VECTOR) [336x106, fill=#000000]
+  - [content/capsule] (TEXT) [274x26, fill=#ffffff]: "[content/capsule]"
+  - LGN [noun.] A community platform that offers one short film each  month as common ground for reflection, discussion, and practice.” (TEXT) [696x72, fill=#000000]: "LGN [noun.]\nA community platform that offers one short film each  month as common ground for ref..."
+  - [Content/capsule] (TEXT) [187x48, fill=#000000]: "[Content/capsule]"
+  - About (TEXT) [64x48, fill=#000000]: "About"
+  - Invest (TEXT) [64x48, fill=#000000]: "Invest"
+  - Submit a film (TEXT) [138x48, fill=#000000]: "Submit a film"
+
+============================================================
+FILE: Header.json
+============================================================
+- Header (COMPONENT) [386x49, fill=#242424]
+  - Logo Menu (INSTANCE) [32x29]
+  - Menu Item (INSTANCE) [74x29]
+  - Menu Item (INSTANCE) [74x29]
+  - Menu Item (INSTANCE) [120x29]
+
+============================================================
+FILE: IMG_3079 1.json
+============================================================
+- IMG_3079 1 (RECTANGLE) [265x306]
+
+============================================================
+FILE: Invest.json
+============================================================
+- Invest (FRAME) [1920x1457, fill=#000000]
+  - How you can invest in this vision: (TEXT) [1220x48, fill=#878787]: "How you can invest in this vision:\n"
+  - As a registered 501(c)(3), donations to Life is Greater than Numbers, Inc. are tax-deductible to the fullest extent allowed by law. Charitable disclosure & state registration info will be added here as we complete our national registration process. This page is not intended as a solicitation in jurisdictions where Life is Greater than Numbers, Inc. is not yet registered or exempt from registration. (TEXT) [600x90, fill=#878787]: "As a registered 501(c)(3), donations to Life is Greater than Numbers, Inc. are tax-deductible to ..."
+  - Share this vision with your network Join the LGN discourse (in beta) Partner with us to kickstart a peer-to-peer fundraising campaign (TEXT) [899x105, fill=#ffffff]: "Share this vision with your network\nJoin the LGN discourse (in beta)\nPartner with us to kicksta..."
+  - — (TEXT) [24x24, fill=#ffffff]: "—"
+  - + (TEXT) [20x24, fill=#ffffff]: "+"
+  - + (TEXT) [20x24, fill=#ffffff]: "+"
+  - Time (TEXT) [1220x48, fill=#ffffff]: "Time"
+  - Talent (TEXT) [1220x48, fill=#ffffff]: "Talent"
+  - Treasure (TEXT) [1220x48, fill=#ffffff]: "Treasure"
+  - Vector 2 (VECTOR)
+  - Vector 3 (VECTOR)
+  - Vector 4 (VECTOR)
+  - Button (INSTANCE) [257x77, fill=#454545]
+  - Header (INSTANCE) [386x49, fill=#242424]
+  - Button (INSTANCE) [118x44, fill=#454545]
+  - Footer (INSTANCE) [1920x377, fill=#ffffff]
+
+============================================================
+FILE: LGN-Logo_Registered_Black 2.json
+============================================================
+- LGN-Logo_Registered_Black 2 (RECTANGLE) [390x43]
+
+============================================================
+FILE: Logo Menu.json
+============================================================
+- Logo Menu (COMPONENT_SET) [104x233]
+  - Property 1=Default (COMPONENT) [56x43]
+    - LGN-Icon_White 2 (RECTANGLE) [22x23]
+  - Property 1=Hover (COMPONENT) [56x43, fill=#454545]
+    - LGN-Icon_White 2 (RECTANGLE) [22x23]
+  - Property 1=Selected (COMPONENT) [56x43, fill=#000000]
+    - LGN-Icon_White 2 (RECTANGLE) [22x23]
+
+============================================================
+FILE: Menu Item.json
+============================================================
+- Menu Item (COMPONENT_SET) [187x212]
+  - Property 1=Default (COMPONENT) [147x44]
+    - Menu Item (TEXT) [113x24, fill=#ffffff]: "Menu Item"
+  - Property 1=Hover (COMPONENT) [147x44, fill=#454545]
+    - Menu Item (TEXT) [113x24, fill=#ffffff]: "Menu Item"
+  - Property 1=Selected (COMPONENT) [147x44, fill=#000000]
+    - Menu Item (TEXT) [113x24, fill=#ffffff]: "Menu Item"
+
+============================================================
+FILE: Rectangle 34.json
+============================================================
+- Rectangle 34 (RECTANGLE) [140x140, fill=#000000]
+
+============================================================
+FILE: Rectangle 35.json
+============================================================
+- Rectangle 35 (RECTANGLE) [140x140, fill=#ffffff]
+
+============================================================
+FILE: Rectangle 36.json
+============================================================
+- Rectangle 36 (RECTANGLE) [140x140, fill=#242424]
+
+============================================================
+FILE: Rectangle 37.json
+============================================================
+- Rectangle 37 (RECTANGLE) [140x140, fill=#454545]
+
+============================================================
+FILE: Rectangle 38.json
+============================================================
+- Rectangle 38 (RECTANGLE) [140x140, fill=#878787]
+
+============================================================
+FILE: Screenshot 2026-07-12 at 7.30.12 PM 1.json
+============================================================
+- Screenshot 2026-07-12 at 7.30.12 PM 1 (COMPONENT) [836x780, fill=#ffffff]
+  - Screenshot 2026-07-12 at 7.30.12 PM 1 (RECTANGLE) [836x780]
+
+============================================================
+FILE: Site buildout.json
+============================================================
+- Site buildout (TEXT) [701x96, fill=#000000]: "Site buildout"
+
+============================================================
+FILE: VISUAL ALIGNMENT.json
+============================================================
+- VISUAL ALIGNMENT (TEXT) [1173x96, fill=#000000]: "VISUAL ALIGNMENT"
+
+============================================================
+FILE: [CAPSULE].json
+============================================================
+- [CAPSULE] (FRAME) [1920x2048, fill=#000000]
+  - Rectangle 23 (VECTOR) [1920x1457]
+  - Rectangle 27 (RECTANGLE) [1840x1432, fill=#242424]
+  - Frame 1 (FRAME) [100x100]
+  - Rectangle 28 (RECTANGLE) [1140x641, fill=#000000]
+  - Polygon 1 (POLYGON) [81x81, fill=#878787]
+  - Rectangle 32 (RECTANGLE) [1760x559, fill=#000000]
+  - Rectangle 33 (RECTANGLE) [207x57, fill=#242424]
+  - Rectangle 33 (RECTANGLE) [207x57, fill=#242424]
+  - Month—01 (TEXT) [119x24, fill=#ffffff]: "Month—01"
+  - Month—02 (TEXT) [119x24, fill=#ffffff]: "Month—02"
+  - The Story Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum  + Supporting context Brief synopsis Runtime Filmmaker credits Content considerations Optional background and supporting context Pre-watch prompt/question? (maybe not) “Reflect” (TEXT) [605x502, fill=#ffffff]: "The Story\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incid..."
+  - Lorem Ipsum Title (TEXT) [376x48, fill=#ffffff]: "Lorem Ipsum Title"
+  - Reflect A small set of reflection questions Space to write privately Option to email/text reflections to oneself Optional submission to LGN (for review) (TEXT) [512x154, fill=#ffffff]: "Reflect\n\nA small set of reflection questions\nSpace to write privately\nOption to email/text re..."
+  - Gather Discussion guide/resources (not downloadable just on the web) Option to share discussion takeaways with LGN Community Tell us you gathered Share a glimpse of your gathering Let us know where the story traveled (TEXT) [598x226, fill=#ffffff]: "Gather\n\nDiscussion guide/resources (not downloadable just on the web)\nOption to share discussi..."
+  - Practice A shared monthly practice: One accessible invitation connected to the capsule. Further pathways: Additional ways to learn, serve, create, connect, or continue. One clear practice invitation A few alternate pathways for different people or contexts Related organizations, readings, or resources A way to privately choose a next step Option to share what happened afterward with LGN Community (TEXT) [520x322, fill=#ffffff]: "Practice\n\nA shared monthly practice: One accessible invitation connected to the capsule.\nFurth..."
+  - Button (INSTANCE) [194x58, fill=#454545]
+  - Button (INSTANCE) [194x58, fill=#000000]
+  - Button (INSTANCE) [106x44, fill=#454545]
+  - Button (INSTANCE) [106x44, fill=#454545]
+  - Button (INSTANCE) [106x44, fill=#454545]
+  - Header (INSTANCE) [386x49, fill=#242424]
+  - Button (INSTANCE) [118x44, fill=#454545]
+  - Footer (INSTANCE) [1920x377, fill=#ffffff]
+
+============================================================
+FILE: [CAPSULE]—Reflect.json
+============================================================
+- [CAPSULE]—Reflect (FRAME) [1920x2048, fill=#000000]
+  - Rectangle 23 (VECTOR) [1920x1457]
+  - Rectangle 27 (RECTANGLE) [1840x1432, fill=#242424]
+  - Rectangle 28 (RECTANGLE) [1140x641, fill=#000000]
+  - Polygon 1 (POLYGON) [81x81, fill=#878787]
+  - Rectangle 32 (RECTANGLE) [1760x559, fill=#000000]
+  - Group 25 (GROUP) [142x57]
+    - Rectangle 33 (RECTANGLE) [142x57, fill=#000000]
+    - The Story (TEXT) [104x24, fill=#ffffff]: "The Story "
+  - Group 26 (GROUP) [162x57]
+    - Rectangle 34 (RECTANGLE) [162x57, fill=#454545]
+    - Storyboard (TEXT) [121x24, fill=#ffffff]: "Storyboard"
+  - Rectangle 33 (RECTANGLE) [207x57, fill=#242424]
+  - Rectangle 33 (RECTANGLE) [207x57, fill=#242424]
+  - Group 22 (GROUP) [130x46]
+    - Rectangle 41 (RECTANGLE) [130x46, fill=#454545]
+    - Contact (TEXT) [84x24, fill=#ffffff]: "Contact"
+  - Group 27 (GROUP) [118x46]
+    - Rectangle 41 (RECTANGLE) [118x46, fill=#454545]
+    - Button (TEXT) [72x24, fill=#ffffff]: "Button"
+  - Group 28 (GROUP) [118x46]
+    - Rectangle 41 (RECTANGLE) [118x46, fill=#454545]
+    - Button (TEXT) [72x24, fill=#ffffff]: "Button"
+  - Group 29 (GROUP) [118x46]
+    - Rectangle 41 (RECTANGLE) [118x46, fill=#454545]
+    - Button (TEXT) [72x24, fill=#ffffff]: "Button"
+  - Month—01 (TEXT) [119x24, fill=#ffffff]: "Month—01"
+  - Month—02 (TEXT) [119x24, fill=#ffffff]: "Month—02"
+  - The Story Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum  + Supporting context Brief synopsis Runtime Filmmaker credits Content considerations Optional background and supporting context Pre-watch prompt/question? (maybe not) “Reflect” (TEXT) [605x502, fill=#ffffff]: "The Story\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incid..."
+  - Lorem Ipsum Title (TEXT) [376x48, fill=#ffffff]: "Lorem Ipsum Title"
+  - Reflect A small set of reflection questions Space to write privately Option to email/text reflections to oneself Optional submission to LGN (for review) (TEXT) [512x154, fill=#ffffff]: "Reflect\n\nA small set of reflection questions\nSpace to write privately\nOption to email/text re..."
+  - Gather Discussion guide/resources (not downloadable just on the web) Option to share discussion takeaways with LGN Community Tell us you gathered Share a glimpse of your gathering Let us know where the story traveled (TEXT) [598x226, fill=#ffffff]: "Gather\n\nDiscussion guide/resources (not downloadable just on the web)\nOption to share discussi..."
+  - Practice A shared monthly practice: One accessible invitation connected to the capsule. Further pathways: Additional ways to learn, serve, create, connect, or continue. One clear practice invitation A few alternate pathways for different people or contexts Related organizations, readings, or resources A way to privately choose a next step Option to share what happened afterward with LGN Community (TEXT) [520x322, fill=#ffffff]: "Practice\n\nA shared monthly practice: One accessible invitation connected to the capsule.\nFurth..."
+  - Header (INSTANCE) [386x49, fill=#242424]
+  - Footer (INSTANCE) [1920x377, fill=#ffffff]
+
+============================================================
+FILE: home—ALT DARK.json
+============================================================
+- home—ALT DARK (FRAME) [1920x1457, fill=#000000]
+  - LGN (n.)  A community platform that offers one short film each month as common ground for reflection, discussion, and practice. (TEXT) [468x58, fill=#d9d9d9]: "LGN (n.)  A community platform that offers one short film each month as common ground for reflect..."
+  - LGN-Logo_Registered_White 1 (RECTANGLE) [959x106]
+  - Great stories for greater living. (TEXT) [688x48, fill=#ffffff]: "Great stories for greater living."
+  - Header (INSTANCE) [386x49, fill=#242424]
+  - Button (INSTANCE) [118x44, fill=#454545]
+  - Button (INSTANCE) [256x82, fill=#454545]
+  - Footer (INSTANCE) [1920x377, fill=#ffffff]
