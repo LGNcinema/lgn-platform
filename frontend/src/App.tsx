@@ -125,6 +125,34 @@ const TIMELINE_QUOTES: TimelineQuote[] = [
   }
 ];
 
+const TIMELINE_ERAS = [
+  'Before The Common Era',
+  '1st-6th Centuries',
+  'Medieval & Early Renaissance',
+  '17th-18th Centuries (Early Modern)',
+  '19th Century',
+  'Early-Mid 20th Century',
+  'Late 20th Century',
+  '21st Century'
+];
+
+const formatRecorded = (period: string) => {
+  if (period === '—') return '[-]';
+  const formatted = period
+    .replace(/c\./gi, 'C.')
+    .replace(/\bc\b/gi, 'C')
+    .replace(/–/g, '-')
+    .replace(/bce/gi, 'BCE')
+    .replace(/ce/gi, 'CE');
+  return `[${formatted}]`;
+};
+
+const formatTag = (tag: string) => {
+  return tag.replace(/>\s*([a-z])([a-zA-Z]*)/g, (_, p1, p2) => {
+    return `> ${p1.toUpperCase()}${p2}`;
+  });
+};
+
 function App() {
   // Navigation / Router States
   const [currentView, setCurrentView] = useState<'home' | 'capsule' | 'timeline' | 'about' | 'invest' | 'contact' | 'submit-film'>('home');
@@ -163,13 +191,13 @@ function App() {
   const reflectionEmail = '';
   const submitReflectionLgn = false;
   const [reflectionSuccess, setReflectionSuccess] = useState(false);
-  
+
   const [gatherSuccess, setGatherSuccess] = useState(false);
 
   const [practiceSuccess, setPracticeSuccess] = useState(false);
 
   const [aboutMenuOpen, setAboutMenuOpen] = useState(false);
-  const [activeTimelineEra, setActiveTimelineEra] = useState<string>('Before the Common Era');
+  const [activeTimelineEra, setActiveTimelineEra] = useState<string>('Before The Common Era');
   const [investExpandedRow, setInvestExpandedRow] = useState<string | null>(null);
   const [capsuleTopTab, setCapsuleTopTab] = useState<'story' | 'storyboard'>('story');
   const [capsuleActiveAction, setCapsuleActiveAction] = useState<'reflect' | 'gather' | 'practice' | null>(null);
@@ -359,9 +387,9 @@ function App() {
             <div className="home-definition-block">
               LGN (n.)&nbsp; A community platform that offers one short film each month as common ground for reflection, discussion, and practice.
             </div>
-            
+
             <div className="home-hero-center">
-              <img src="/images/lgn-logo-registered-white.svg" alt="Life is Greater than Numbers" style={{ width: 'auto', height: '180px', maxWidth: '90%', marginBottom: '32px' }} />
+              <img src="/images/lgn-logo-registered-white.svg" alt="Life is Greater than Numbers" style={{ width: 'auto', height: '122px', maxWidth: '90%' }} />
               <p className="home-hero-subtitle">Great stories for greater living.</p>
               <button className="home-hero-btn" onClick={() => setCurrentView('capsule')}>Lightpoles</button>
             </div>
@@ -387,13 +415,13 @@ function App() {
               <div className="capsule-title-row">
                 <h1 className="capsule-main-title">{film ? film.title : 'Lorem Ipsum Title'}</h1>
                 <div className="capsule-title-pills">
-                  <button 
+                  <button
                     className={`capsule-pill ${capsuleTopTab === 'story' ? 'active' : ''}`}
                     onClick={() => setCapsuleTopTab('story')}
                   >
                     The Story
                   </button>
-                  <button 
+                  <button
                     className={`capsule-pill ${capsuleTopTab === 'storyboard' ? 'active' : ''}`}
                     onClick={() => setCapsuleTopTab('storyboard')}
                   >
@@ -402,39 +430,58 @@ function App() {
                 </div>
               </div>
 
-              <div className="capsule-video-player">
-                {film ? (
-                  <>
-                    {!isPlaying && (
-                      <div 
-                        className="video-poster-overlay"
-                        style={{ backgroundImage: `url(${film.thumbnail_url || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1200&q=80'})` }}
-                      >
-                        <button className="play-trigger-btn" onClick={handlePlayVideo} aria-label="Play Film" id="btn-play-video">
-                          <svg viewBox="0 0 24 24">
-                            <path d="M8 5v14l11-7z" />
-                          </svg>
-                        </button>
-                      </div>
-                    )}
-                    
-                    <video 
-                      ref={videoRef}
-                      className="screen-video"
-                      src={film.video_url}
-                      controls={isPlaying}
-                      onPause={handleVideoPause}
-                      onEnded={handleVideoPause}
-                      playsInline
-                    />
-                  </>
-                ) : (
-                  <div className="no-film-placeholder">No film associated with this capsule yet.</div>
-                )}
+              <div className="capsule-middle-row">
+                <div className="capsule-video-player">
+                  {film ? (
+                    <>
+                      {!isPlaying && (
+                        <div
+                          className="video-poster-overlay"
+                          style={{ backgroundImage: `url(${film.thumbnail_url || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1200&q=80'})` }}
+                        >
+                          <button className="play-trigger-btn" onClick={handlePlayVideo} aria-label="Play Film" id="btn-play-video">
+                            <svg viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+
+                      <video
+                        ref={videoRef}
+                        className="screen-video"
+                        src={film.video_url}
+                        controls={isPlaying}
+                        onPause={handleVideoPause}
+                        onEnded={handleVideoPause}
+                        playsInline
+                      />
+                    </>
+                  ) : (
+                    <div className="no-film-placeholder">No film associated with this capsule yet.</div>
+                  )}
+                </div>
+
+                <div className="capsule-story-text-col">
+                  <h2 className="capsule-story-heading">The Story</h2>
+                  <p className="capsule-story-body">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
+                  </p>
+                  <ul className="capsule-story-list">
+                    <li>+ Supporting context</li>
+                    <li>Brief synopsis</li>
+                    <li>Runtime</li>
+                    <li>Filmmaker credits</li>
+                    <li>Content considerations</li>
+                    <li>Optional background and supporting context</li>
+                    <li>Pre-watch prompt/question? (maybe not)</li>
+                    <li>“Reflect”</li>
+                  </ul>
+                </div>
               </div>
 
               {capsuleTopTab === 'storyboard' ? (
-                <div style={{padding: '40px 0', textAlign: 'center', color: 'var(--text-muted)'}}>
+                <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
                   <p>Storyboard content for {film?.title || 'this capsule'} is not available yet.</p>
                 </div>
               ) : (
@@ -454,14 +501,14 @@ function App() {
                     {capsuleActiveAction === 'reflect' && (
                       <div className="capsule-form-container">
                         <form onSubmit={handleReflectionSubmit}>
-                          <textarea 
-                            placeholder="Your reflection..." 
-                            style={{width: '100%', minHeight: '80px', marginBottom: '8px', padding: '8px', background: 'var(--bg-darker)', color: 'white', border: '1px solid var(--border)', borderRadius: '4px', fontFamily: 'var(--font-sans)'}}
+                          <textarea
+                            placeholder="Your reflection..."
+                            style={{ width: '100%', minHeight: '80px', marginBottom: '8px', padding: '8px', background: 'var(--bg-darker)', color: 'white', border: '1px solid var(--border)', borderRadius: '4px', fontFamily: 'var(--font-sans)' }}
                             value={reflectionAnswer}
                             onChange={(e) => setReflectionAnswer(e.target.value)}
                           />
-                          <button type="submit" className="capsule-action-btn" style={{width: '100%', background: 'var(--primary)', color: 'black'}}>Submit</button>
-                          {reflectionSuccess && <p style={{color: 'green', fontSize: '12px', marginTop: '4px'}}>Success!</p>}
+                          <button type="submit" className="capsule-action-btn" style={{ width: '100%', background: 'var(--primary)', color: 'black' }}>Submit</button>
+                          {reflectionSuccess && <p style={{ color: 'green', fontSize: '12px', marginTop: '4px' }}>Success!</p>}
                         </form>
                       </div>
                     )}
@@ -482,9 +529,9 @@ function App() {
                     </button>
                     {capsuleActiveAction === 'gather' && (
                       <div className="capsule-form-container">
-                        <p style={{fontSize: '12px', color: 'var(--text-muted)'}}>Check-in your gathering here...</p>
-                        <button className="capsule-action-btn" style={{width: '100%', background: 'var(--primary)', color: 'black', marginTop: '8px'}} onClick={() => setGatherSuccess(true)}>Mark Gathered</button>
-                        {gatherSuccess && <p style={{color: 'green', fontSize: '12px', marginTop: '4px'}}>Success!</p>}
+                        <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Check-in your gathering here...</p>
+                        <button className="capsule-action-btn" style={{ width: '100%', background: 'var(--primary)', color: 'black', marginTop: '8px' }} onClick={() => setGatherSuccess(true)}>Mark Gathered</button>
+                        {gatherSuccess && <p style={{ color: 'green', fontSize: '12px', marginTop: '4px' }}>Success!</p>}
                       </div>
                     )}
                   </div>
@@ -506,9 +553,9 @@ function App() {
                     </button>
                     {capsuleActiveAction === 'practice' && (
                       <div className="capsule-form-container">
-                        <p style={{fontSize: '12px', color: 'var(--text-muted)'}}>Record your practice...</p>
-                        <button className="capsule-action-btn" style={{width: '100%', background: 'var(--primary)', color: 'black', marginTop: '8px'}} onClick={() => setPracticeSuccess(true)}>Mark Practiced</button>
-                        {practiceSuccess && <p style={{color: 'green', fontSize: '12px', marginTop: '4px'}}>Success!</p>}
+                        <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Record your practice...</p>
+                        <button className="capsule-action-btn" style={{ width: '100%', background: 'var(--primary)', color: 'black', marginTop: '8px' }} onClick={() => setPracticeSuccess(true)}>Mark Practiced</button>
+                        {practiceSuccess && <p style={{ color: 'green', fontSize: '12px', marginTop: '4px' }}>Success!</p>}
                       </div>
                     )}
                   </div>
@@ -518,71 +565,107 @@ function App() {
           </div>
         );
 
-      case 'timeline':
+      case 'timeline': {
+        const activeEraIdx = TIMELINE_ERAS.indexOf(activeTimelineEra);
+        const erasBefore = activeEraIdx !== -1 ? TIMELINE_ERAS.slice(0, activeEraIdx) : [];
+        const erasAfter = activeEraIdx !== -1 ? TIMELINE_ERAS.slice(activeEraIdx + 1) : TIMELINE_ERAS;
+        const activeQuotes = TIMELINE_QUOTES.filter(q => {
+          if (activeTimelineEra === 'Before The Common Era') {
+            return q.period.includes('BCE') || q.period === '—';
+          }
+          return false;
+        });
+
         return (
           <div className="timeline-view-wrapper">
-            <div className="timeline-header-area">
-              <span className="panel-category">Chronological Chorus</span>
-              <h1 className="timeline-main-title">A Witness through Time</h1>
-              <p className="timeline-subtitle">
-                Affirming the foundational tenet: <strong>Life is Greater than Numbers</strong> (<code>Life &gt; Numbers</code>). A chorus of humanity protesting numerical reductionism across the millennia.
-              </p>
+            <div className="timeline-header-grid">
+              <div className="timeline-title-col">
+                A Witness Through<br />Time
+              </div>
+              <div className="timeline-desc-col">
+                A chronological chorus affirming the<br />
+                Life &gt; Numbers Tenet.
+              </div>
             </div>
 
-            <div className="timeline-split-layout">
-              <div className="timeline-sidebar">
-                {['Before the Common Era', '1st–6th centuries', 'Medieval & early Renaissance', '17th–18th centuries (early modern)', '19th century', 'Early–mid 20th century', 'Late 20th century', '21st century'].map(era => (
-                  <button 
-                    key={era} 
-                    className={`timeline-era-btn ${activeTimelineEra === era ? 'active' : ''}`}
-                    onClick={() => setActiveTimelineEra(era)}
-                  >
-                    {era}
-                  </button>
-                ))}
-              </div>
-
-              <div className="timeline-table-container">
-                <table className="timeline-table">
-                  <thead>
-                    <tr>
-                      <th style={{width: '15%'}}>[Period]</th>
-                      <th style={{width: '15%'}}>[Source]</th>
-                      <th style={{width: '15%'}}>[Recorded]</th>
-                      <th style={{width: '40%'}}>[Witness]</th>
-                      <th style={{width: '15%'}}>[Tag]</th>
+            <div className="timeline-table-container">
+              <table className="timeline-table">
+                <thead>
+                  <tr>
+                    <th className="col-period">[Period]</th>
+                    <th className="col-source">[Source]</th>
+                    <th className="col-recorded">[Recorded]</th>
+                    <th className="col-witness">[Witness]</th>
+                    <th className="col-tag">[Tag]</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {erasBefore.map(era => (
+                    <tr key={era} className="era-nav-row">
+                      <td className="col-period">
+                        <button className="timeline-era-nav-btn" onClick={() => setActiveTimelineEra(era)}>
+                          {era}
+                        </button>
+                      </td>
+                      <td colSpan={4}></td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {TIMELINE_QUOTES.length > 0 ? (
-                      TIMELINE_QUOTES.filter(q => {
-                        if (activeTimelineEra === 'Before the Common Era') return q.period.includes('BCE') || q.period === '—';
-                        return false;
-                      }).length > 0 ? (
-                        TIMELINE_QUOTES.filter(q => {
-                          if (activeTimelineEra === 'Before the Common Era') return q.period.includes('BCE') || q.period === '—';
-                          return false;
-                        }).map((q, idx) => (
-                          <tr key={idx}>
-                            <td className="col-period">{q.period}</td>
-                            <td className="col-source">{q.source}</td>
-                            <td className="col-recorded"></td>
-                            <td className="col-witness">{q.quote}</td>
-                            <td className="col-tag">{q.tag}</td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={5} style={{padding: '32px 0', color: 'var(--text-muted)'}}>No quotes recorded for this era yet.</td>
-                        </tr>
-                      )
-                    ) : null}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+
+                  {erasBefore.length > 0 && (
+                    <tr className="timeline-spacer-row">
+                      <td colSpan={5}></td>
+                    </tr>
+                  )}
+
+                  {activeQuotes.length > 0 ? (
+                    activeQuotes.map((q, idx) => (
+                      <tr key={idx} className="quote-row">
+                        {idx === 0 ? (
+                          <td className="col-period active-era-cell">
+                            <span className="active-era-name">{activeTimelineEra}</span>
+                          </td>
+                        ) : (
+                          <td className="col-period"></td>
+                        )}
+                        <td className="col-source">{q.source}</td>
+                        <td className="col-recorded">{formatRecorded(q.period)}</td>
+                        <td className="col-witness">{q.quote}</td>
+                        <td className="col-tag">{formatTag(q.tag)}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr className="quote-row empty-era-row">
+                      <td className="col-period active-era-cell">
+                        <span className="active-era-name">{activeTimelineEra}</span>
+                      </td>
+                      <td colSpan={4} className="col-empty-message">
+                        No quotes recorded for this era yet.
+                      </td>
+                    </tr>
+                  )}
+
+                  {erasAfter.length > 0 && (
+                    <tr className="timeline-spacer-row">
+                      <td colSpan={5}></td>
+                    </tr>
+                  )}
+
+                  {erasAfter.map(era => (
+                    <tr key={era} className="era-nav-row">
+                      <td className="col-period">
+                        <button className="timeline-era-nav-btn" onClick={() => setActiveTimelineEra(era)}>
+                          {era}
+                        </button>
+                      </td>
+                      <td colSpan={4}></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         );
+      }
 
       case 'about':
         return (
@@ -615,10 +698,9 @@ function App() {
 
               {aboutSubView === 'purpose' && (
                 <div className="animate-fade">
-                  <div className="about-mv-label" style={{ marginBottom: '40px' }}>Purpose</div>
+                  <div className="about-mv-label">Purpose</div>
                   <p className="about-purpose-text">LGN stands for Life &gt; Numbers—a reminder that people are more than metrics, outcomes, opinions, identities, and categories.</p>
-                  <p className="about-purpose-text">We gather people around great stories that help us see life more fully.</p>
-                  <p className="about-purpose-text">Each month, LGN offers one film as common ground, with simple pathways for reflection, discussion, and practice that help the story move beyond the screen and into greater living.</p>
+                  <p className="about-purpose-text">We gather people around great stories that help us see life more fully. Each month, LGN offers one film as common ground, with simple pathways for reflection, discussion, and practice that help the story move beyond the screen and into greater living.</p>
                 </div>
               )}
 
@@ -679,56 +761,51 @@ function App() {
       case 'invest':
         return (
           <div className="invest-container animate-fade">
-            <div className="invest-header-row" style={{marginBottom: '60px'}}>
-              <h1 className="invest-title" style={{fontSize: '32px', color: 'var(--primary)', marginBottom: '16px'}}>How you can invest in this vision:</h1>
-            </div>
-            
-            <div className="invest-accordion">
-              <div className="invest-accordion-row">
-                <button className="invest-accordion-header" onClick={() => setInvestExpandedRow(investExpandedRow === 'time' ? null : 'time')}>
-                  <span>Time</span>
-                  <span className="invest-accordion-icon">{investExpandedRow === 'time' ? '−' : '+'}</span>
-                </button>
-                <div className={`invest-accordion-content ${investExpandedRow === 'time' ? 'expanded' : ''}`}>
-                  <div className="invest-accordion-inner">
-                    <ul style={{ listStyle: 'none', color: 'var(--text-muted)' }}>
-                      <li style={{ marginBottom: '8px' }}>— Share this vision with your network</li>
-                      <li style={{ marginBottom: '8px' }}>— Join the LGN discourse (in beta)</li>
-                      <li>— Partner with us to kickstart a peer-to-peer fundraising campaign</li>
-                    </ul>
+            <div className="invest-sidebar-placeholder"></div>
+            <div className="invest-content">
+              <h1 className="invest-title">How you can invest in this vision:</h1>
+
+              <div className="invest-accordion">
+                <div className="invest-accordion-row" onClick={() => setInvestExpandedRow(investExpandedRow === 'time' ? null : 'time')}>
+                  <div className="invest-row-title">Time</div>
+                  <div className="invest-row-content">
+                    {investExpandedRow === 'time' && (
+                      <ul className="invest-bullet-list">
+                        <li>Share this vision with your network</li>
+                        <li>Join the LGN discourse (in beta)</li>
+                        <li>Partner with us to kickstart a peer-to-peer fundraising campaign</li>
+                      </ul>
+                    )}
                   </div>
+                  <div className="invest-row-icon">{investExpandedRow === 'time' ? '−' : '+'}</div>
+                </div>
+
+                <div className="invest-accordion-row" onClick={() => setInvestExpandedRow(investExpandedRow === 'talent' ? null : 'talent')}>
+                  <div className="invest-row-title">Talent</div>
+                  <div className="invest-row-content">
+                    {investExpandedRow === 'talent' && (
+                      <p className="invest-row-text">Contribute your skills to our platform. We are currently seeking volunteers with experience in web development, design, and content writing.</p>
+                    )}
+                  </div>
+                  <div className="invest-row-icon">{investExpandedRow === 'talent' ? '−' : '+'}</div>
+                </div>
+
+                <div className="invest-accordion-row" onClick={() => setInvestExpandedRow(investExpandedRow === 'treasure' ? null : 'treasure')}>
+                  <div className="invest-row-title">Treasure</div>
+                  <div className="invest-row-content">
+                    {investExpandedRow === 'treasure' && (
+                      <p className="invest-row-text">Your financial support helps us license great films, maintain the platform, and grow the community.</p>
+                    )}
+                  </div>
+                  <div className="invest-row-icon">{investExpandedRow === 'treasure' ? '−' : '+'}</div>
                 </div>
               </div>
 
-              <div className="invest-accordion-row">
-                <button className="invest-accordion-header" onClick={() => setInvestExpandedRow(investExpandedRow === 'talent' ? null : 'talent')}>
-                  <span>Talent</span>
-                  <span className="invest-accordion-icon">{investExpandedRow === 'talent' ? '−' : '+'}</span>
-                </button>
-                <div className={`invest-accordion-content ${investExpandedRow === 'talent' ? 'expanded' : ''}`}>
-                  <div className="invest-accordion-inner" style={{ color: 'var(--text-muted)' }}>
-                    <p>Contribute your skills to our platform. We are currently seeking volunteers with experience in web development, design, and content writing.</p>
-                  </div>
-                </div>
-              </div>
+              <button className="invest-give-btn" id="btn-give-treasure">Give Here</button>
 
-              <div className="invest-accordion-row">
-                <button className="invest-accordion-header" onClick={() => setInvestExpandedRow(investExpandedRow === 'treasure' ? null : 'treasure')}>
-                  <span>Treasure</span>
-                  <span className="invest-accordion-icon">{investExpandedRow === 'treasure' ? '−' : '+'}</span>
-                </button>
-                <div className={`invest-accordion-content ${investExpandedRow === 'treasure' ? 'expanded' : ''}`}>
-                  <div className="invest-accordion-inner" style={{ color: 'var(--text-muted)' }}>
-                    <p>Your financial support helps us license great films, maintain the platform, and grow the community.</p>
-                  </div>
-                </div>
+              <div className="invest-footer-info">
+                <p>As a registered 501(c)(3), donations to Life is Greater than Numbers, Inc. are tax-deductible to the fullest extent allowed by law. Charitable disclosure & state registration info will be added here as we complete our national registration process. This page is not intended as a solicitation in jurisdictions where Life is Greater than Numbers, Inc. is not yet registered or exempt from registration.</p>
               </div>
-              
-              <button className="invest-give-btn">Give Here</button>
-              
-              <p className="invest-disclaimer" style={{marginTop: '60px', color: 'var(--text-dark)', fontSize: '12px'}}>
-                As a registered 501(c)(3), donations to Life is Greater than Numbers, Inc. are tax-deductible to the fullest extent allowed by law. Charitable disclosure & state registration info will be added here as we complete our national registration process. This page is not intended as a solicitation in jurisdictions where Life is Greater than Numbers, Inc. is not yet registered or exempt from registration.
-              </p>
             </div>
           </div>
         );
@@ -903,7 +980,7 @@ function App() {
           <button onClick={() => setCurrentView('home')} className="nav-brand-btn">
             <img src="/images/lgn-icon-white.svg" alt="LGN Icon" style={{ width: '24px', height: '24px' }} />
           </button>
-          
+
           <div className="nav-dropdown-wrapper" onMouseEnter={() => setAboutMenuOpen(true)} onMouseLeave={() => setAboutMenuOpen(false)}>
             <button className={`nav-link-pill ${currentView === 'about' ? 'active' : ''}`} onClick={() => setCurrentView('about')}>About</button>
             {aboutMenuOpen && (
@@ -914,7 +991,7 @@ function App() {
               </div>
             )}
           </div>
-          
+
           <button className={`nav-link-pill ${currentView === 'invest' ? 'active' : ''}`} onClick={() => setCurrentView('invest')}>Invest</button>
           <button className={`nav-link-pill ${currentView === 'capsule' ? 'active' : ''}`} onClick={() => setCurrentView('capsule')}>Lightpoles</button>
         </div>
@@ -924,7 +1001,7 @@ function App() {
         </div>
       </header>
 
-      <main className="container" style={{ flexGrow: 1, paddingBottom: '60px' }}>
+      <main className={['home', 'capsule', 'invest', 'timeline'].includes(currentView) ? '' : 'container'} style={{ flexGrow: 1, paddingBottom: '60px' }}>
         {renderActiveView()}
       </main>
 
@@ -951,7 +1028,7 @@ function App() {
           {/* Column 3: Mailing & Social */}
           <div className="footer-col col-mailing">
             <h3>Mailing</h3>
-            <p>Life is Greater than Numbers, Inc.<br/>1950 W Corporate Way, STE 31556<br/>Anaheim, CA 92801</p>
+            <p>Life is Greater than Numbers, Inc.<br />1950 W Corporate Way, STE 31556<br />Anaheim, CA 92801</p>
             <div className="footer-bottom-text social-links">
               <a href="#">YT</a>
               <a href="#">Vimeo</a>

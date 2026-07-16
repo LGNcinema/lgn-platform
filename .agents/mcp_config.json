@@ -1,8 +1,10 @@
 {
   "mcpServers": {
     "figma": {
-      "serverUrl": "https://mcp.figma.com/mcp",
-      "url": "https://mcp.figma.com/mcp"
+      "serverUrl": "https://mcp.figma.com/mcp"
+    },
+    "supabase": {
+      "serverUrl": "https://mcp.supabase.com/mcp?project_ref=eafsbdplcuulvaruumof"
     }
   }
 }
