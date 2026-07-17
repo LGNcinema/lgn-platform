@@ -389,7 +389,7 @@ function App() {
             </div>
 
             <div className="home-hero-center">
-              <img src="/images/lgn-logo-registered-white.svg" alt="Life is Greater than Numbers" style={{ width: 'auto', height: '122px', maxWidth: '90%' }} />
+              <img className="home-hero-logo" src="/images/lgn-logo-registered-white.svg" alt="Life is Greater than Numbers" />
               <p className="home-hero-subtitle">Great stories for greater living.</p>
               <button className="home-hero-btn" onClick={() => setCurrentView('capsule')}>Lightpoles</button>
             </div>
@@ -977,7 +977,7 @@ function App() {
     <>
       <header className="floating-header-container">
         <div className="header-pill-left">
-          <button onClick={() => setCurrentView('home')} className="nav-brand-btn">
+          <button onClick={() => setCurrentView('home')} className={`nav-brand-btn ${currentView === 'home' ? 'active' : ''}`}>
             <img src="/images/lgn-icon-white.svg" alt="LGN Icon" style={{ width: '24px', height: '24px' }} />
           </button>
 
@@ -1001,7 +1001,7 @@ function App() {
         </div>
       </header>
 
-      <main className={['home', 'capsule', 'invest', 'timeline'].includes(currentView) ? '' : 'container'} style={{ flexGrow: 1, paddingBottom: '60px' }}>
+      <main className={['home', 'capsule', 'invest', 'timeline', 'about'].includes(currentView) ? '' : 'container'} style={{ flexGrow: 1, paddingBottom: '60px' }}>
         {renderActiveView()}
       </main>
 
