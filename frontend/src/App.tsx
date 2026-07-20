@@ -191,15 +191,7 @@ function App() {
   const [filmSuccess, setFilmSuccess] = useState(false);
   const [filmSubmitting, setFilmSubmitting] = useState(false);
 
-  // Interactive Capsule Forms states
-  const [reflectionAnswer, setReflectionAnswer] = useState('');
-  const reflectionEmail = '';
-  const submitReflectionLgn = false;
-  const [reflectionSuccess, setReflectionSuccess] = useState(false);
-
-  const [gatherSuccess, setGatherSuccess] = useState(false);
-
-  const [practiceSuccess, setPracticeSuccess] = useState(false);
+  // Interactive Capsule Forms states (Removed unused placeholders)
 
   const [aboutMenuOpen, setAboutMenuOpen] = useState(false);
   const [activeTimelineEra, setActiveTimelineEra] = useState<string>('Before The Common Era');
@@ -265,10 +257,7 @@ function App() {
       videoRef.current.pause();
       videoRef.current.load();
     }
-    setReflectionAnswer('');
-    setReflectionSuccess(false);
-    setGatherSuccess(false);
-    setPracticeSuccess(false);
+
     setBeforeYouWatchExpanded(false);
     setStoryboardSuccess(false);
     fetchData(id);
@@ -335,27 +324,7 @@ function App() {
     }
   };
 
-  const handleReflectionSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!reflectionAnswer || !activeCapsule) return;
-    try {
-      const res = await fetch(`${API_URL}/api/submissions/reflection`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          capsule_id: activeCapsule.id,
-          email: reflectionEmail || null,
-          answers: reflectionAnswer,
-          submitted_to_lgn: submitReflectionLgn,
-        }),
-      });
-      if (res.ok) {
-        setReflectionSuccess(true);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+
 
   const handleStoryboardSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
