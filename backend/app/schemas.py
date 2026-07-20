@@ -10,6 +10,9 @@ class FilmBase(BaseModel):
     video_url: str
     thumbnail_url: Optional[str] = None
     description: Optional[str] = None
+    theme: Optional[str] = None
+    bts_text: Optional[str] = None
+    screenplay_text: Optional[str] = None
 
 class FilmCreate(FilmBase):
     pass
@@ -23,6 +26,7 @@ class Film(FilmBase):
 # Reflection schemas
 class ReflectionBase(BaseModel):
     title: str
+    introduction: Optional[str] = None
     content: str
     author: Optional[str] = None
 
@@ -36,18 +40,17 @@ class Reflection(ReflectionBase):
 
     model_config = ConfigDict(from_attributes=True)
 
-# Gathering schemas
-class GatheringBase(BaseModel):
+# Discussion Circle schemas
+class DiscussionCircleBase(BaseModel):
     title: str
-    description: Optional[str] = None
-    date_str: str
-    location: str
-    rsvp_link: Optional[str] = None
+    opening_round: Optional[str] = None
+    discuss_prompts: Optional[str] = None
+    closing_question: Optional[str] = None
 
-class GatheringCreate(GatheringBase):
+class DiscussionCircleCreate(DiscussionCircleBase):
     pass
 
-class Gathering(GatheringBase):
+class DiscussionCircle(DiscussionCircleBase):
     id: int
     capsule_id: int
 
@@ -74,6 +77,8 @@ class CapsuleBase(BaseModel):
     title: str
     description: Optional[str] = None
     is_active: bool = True
+    pre_watch_prompt: Optional[str] = None
+    pre_watch_supporting_text: Optional[str] = None
 
 class CapsuleCreate(CapsuleBase):
     pass
@@ -88,7 +93,7 @@ class Capsule(CapsuleBase):
 class CapsuleDetail(Capsule):
     film: Optional[Film] = None
     reflections: List[Reflection] = []
-    gatherings: List[Gathering] = []
+    discussion_circles: List[DiscussionCircle] = []
     practices: List[Practice] = []
 
     model_config = ConfigDict(from_attributes=True)
@@ -137,6 +142,26 @@ class UserReflectionCreate(UserReflectionBase):
     pass
 
 class UserReflection(UserReflectionBase):
+    id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+# Storyboard Submission schemas
+class StoryboardSubmissionBase(BaseModel):
+    capsule_id: int
+    content: Optional[str] = None
+    media_url: Optional[str] = None
+    author_name: Optional[str] = None
+    author_location: Optional[str] = None
+    author_age: Optional[str] = None
+    is_anonymous: bool = False
+    is_approved: bool = False
+
+class StoryboardSubmissionCreate(StoryboardSubmissionBase):
+    pass
+
+class StoryboardSubmission(StoryboardSubmissionBase):
     id: int
     created_at: datetime
 

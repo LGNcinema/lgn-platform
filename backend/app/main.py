@@ -12,85 +12,6 @@ from app import models, schemas
 # and seed a sample monthly capsule if none exists
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create tables
-    Base.metadata.create_all(bind=engine)
-    
-    # Seed data if empty
-    db = next(get_db())
-    try:
-        if db.query(models.Capsule).count() == 0:
-            print("Seeding initial capsule data...")
-            # Create active capsule
-            capsule = models.Capsule(
-                month="2026-07",
-                title="Awakening the Undergrowth",
-                description="Exploring our deep interconnectedness with the earth through silent observation and ancient ecosystems.",
-                is_active=True
-            )
-            db.add(capsule)
-            db.commit()
-            db.refresh(capsule)
-
-            # Create Film
-            film = models.Film(
-                capsule_id=capsule.id,
-                title="Whispers of the Canopy",
-                director="Sofia Lorenson",
-                duration="14 mins",
-                # Using a public sample video file
-                video_url="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-                thumbnail_url="https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1600&q=80",
-                description="A cinematic meditation on the subterranean communications network linking old-growth forests. Shot over four seasons in the Pacific Northwest, the film explores how trees support one another through fungal networks, presenting a visual metaphor for human community and mutual support."
-            )
-            db.add(film)
-
-            # Create Reflection
-            reflection = models.Reflection(
-                capsule_id=capsule.id,
-                title="Hearing the Unheard Conversations",
-                author="Marcus Aurel",
-                content=(
-                    "In Sofia's lens, the forest is not a passive backdrop but an active, breathing conversation. "
-                    "When we walk beneath the canopy, we tread on an ancient Internet. The mycelial network transports nutrients and warning signals, "
-                    "acting as a collaborative nervous system for the woods.\n\n"
-                    "How often do we shut off our own digital networks to plug into this organic, silent, yet screaming flow of life? "
-                    "By watching *Whispers of the Canopy*, we are invited to ask: *Who are we connected to, and what signals are we sending?*"
-                )
-            )
-            db.add(reflection)
-
-            # Create Gathering
-            gathering = models.Gathering(
-                capsule_id=capsule.id,
-                title="Community Screening & Shared Silence",
-                description="Join us for a hybrid screening of 'Whispers of the Canopy' followed by 15 minutes of collective, quiet reflection and open-mic dialogue.",
-                date_str="Friday, July 24, 2026 at 7:00 PM EST",
-                location="The Community Hearth (Brooklyn, NY) & Zoom Hybrid",
-                rsvp_link="https://example.com/rsvp-canopy"
-            )
-            db.add(gathering)
-
-            # Create Practice
-            practice = models.Practice(
-                capsule_id=capsule.id,
-                title="A Weekly Exercise in Rooting",
-                description="A physical and mental alignment practice designed to ground your awareness into your immediate environment.",
-                steps=(
-                    "1. Find a quiet green space or stand barefoot on the earth if possible.\n"
-                    "2. Position your feet shoulder-width apart, knees slightly bent, and close your eyes.\n"
-                    "3. Shift your focus to the soles of your feet. Visualize root fibers growing from your feet down through the soil, connecting with the root networks of nearby plants.\n"
-                    "4. Stand in this connected posture for 5-10 minutes, breathing naturally. Observe what arises when you treat yourself as part of the soil system."
-                )
-            )
-            db.add(practice)
-            db.commit()
-            print("Seeding completed successfully!")
-    except Exception as e:
-        print(f"Error seeding database: {e}")
-        db.rollback()
-    finally:
-        db.close()
-        
     yield
 
 app = FastAPI(
@@ -209,20 +130,20 @@ def add_reflection(capsule_id: int, reflection: schemas.ReflectionCreate, db: Se
     db.refresh(db_reflection)
     return db_reflection
 
-@app.post("/api/capsules/{capsule_id}/gatherings", response_model=schemas.Gathering, status_code=status.HTTP_201_CREATED)
-def add_gathering(capsule_id: int, gathering: schemas.GatheringCreate, db: Session = Depends(get_db)):
+@app.post("/api/capsules/{capsule_id}/discussion_circles", response_model=schemas.DiscussionCircle, status_code=status.HTTP_201_CREATED)
+def add_discussion_circle(capsule_id: int, circle: schemas.DiscussionCircleCreate, db: Session = Depends(get_db)):
     """
-    Add a gathering to a specific capsule.
+    Add a discussion circle to a specific capsule.
     """
     capsule = db.query(models.Capsule).filter(models.Capsule.id == capsule_id).first()
     if not capsule:
         raise HTTPException(status_code=404, detail="Capsule not found")
         
-    db_gathering = models.Gathering(**gathering.model_dump(), capsule_id=capsule_id)
-    db.add(db_gathering)
+    db_circle = models.DiscussionCircle(**circle.model_dump(), capsule_id=capsule_id)
+    db.add(db_circle)
     db.commit()
-    db.refresh(db_gathering)
-    return db_gathering
+    db.refresh(db_circle)
+    return db_circle
 
 @app.post("/api/capsules/{capsule_id}/practices", response_model=schemas.Practice, status_code=status.HTTP_201_CREATED)
 def add_practice(capsule_id: int, practice: schemas.PracticeCreate, db: Session = Depends(get_db)):
@@ -276,3 +197,17 @@ def submit_reflection(submission: schemas.UserReflectionCreate, db: Session = De
     db.refresh(db_reflection)
     return db_reflection
 
+@app.post("/api/submissions/storyboard", response_model=schemas.StoryboardSubmission, status_code=status.HTTP_201_CREATED)
+def submit_storyboard(submission: schemas.StoryboardSubmissionCreate, db: Session = Depends(get_db)):
+    """
+    Submit a contribution to the Storyboard (reflection, link, image info).
+    """
+    capsule = db.query(models.Capsule).filter(models.Capsule.id == submission.capsule_id).first()
+    if not capsule:
+        raise HTTPException(status_code=404, detail="Capsule not found")
+        
+    db_submission = models.StoryboardSubmission(**submission.model_dump())
+    db.add(db_submission)
+    db.commit()
+    db.refresh(db_submission)
+    return db_submission

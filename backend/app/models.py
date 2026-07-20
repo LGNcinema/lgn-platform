@@ -12,12 +12,14 @@ class Capsule(Base):
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True)
+    pre_watch_prompt = Column(String, nullable=True)
+    pre_watch_supporting_text = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
     film = relationship("Film", back_populates="capsule", uselist=False, cascade="all, delete-orphan")
     reflections = relationship("Reflection", back_populates="capsule", cascade="all, delete-orphan")
-    gatherings = relationship("Gathering", back_populates="capsule", cascade="all, delete-orphan")
+    discussion_circles = relationship("DiscussionCircle", back_populates="capsule", cascade="all, delete-orphan")
     practices = relationship("Practice", back_populates="capsule", cascade="all, delete-orphan")
 
 class Film(Base):
@@ -31,6 +33,9 @@ class Film(Base):
     video_url = Column(String, nullable=False)
     thumbnail_url = Column(String, nullable=True)
     description = Column(Text, nullable=True)
+    theme = Column(String, nullable=True)
+    bts_text = Column(Text, nullable=True)
+    screenplay_text = Column(Text, nullable=True)
 
     capsule = relationship("Capsule", back_populates="film")
 
@@ -40,24 +45,24 @@ class Reflection(Base):
     id = Column(Integer, primary_key=True, index=True)
     capsule_id = Column(Integer, ForeignKey("capsules.id"), nullable=False)
     title = Column(String, nullable=False)
-    content = Column(Text, nullable=False) # Supports markdown
+    introduction = Column(Text, nullable=True)
+    content = Column(Text, nullable=False) # Supports markdown (e.g. questions)
     author = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     capsule = relationship("Capsule", back_populates="reflections")
 
-class Gathering(Base):
-    __tablename__ = "gatherings"
+class DiscussionCircle(Base):
+    __tablename__ = "discussion_circles"
 
     id = Column(Integer, primary_key=True, index=True)
     capsule_id = Column(Integer, ForeignKey("capsules.id"), nullable=False)
     title = Column(String, nullable=False)
-    description = Column(Text, nullable=True)
-    date_str = Column(String, nullable=False) # e.g. "July 24, 2026, 7:00 PM EST"
-    location = Column(String, nullable=False)  # Zoom or address
-    rsvp_link = Column(String, nullable=True)
+    opening_round = Column(Text, nullable=True)
+    discuss_prompts = Column(Text, nullable=True)
+    closing_question = Column(Text, nullable=True)
 
-    capsule = relationship("Capsule", back_populates="gatherings")
+    capsule = relationship("Capsule", back_populates="discussion_circles")
 
 class Practice(Base):
     __tablename__ = "practices"
@@ -99,5 +104,19 @@ class UserReflection(Base):
     email = Column(String, nullable=True)
     answers = Column(Text, nullable=False) # JSON-stringified or block text of answers
     submitted_to_lgn = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class StoryboardSubmission(Base):
+    __tablename__ = "storyboard_submissions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    capsule_id = Column(Integer, ForeignKey("capsules.id"), nullable=False)
+    content = Column(Text, nullable=True) # reflection, story, or link
+    media_url = Column(String, nullable=True)
+    author_name = Column(String, nullable=True)
+    author_location = Column(String, nullable=True)
+    author_age = Column(String, nullable=True)
+    is_anonymous = Column(Boolean, default=False)
+    is_approved = Column(Boolean, default=False) # Requires review before public collage
     created_at = Column(DateTime, default=datetime.utcnow)
 
