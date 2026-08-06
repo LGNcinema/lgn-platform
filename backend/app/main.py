@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.database import engine, Base, get_db
+from app.database import engine, Base, SessionLocal, get_db
 from app.config import settings
 from app import models, schemas
 
@@ -12,6 +12,37 @@ from app import models, schemas
 # and seed a sample monthly capsule if none exists
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    models.Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        if db.query(models.Capsule).count() == 0:
+            sample_capsule = models.Capsule(
+                month="2026-08",
+                title="SISTERS WITH TRANSISTORS",
+                description="A patchwork portrait of several female electronic music pioneers.",
+                is_active=True,
+                pre_watch_prompt="What was your first encounter with synthesized sound?",
+                pre_watch_supporting_text="Before pressing play, take a moment to listen to the room around you."
+            )
+            db.add(sample_capsule)
+            db.commit()
+            db.refresh(sample_capsule)
+
+            sample_film = models.Film(
+                capsule_id=sample_capsule.id,
+                title="SISTERS WITH TRANSISTORS",
+                director="Lisa Rovner",
+                duration="86 min",
+                video_url="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+                thumbnail_url="/images/sisters-thumbnail.jpg",
+                description="Narrated by Laurie Anderson. 2020. USA. 86 min."
+            )
+            db.add(sample_film)
+            db.commit()
+    except Exception as e:
+        print(f"Database startup/seed error: {e}")
+    finally:
+        db.close()
     yield
 
 app = FastAPI(
@@ -26,11 +57,12 @@ origins = [origin.strip() for origin in settings.CORS_ORIGINS.split(",") if orig
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=origins if "*" not in origins else ["*"],
+    allow_credentials=True if "*" not in origins else False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Endpoints
 @app.get("/api/health")
