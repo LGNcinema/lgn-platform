@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
 import { CapsuleView } from './components/CapsuleView';
 import { CapsuleReflect } from './components/CapsuleReflect';
 import { CapsulePractice } from './components/CapsulePractice';
 import { CapsuleDiscuss } from './components/CapsuleDiscuss';
-import type { CapsuleDetail, CapsuleSummary, TimelineQuote } from './types';
+import type { CapsuleDetail, CapsuleSummary } from './types';
 
 interface TimelineQuote {
   period: string;
@@ -114,10 +114,6 @@ function App() {
 
   // Tabbed Navigation state for Capsule view is managed in parent/components
 
-  // Custom Video Player states
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
   // Form states
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
@@ -134,23 +130,10 @@ function App() {
   const [filmSuccess, setFilmSuccess] = useState(false);
   const [filmSubmitting, setFilmSubmitting] = useState(false);
 
-  // Interactive Capsule Forms states (Removed unused placeholders)
-
   const [aboutMenuOpen, setAboutMenuOpen] = useState(false);
   const [activeTimelineEra, setActiveTimelineEra] = useState<string>('Before The Common Era');
   const [investExpandedRow, setInvestExpandedRow] = useState<string | null>(null);
-  const [capsuleTopTab, setCapsuleTopTab] = useState<'story' | 'storyboard'>('story');
-  const [capsuleActiveAction, setCapsuleActiveAction] = useState<'reflect' | 'gather' | 'practice' | null>(null);
-
-  const [beforeYouWatchExpanded, setBeforeYouWatchExpanded] = useState(false);
-  const [storyboardContent, setStoryboardContent] = useState('');
-  const [storyboardMediaUrl, setStoryboardMediaUrl] = useState('');
-  const [storyboardName, setStoryboardName] = useState('');
-  const [storyboardLocation, setStoryboardLocation] = useState('');
-  const [storyboardAge, setStoryboardAge] = useState('');
-  const [storyboardAnonymous, setStoryboardAnonymous] = useState(false);
-  const [storyboardSuccess, setStoryboardSuccess] = useState(false);
-  const [storyboardSubmitting, setStoryboardSubmitting] = useState(false);
+  const [capsuleActiveAction, setCapsuleActiveAction] = useState<'reflect' | 'gather' | 'practice' | 'discuss' | null>(null);
   // Fetch active capsule and all capsules
   const fetchData = async (capsuleId?: number) => {
     setLoading(true);
@@ -186,26 +169,7 @@ function App() {
     fetchData();
   }, []);
 
-  const handlePlayVideo = () => {
-    if (videoRef.current) {
-      videoRef.current.play();
-      setIsPlaying(true);
-    }
-  };
-
-  const handleVideoPause = () => {
-    setIsPlaying(false);
-  };
-
   const handleCapsuleSelect = (id: number) => {
-    setIsPlaying(false);
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.load();
-    }
-
-    setBeforeYouWatchExpanded(false);
-    setStoryboardSuccess(false);
     fetchData(id);
   };
 
@@ -272,50 +236,7 @@ function App() {
 
 
 
-  const handleStoryboardSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeCapsule) return;
-    setStoryboardSubmitting(true);
-    try {
-      const res = await fetch(`${API_URL}/api/submissions/storyboard`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          capsule_id: activeCapsule.id,
-          content: storyboardContent || null,
-          media_url: storyboardMediaUrl || null,
-          author_name: storyboardName || null,
-          author_location: storyboardLocation || null,
-          author_age: storyboardAge || null,
-          is_anonymous: storyboardAnonymous,
-          is_approved: false,
-        }),
-      });
-      if (res.ok) {
-        setStoryboardSuccess(true);
-        setStoryboardContent('');
-        setStoryboardMediaUrl('');
-        setStoryboardName('');
-        setStoryboardLocation('');
-        setStoryboardAge('');
-        setStoryboardAnonymous(false);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setStoryboardSubmitting(false);
-    }
-  };
 
-  const formatMonth = (monthStr: string) => {
-    try {
-      const [year, month] = monthStr.split('-');
-      const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-      return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
-    } catch {
-      return monthStr.toUpperCase();
-    }
-  };
 
   const navigateToAbout = (subView: 'purpose' | 'mission-vision' | 'board-staff') => {
     setCurrentView('about');
@@ -344,8 +265,6 @@ function App() {
         </div>
       );
     }
-
-    const film = activeCapsule.film;
 
     switch (currentView) {
       case 'home':
