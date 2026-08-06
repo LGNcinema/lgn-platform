@@ -36,7 +36,7 @@ class ReflectionCreate(ReflectionBase):
 class Reflection(ReflectionBase):
     id: int
     capsule_id: int
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -85,7 +85,7 @@ class CapsuleCreate(CapsuleBase):
 
 class Capsule(CapsuleBase):
     id: int
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -109,7 +109,7 @@ class ContactSubmissionCreate(ContactSubmissionBase):
 
 class ContactSubmission(ContactSubmissionBase):
     id: int
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -127,7 +127,7 @@ class FilmSubmissionCreate(FilmSubmissionBase):
 
 class FilmSubmission(FilmSubmissionBase):
     id: int
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -143,7 +143,7 @@ class UserReflectionCreate(UserReflectionBase):
 
 class UserReflection(UserReflectionBase):
     id: int
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -163,7 +163,7 @@ class StoryboardSubmissionCreate(StoryboardSubmissionBase):
 
 class StoryboardSubmission(StoryboardSubmissionBase):
     id: int
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 
