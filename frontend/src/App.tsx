@@ -1,67 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 
-// API interfaces
-interface Film {
-  id: number;
-  capsule_id: number;
-  title: string;
-  director: string;
-  duration?: string;
-  video_url: string;
-  thumbnail_url?: string;
-  description?: string;
-  theme?: string;
-  bts_text?: string;
-  screenplay_text?: string;
-}
-
-interface Reflection {
-  id: number;
-  capsule_id: number;
-  title: string;
-  introduction?: string;
-  content: string;
-  author?: string;
-  created_at: string;
-}
-
-interface DiscussionCircle {
-  id: number;
-  capsule_id: number;
-  title: string;
-  opening_round?: string;
-  discuss_prompts?: string;
-  closing_question?: string;
-}
-
-interface Practice {
-  id: number;
-  capsule_id: number;
-  title: string;
-  description?: string;
-  steps: string;
-}
-
-interface CapsuleDetail {
-  id: number;
-  month: string;
-  title: string;
-  description?: string;
-  is_active: boolean;
-  pre_watch_prompt?: string;
-  pre_watch_supporting_text?: string;
-  film?: Film;
-  reflections: Reflection[];
-  discussion_circles: DiscussionCircle[];
-  practices: Practice[];
-}
-
-interface CapsuleSummary {
-  id: number;
-  month: string;
-  title: string;
-  is_active: boolean;
-}
+import { CapsuleView } from './components/CapsuleView';
+import { CapsuleReflect } from './components/CapsuleReflect';
+import { CapsulePractice } from './components/CapsulePractice';
+import { CapsuleDiscuss } from './components/CapsuleDiscuss';
+import type { CapsuleDetail, CapsuleSummary, TimelineQuote } from './types';
 
 interface TimelineQuote {
   period: string;
@@ -227,7 +170,10 @@ function App() {
       const listRes = await fetch(`${API_URL}/api/capsules`);
       if (listRes.ok) {
         const listData = await listRes.json();
-        setAllCapsules(listData);
+        setAllCapsules([
+          ...listData, 
+          { id: 999, month: "2027-01-01", title: "Lorem Ip...", is_active: false }
+        ]);
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred while loading application data.');
@@ -420,275 +366,50 @@ function App() {
       case 'capsule':
         return (
           <div className="capsule-view-wrapper">
-            <div className="capsule-tabs-header">
-              {allCapsules.map((cap) => (
-                <button
-                  key={cap.id}
-                  className={`capsule-month-tab ${activeCapsule.id === cap.id ? 'active' : ''}`}
-                  onClick={() => handleCapsuleSelect(cap.id)}
-                >
-                  {formatMonth(cap.month).replace(' ', '—')}
-                </button>
-              ))}
+            <div className="capsule-month-tabs-v2">
+              {allCapsules.map((cap) => {
+                const dateParts = cap.month.split('-');
+                const mm = dateParts[1] || '';
+                const yy = dateParts[0] ? dateParts[0].substring(2) : '';
+                return (
+                  <button
+                    key={cap.id}
+                    className={`capsule-month-tab-v2 ${activeCapsule.id === cap.id ? 'active' : ''}`}
+                    onClick={() => {
+                      handleCapsuleSelect(cap.id);
+                      setCapsuleActiveAction(null);
+                    }}
+                  >
+                    <span className="tab-date">{mm}.{yy}</span>
+                    <span className="tab-title">{cap.title}</span>
+                  </button>
+                );
+              })}
             </div>
-
-            <div className="capsule-content-area">
-              <div className="capsule-title-row">
-                <h1 className="capsule-main-title">{film ? film.title : 'Lorem Ipsum Title'}</h1>
-                <div className="capsule-title-pills">
-                  <button
-                    className={`capsule-pill ${capsuleTopTab === 'story' ? 'active' : ''}`}
-                    onClick={() => setCapsuleTopTab('story')}
-                  >
-                    The Story
-                  </button>
-                  <button
-                    className={`capsule-pill ${capsuleTopTab === 'storyboard' ? 'active' : ''}`}
-                    onClick={() => setCapsuleTopTab('storyboard')}
-                  >
-                    Storyboard
-                  </button>
-                </div>
-              </div>
-
-              {capsuleTopTab === 'storyboard' ? (
-                <div className="storyboard-container animate-fade">
-                  <div className="storyboard-header">
-                    <h2>The Storyboard</h2>
-                    <p>Where our stories begin to shape a larger one.</p>
-                    <p>How did {film?.title || 'the film'} move you beyond the screen?<br/>Share something from your experience.</p>
-                  </div>
-                  
-                  {storyboardSuccess ? (
-                    <div className="form-success-card">
-                      <h3>✓ Contribution Received</h3>
-                      <p>Thank you for sharing your story. LGN has received your contribution for the {film?.title} Storyboard.</p>
-                      <button className="retry-btn" onClick={() => setStoryboardSuccess(false)} style={{ marginTop: '16px' }}>Submit Another</button>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleStoryboardSubmit} className="interactive-form-grid storyboard-form">
-                      <div className="form-group full-width">
-                        <label>What would you like to share?</label>
-                        <textarea
-                          className="form-input"
-                          placeholder="A reflection, story, or response..."
-                          value={storyboardContent}
-                          onChange={(e) => setStoryboardContent(e.target.value)}
-                          style={{ minHeight: '120px' }}
-                        />
-                      </div>
-                      <div className="form-group full-width">
-                        <label>Link (Image, song, poem, quotation, book, film, etc.)</label>
-                        <input
-                          type="url"
-                          className="form-input"
-                          placeholder="https://..."
-                          value={storyboardMediaUrl}
-                          onChange={(e) => setStoryboardMediaUrl(e.target.value)}
-                        />
-                        <p style={{fontSize:'12px', color:'var(--text-muted)', marginTop:'4px'}}>If this is someone else’s work, include the creator and source.</p>
-                      </div>
-                      <div className="form-group">
-                        <label>How should we identify you?</label>
-                        <select 
-                          className="form-input" 
-                          value={storyboardAnonymous ? 'anonymous' : 'name'}
-                          onChange={(e) => setStoryboardAnonymous(e.target.value === 'anonymous')}
-                        >
-                          <option value="name">Include my name</option>
-                          <option value="anonymous">Share anonymously</option>
-                        </select>
-                      </div>
-                      {!storyboardAnonymous && (
-                        <div className="form-group">
-                          <label>Name</label>
-                          <input type="text" className="form-input" value={storyboardName} onChange={(e) => setStoryboardName(e.target.value)} />
-                        </div>
-                      )}
-                      <div className="form-group">
-                        <label>Country/City (Optional)</label>
-                        <input type="text" className="form-input" value={storyboardLocation} onChange={(e) => setStoryboardLocation(e.target.value)} />
-                      </div>
-                      <div className="form-group">
-                        <label>Age (Optional)</label>
-                        <input type="text" className="form-input" value={storyboardAge} onChange={(e) => setStoryboardAge(e.target.value)} />
-                      </div>
-                      <div className="form-group full-width">
-                        <p style={{fontSize:'12px', color:'var(--text-muted)', marginBottom:'16px'}}>
-                          Submission note: Nothing from your personal Capsule is sent to LGN. Only what you submit here will be considered for the Storyboard. LGN reviews each contribution before adding it to the public collage. Submission does not guarantee publication.
-                        </p>
-                        <button type="submit" className="capsule-action-btn" style={{background: 'var(--primary)', color: 'black'}} disabled={storyboardSubmitting}>
-                          {storyboardSubmitting ? 'Submitting...' : 'Submit to LGN'}
-                        </button>
-                      </div>
-                    </form>
-                  )}
-                </div>
-              ) : (
-                <>
-                  <div className="capsule-middle-row">
-                    <div className="capsule-video-player">
-                      {/* Section 1: Before You Watch */}
-                      {activeCapsule.pre_watch_prompt && (
-                        <div className="before-watch-section">
-                          <button 
-                            className="before-watch-toggle"
-                            onClick={() => setBeforeYouWatchExpanded(!beforeYouWatchExpanded)}
-                          >
-                            Bring a question into the film {beforeYouWatchExpanded ? '↑' : '↓'}
-                          </button>
-                          {beforeYouWatchExpanded && (
-                            <div className="before-watch-content animate-fade">
-                              <h4>{activeCapsule.pre_watch_prompt}</h4>
-                              <p>{activeCapsule.pre_watch_supporting_text}</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Section 2: Watch */}
-                      {film ? (
-                        <div className="video-wrapper">
-                          {!isPlaying && (
-                            <div
-                              className="video-poster-overlay"
-                              style={{ backgroundImage: `url(${film.thumbnail_url || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1200&q=80'})` }}
-                            >
-                              <button className="play-trigger-btn" onClick={handlePlayVideo} aria-label="Play Film" id="btn-play-video">
-                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                              </button>
-                            </div>
-                          )}
-                          <video
-                            ref={videoRef}
-                            className="screen-video"
-                            src={film.video_url}
-                            controls={isPlaying}
-                            onPause={handleVideoPause}
-                            onEnded={handleVideoPause}
-                            playsInline
-                          />
-                        </div>
-                      ) : (
-                        <div className="no-film-placeholder">No film associated with this capsule yet.</div>
-                      )}
-                    </div>
-
-                    {/* Section 0: Film Info */}
-                    <div className="capsule-story-text-col">
-                      <h2 className="capsule-story-heading">Film Info</h2>
-                      <ul className="capsule-story-list">
-                        <li><strong>Month’s Film:</strong> {film?.title || 'TBD'}</li>
-                        {film?.theme && <li><strong>Month’s Theme:</strong> {film.theme}</li>}
-                        {film?.bts_text && <li><strong>BTS:</strong> {film.bts_text}</li>}
-                        {film?.screenplay_text && <li><strong>Screenplay:</strong> Available (Script details)</li>}
-                      </ul>
-                      <p className="capsule-story-body" style={{marginTop: '16px'}}>
-                        {film?.description || 'No description available.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Section 3, 4, 5: Actions */}
-                  <div className={`capsule-actions-wrapper ${capsuleActiveAction ? 'has-active' : ''}`}>
-                    {/* Reflect */}
-                    <div className={`capsule-action-panel ${capsuleActiveAction === 'reflect' ? 'expanded' : ''} ${capsuleActiveAction && capsuleActiveAction !== 'reflect' ? 'hidden' : ''}`}>
-                      <div className="panel-header">
-                        <h3>Reflect</h3>
-                        {capsuleActiveAction === 'reflect' && (
-                          <button className="close-panel-btn" onClick={() => setCapsuleActiveAction(null)}>✕</button>
-                        )}
-                      </div>
-                      
-                      {!capsuleActiveAction ? (
-                        <div className="panel-preview">
-                          <p>Take these at your own pace. Private reflections on the film.</p>
-                          <button className="capsule-action-btn" onClick={() => setCapsuleActiveAction('reflect')}>Open Reflections</button>
-                        </div>
-                      ) : (
-                        <div className="panel-full-content animate-fade">
-                          <p className="panel-intro">Take these at your own pace. Keep your answers private, record them for yourself, or share them with the community later—the choice is yours.</p>
-                          {activeCapsule.reflections.map((ref, idx) => (
-                            <div key={idx} className="reflection-block">
-                              <h4>{ref.title}</h4>
-                              <p className="ref-intro">{ref.introduction}</p>
-                              <p className="ref-content">{ref.content}</p>
-                              <textarea className="private-textarea" placeholder="Write privately..." />
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Discuss */}
-                    <div className={`capsule-action-panel ${capsuleActiveAction === 'gather' ? 'expanded' : ''} ${capsuleActiveAction && capsuleActiveAction !== 'gather' ? 'hidden' : ''}`}>
-                      <div className="panel-header">
-                        <h3>Discuss</h3>
-                        {capsuleActiveAction === 'gather' && (
-                          <button className="close-panel-btn" onClick={() => setCapsuleActiveAction(null)}>✕</button>
-                        )}
-                      </div>
-
-                      {!capsuleActiveAction ? (
-                        <div className="panel-preview">
-                          <p>Gather your circle for a guided discussion.</p>
-                          <button className="capsule-action-btn" onClick={() => setCapsuleActiveAction('gather')}>Open Guide</button>
-                        </div>
-                      ) : (
-                        <div className="panel-full-content animate-fade">
-                          <p className="panel-intro"><strong>Note for the Circle:</strong> Listen without trying to fix one another. Authenticity is crucial. Passing is always welcome.</p>
-                          {activeCapsule.discussion_circles.map((circle, idx) => (
-                            <div key={idx} className="circle-block">
-                              <h4>{circle.title}</h4>
-                              {circle.opening_round && <div className="circle-section"><strong>Opening round:</strong> <p>{circle.opening_round}</p></div>}
-                              {circle.discuss_prompts && <div className="circle-section"><strong>Discuss:</strong> <p style={{whiteSpace: 'pre-line'}}>{circle.discuss_prompts}</p></div>}
-                              {circle.closing_question && <div className="circle-section"><strong>Closing question:</strong> <p>{circle.closing_question}</p></div>}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Practice */}
-                    <div className={`capsule-action-panel ${capsuleActiveAction === 'practice' ? 'expanded' : ''} ${capsuleActiveAction && capsuleActiveAction !== 'practice' ? 'hidden' : ''}`}>
-                      <div className="panel-header">
-                        <h3>Practice</h3>
-                        {capsuleActiveAction === 'practice' && (
-                          <button className="close-panel-btn" onClick={() => setCapsuleActiveAction(null)}>✕</button>
-                        )}
-                      </div>
-
-                      {!capsuleActiveAction ? (
-                        <div className="panel-preview">
-                          <p>Choose one practice for the month.</p>
-                          <button className="capsule-action-btn" onClick={() => setCapsuleActiveAction('practice')}>Open Practices</button>
-                        </div>
-                      ) : (
-                        <div className="panel-full-content animate-fade">
-                          <p className="panel-intro">Choose one practice for the month, move through all three, or choose your own.</p>
-                          {activeCapsule.practices.map((prac, idx) => (
-                            <div key={idx} className="practice-block">
-                              <h4>{prac.title}</h4>
-                              <p style={{whiteSpace: 'pre-line'}}>{prac.steps}</p>
-                              {idx === 1 && (
-                                <div className="ai-helper-note">
-                                  <span className="ai-badge">Optional AI helper</span>
-                                  <p>Help me find a small next step. (Coming Soon)</p>
-                                </div>
-                              )}
-                              {idx === 2 && (
-                                <div className="ai-helper-note">
-                                  <span className="ai-badge">Optional AI helper</span>
-                                  <p>Find ways to contribute. (Coming Soon)</p>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </>
+            <div className="capsule-content-area" style={{ padding: 0 }}>
+              {!capsuleActiveAction && (
+                <CapsuleView 
+                  capsule={activeCapsule} 
+                  onNavigate={(view) => setCapsuleActiveAction(view as 'reflect' | 'practice' | 'discuss' | 'gather')} 
+                />
+              )}
+              {capsuleActiveAction === 'reflect' && (
+                <CapsuleReflect 
+                  capsule={activeCapsule} 
+                  onBack={() => setCapsuleActiveAction(null)} 
+                />
+              )}
+              {capsuleActiveAction === 'practice' && (
+                <CapsulePractice 
+                  capsule={activeCapsule} 
+                  onBack={() => setCapsuleActiveAction(null)} 
+                />
+              )}
+              {(capsuleActiveAction === 'discuss' || capsuleActiveAction === 'gather') && (
+                <CapsuleDiscuss 
+                  capsule={activeCapsule} 
+                  onBack={() => setCapsuleActiveAction(null)} 
+                />
               )}
             </div>
           </div>
