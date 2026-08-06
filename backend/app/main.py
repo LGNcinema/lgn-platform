@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -63,6 +64,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": f"Internal Server Error: {str(exc)}"},
+        headers={"Access-Control-Allow-Origin": "*"}
+    )
 
 # Endpoints
 @app.get("/api/health")
@@ -75,17 +83,66 @@ def get_active_capsule(db: Session = Depends(get_db)):
     Retrieve the currently active monthly capsule.
     Includes the monthly film, reflections, gatherings, and practices.
     """
-    capsule = db.query(models.Capsule).filter(models.Capsule.is_active == True).first()
-    if not capsule:
-        # If no active, try to return the latest created capsule
-        capsule = db.query(models.Capsule).order_by(models.Capsule.created_at.desc()).first()
-    
-    if not capsule:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No active monthly capsule found."
+    try:
+        capsule = db.query(models.Capsule).filter(models.Capsule.is_active == True).first()
+        if not capsule:
+            capsule = db.query(models.Capsule).order_by(models.Capsule.created_at.desc()).first()
+        
+        if not capsule:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No active monthly capsule found."
+            )
+        
+        film = None
+        reflections = []
+        discussion_circles = []
+        practices = []
+
+        try:
+            film = capsule.film
+        except Exception as e:
+            print(f"Error fetching film relation: {e}")
+
+        try:
+            reflections = capsule.reflections or []
+        except Exception as e:
+            print(f"Error fetching reflections relation: {e}")
+
+        try:
+            discussion_circles = capsule.discussion_circles or []
+        except Exception as e:
+            print(f"Error fetching discussion_circles relation: {e}")
+
+        try:
+            practices = capsule.practices or []
+        except Exception as e:
+            print(f"Error fetching practices relation: {e}")
+
+        return schemas.CapsuleDetail(
+            id=capsule.id,
+            month=capsule.month,
+            title=capsule.title,
+            description=capsule.description,
+            is_active=capsule.is_active,
+            pre_watch_prompt=capsule.pre_watch_prompt,
+            pre_watch_supporting_text=capsule.pre_watch_supporting_text,
+            created_at=capsule.created_at,
+            film=film,
+            reflections=reflections,
+            discussion_circles=discussion_circles,
+            practices=practices
         )
-    return capsule
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in get_active_capsule: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching active capsule: {str(e)}"
+        )
 
 @app.get("/api/capsules", response_model=List[schemas.Capsule])
 def list_capsules(db: Session = Depends(get_db)):
@@ -99,13 +156,64 @@ def get_capsule_detail(capsule_id: int, db: Session = Depends(get_db)):
     """
     Get a specific capsule with all its features.
     """
-    capsule = db.query(models.Capsule).filter(models.Capsule.id == capsule_id).first()
-    if not capsule:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Capsule with id {capsule_id} not found."
+    try:
+        capsule = db.query(models.Capsule).filter(models.Capsule.id == capsule_id).first()
+        if not capsule:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Capsule with id {capsule_id} not found."
+            )
+        
+        film = None
+        reflections = []
+        discussion_circles = []
+        practices = []
+
+        try:
+            film = capsule.film
+        except Exception as e:
+            print(f"Error fetching film relation: {e}")
+
+        try:
+            reflections = capsule.reflections or []
+        except Exception as e:
+            print(f"Error fetching reflections relation: {e}")
+
+        try:
+            discussion_circles = capsule.discussion_circles or []
+        except Exception as e:
+            print(f"Error fetching discussion_circles relation: {e}")
+
+        try:
+            practices = capsule.practices or []
+        except Exception as e:
+            print(f"Error fetching practices relation: {e}")
+
+        return schemas.CapsuleDetail(
+            id=capsule.id,
+            month=capsule.month,
+            title=capsule.title,
+            description=capsule.description,
+            is_active=capsule.is_active,
+            pre_watch_prompt=capsule.pre_watch_prompt,
+            pre_watch_supporting_text=capsule.pre_watch_supporting_text,
+            created_at=capsule.created_at,
+            film=film,
+            reflections=reflections,
+            discussion_circles=discussion_circles,
+            practices=practices
         )
-    return capsule
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in get_capsule_detail: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching capsule detail: {str(e)}"
+        )
+
 
 @app.post("/api/capsules", response_model=schemas.Capsule, status_code=status.HTTP_201_CREATED)
 def create_capsule(capsule: schemas.CapsuleCreate, db: Session = Depends(get_db)):
