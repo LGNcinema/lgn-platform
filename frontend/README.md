@@ -30,6 +30,7 @@ npm run dev
 | **`?dark=true`** | Force Dark Theme | Alternative URL flag |
 | **`?dark=1`** | Force Dark Theme | Alternative URL flag |
 | **`?theme=light`** | Force Light Theme | Overrides saved local preference |
+| **`?debug=true`** / **`?dev=true`** | Enable Debug Buttons | Unhides floating dev buttons on production URLs |
 | **Floating Dev Toggle** | **`[ ☀️ Theme: Light / Dark ]`** | Button at bottom-right corner; saves choice to `localStorage` |
 
 ### 2. Interactive Grid Overlay
