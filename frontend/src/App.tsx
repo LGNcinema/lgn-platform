@@ -134,6 +134,35 @@ function App() {
   const [activeTimelineEra, setActiveTimelineEra] = useState<string>('Before The Common Era');
   const [investExpandedRow, setInvestExpandedRow] = useState<string | null>(null);
   const [capsuleActiveAction, setCapsuleActiveAction] = useState<'reflect' | 'gather' | 'practice' | 'discuss' | null>(null);
+  const [showGridOverlay, setShowGridOverlay] = useState<boolean>(false);
+
+  // Theme state: default 'light', optional 'dark' via URL param ?theme=dark or ?dark=true, or localStorage 'lgn_theme'
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const themeParam = params.get('theme') || (params.get('dark') === 'true' || params.get('dark') === '1' ? 'dark' : null);
+    if (themeParam === 'dark') return 'dark';
+    if (themeParam === 'light') return 'light';
+    const saved = localStorage.getItem('lgn_theme');
+    if (saved === 'dark' || saved === 'light') return saved;
+    return 'light';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('lgn_theme', theme);
+  }, [theme]);
+
+  // Toggle Grid Overlay keyboard shortcut (Ctrl+G or Alt+G)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.altKey) && e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        setShowGridOverlay(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
   // Fetch active capsule and all capsules
   const fetchData = async (capsuleId?: number) => {
     setLoading(true);
@@ -275,7 +304,7 @@ function App() {
             </div>
 
             <div className="home-hero-center">
-              <img className="home-hero-logo" src="/images/lgn-logo-registered-white.svg" alt="Life is Greater than Numbers" />
+              <img className="home-hero-logo" src={theme === 'dark' ? '/images/lgn-logo-registered-white.svg' : '/images/lgn-logo-registered.svg'} alt="Life is Greater than Numbers" />
               <p className="home-hero-subtitle">Great stories for greater living.</p>
               <button className="home-hero-btn" onClick={() => setCurrentView('capsule')}>Lightpoles</button>
             </div>
@@ -747,7 +776,7 @@ function App() {
       <header className="floating-header-container">
         <div className="header-pill-left">
           <button onClick={() => setCurrentView('home')} className={`nav-brand-btn ${currentView === 'home' ? 'active' : ''}`}>
-            <img src="/images/lgn-icon-white.svg" alt="LGN Icon" style={{ width: '24px', height: '24px' }} />
+            <img src={theme === 'dark' ? '/images/lgn-icon-white.svg' : '/images/lgn-icon-black.svg'} alt="LGN Icon" style={{ width: '24px', height: '24px' }} />
           </button>
 
           <div className="nav-dropdown-wrapper" onMouseEnter={() => setAboutMenuOpen(true)} onMouseLeave={() => setAboutMenuOpen(false)}>
@@ -778,7 +807,7 @@ function App() {
         <div className="footer-grid">
           {/* Column 1: Logo & Copyright */}
           <div className="footer-col col-logo">
-            <img src="/images/lgn-logo-registered-white.svg" alt="Life is Greater than Numbers" style={{ width: '200px', marginBottom: '24px' }} />
+            <img src={theme === 'dark' ? '/images/lgn-logo-registered-white.svg' : '/images/lgn-logo-registered.svg'} alt="Life is Greater than Numbers" style={{ width: '100%', maxWidth: '380px', marginBottom: '24px' }} />
             <div className="footer-bottom-text">&copy;{new Date().getFullYear()} Life is Greater than Numbers, Inc.</div>
           </div>
 
@@ -815,6 +844,44 @@ function App() {
           </div>
         </div>
       </footer>
+
+      {showGridOverlay && (
+        <div className="dev-grid-overlay-wrapper">
+          <div className="dev-grid-overlay">
+            <div className="dev-grid-col col-1"><span className="dev-grid-label">Col 1</span></div>
+            <div className="dev-grid-col col-2"><span className="dev-grid-label">Col 2</span></div>
+            <div className="dev-grid-col col-3"><span className="dev-grid-label">Col 3</span></div>
+            <div className="dev-grid-col col-4"><span className="dev-grid-label">Col 4</span></div>
+            <div className="dev-grid-col col-5"><span className="dev-grid-label">Col 5</span></div>
+            <div className="dev-grid-col col-6"><span className="dev-grid-label">Col 6</span></div>
+            <div className="dev-grid-col col-7"><span className="dev-grid-label">Col 7</span></div>
+            <div className="dev-grid-col col-8"><span className="dev-grid-label">Col 8</span></div>
+            <div className="dev-grid-col col-9"><span className="dev-grid-label">Col 9</span></div>
+            <div className="dev-grid-col col-10"><span className="dev-grid-label">Col 10</span></div>
+            <div className="dev-grid-col col-11"><span className="dev-grid-label">Col 11</span></div>
+            <div className="dev-grid-col col-12"><span className="dev-grid-label">Col 12</span></div>
+          </div>
+        </div>
+      )}
+
+      <button
+        className="grid-toggle-btn"
+        style={{ bottom: '76px' }}
+        onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
+        title="Toggle Light / Dark Theme"
+      >
+        <span>{theme === 'light' ? '☀️' : '🌙'}</span>
+        <span>Theme: {theme === 'light' ? 'Light' : 'Dark'}</span>
+      </button>
+
+      <button
+        className={`grid-toggle-btn${showGridOverlay ? ' active' : ''}`}
+        onClick={() => setShowGridOverlay(!showGridOverlay)}
+        title="Toggle 6-Column Grid Overlay (Ctrl+G)"
+      >
+        <span>🌐</span>
+        <span>Grid Overlay {showGridOverlay ? 'ON' : 'OFF'}</span>
+      </button>
     </>
   );
 }

@@ -19,6 +19,31 @@ npm run dev
 
 ---
 
+## URL Parameters & Developer Debug Options
+
+### 1. Theme Options & URL Parameters
+
+| Trigger / Parameter | Action / Result | Notes |
+| :--- | :--- | :--- |
+| **Default Theme** | Light Theme (`HOME LIGHT` spec) | `#f5f5f5` bg, `#000000` text, black registered logo |
+| **`?theme=dark`** | Force Dark Theme | Activates dark theme via URL parameter |
+| **`?dark=true`** | Force Dark Theme | Alternative URL flag |
+| **`?dark=1`** | Force Dark Theme | Alternative URL flag |
+| **`?theme=light`** | Force Light Theme | Overrides saved local preference |
+| **Floating Dev Toggle** | **`[ ☀️ Theme: Light / Dark ]`** | Button at bottom-right corner; saves choice to `localStorage` |
+
+### 2. Interactive Grid Overlay
+
+- **Keyboard Shortcut**: Press **`Ctrl + G`** (or **`Alt + G`**) anywhere on the page to toggle grid overlay guides.
+- **Floating Button**: Click **`[ 🌐 Grid Overlay ON / OFF ]`** at the bottom-right corner.
+- **Grid Specifications**:
+  - **`Col 1 (Sidebar)`**: Cyan guide starting at `40px`.
+  - **`Col 2 (Spacer)`**: Buffer column.
+  - **`Col 3 (Body Start)`**: Green guide starting at `664px` (`1216px` body width across Cols 3–6).
+  - **`Cols 4–6`**: Red grid bounds with `32px` column gutters.
+
+---
+
 ## React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
