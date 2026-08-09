@@ -310,12 +310,15 @@ function App() {
               LGN (n.)&nbsp; A community platform that offers one short film each month as common ground for reflection, discussion, and practice.
             </div>
 
-            <div className="home-hero-logo-container">
+            <div className="home-hero-logo-row">
               <img className="home-hero-logo" src={theme === 'dark' ? '/images/lgn-logo-registered-white.svg' : '/images/lgn-logo-registered.svg'} alt="Life is Greater than Numbers" />
             </div>
             
-            <div className="home-hero-text-container">
+            <div className="home-hero-subtitle-row">
               <p className="home-hero-subtitle">Great stories for greater living.</p>
+            </div>
+            
+            <div className="home-hero-btn-row">
               <button className="home-hero-btn" onClick={() => setCurrentView('capsule')}>Lightpoles</button>
             </div>
           </div>
@@ -873,7 +876,7 @@ function App() {
               <div className="dev-grid-col col-12"><span className="dev-grid-label">Col 12</span></div>
             </div>
             <div className="dev-grid-rows-layer">
-              {Array.from({ length: 12 }).map((_, i) => (
+              {Array.from({ length: currentView === 'home' ? 6 : 3 }).map((_, i) => (
                 <div key={i} className="dev-grid-row">
                   <span className="dev-grid-label">R{i + 1}</span>
                 </div>
