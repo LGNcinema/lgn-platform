@@ -2663,11 +2663,18 @@ body {
   right: 0;
   bottom: 0;
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
   gap: var(--grid-gutter);
   padding-left: var(--grid-margin);
   padding-right: var(--grid-margin);
   box-sizing: border-box;
+}
+
+.dev-grid-overlay.mode-home .dev-grid-cols-layer {
+  grid-template-columns: repeat(12, 1fr);
+}
+
+.dev-grid-overlay.mode-internal .dev-grid-cols-layer {
+  grid-template-columns: repeat(6, 1fr);
 }
 
 .dev-grid-col {

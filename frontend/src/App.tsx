@@ -862,18 +862,11 @@ function App() {
         <div className="dev-grid-overlay-wrapper">
           <div className={`dev-grid-overlay ${currentView === 'home' ? 'mode-home' : 'mode-internal'}`}>
             <div className="dev-grid-cols-layer">
-              <div className="dev-grid-col col-1"><span className="dev-grid-label">Col 1</span></div>
-              <div className="dev-grid-col col-2"><span className="dev-grid-label">Col 2</span></div>
-              <div className="dev-grid-col col-3"><span className="dev-grid-label">Col 3</span></div>
-              <div className="dev-grid-col col-4"><span className="dev-grid-label">Col 4</span></div>
-              <div className="dev-grid-col col-5"><span className="dev-grid-label">Col 5</span></div>
-              <div className="dev-grid-col col-6"><span className="dev-grid-label">Col 6</span></div>
-              <div className="dev-grid-col col-7"><span className="dev-grid-label">Col 7</span></div>
-              <div className="dev-grid-col col-8"><span className="dev-grid-label">Col 8</span></div>
-              <div className="dev-grid-col col-9"><span className="dev-grid-label">Col 9</span></div>
-              <div className="dev-grid-col col-10"><span className="dev-grid-label">Col 10</span></div>
-              <div className="dev-grid-col col-11"><span className="dev-grid-label">Col 11</span></div>
-              <div className="dev-grid-col col-12"><span className="dev-grid-label">Col 12</span></div>
+              {Array.from({ length: currentView === 'home' ? 12 : 6 }).map((_, i) => (
+                <div key={`col-${i}`} className={`dev-grid-col col-${i + 1}`}>
+                  <span className="dev-grid-label">Col {i + 1}</span>
+                </div>
+              ))}
             </div>
             <div className="dev-grid-rows-layer">
               {Array.from({ length: currentView === 'home' ? 6 : 3 }).map((_, i) => (
