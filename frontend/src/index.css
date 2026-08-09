@@ -2611,7 +2611,7 @@ body {
   right: 0;
   bottom: 0;
   display: grid;
-  padding: 40px 0;
+  padding: 40px var(--grid-margin);
   box-sizing: border-box;
 }
 
@@ -2650,12 +2650,21 @@ body {
 }
 
 .dev-grid-overlay {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: var(--grid-gutter);
+  position: relative;
   width: 100%;
   max-width: var(--grid-max-width);
   height: 100%;
+}
+
+.dev-grid-cols-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--grid-gutter);
   padding-left: var(--grid-margin);
   padding-right: var(--grid-margin);
   box-sizing: border-box;
