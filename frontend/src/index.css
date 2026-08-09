@@ -128,6 +128,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  position: relative;
 }
 
 /* Layout Utilities & 6-Column Grid Engine */
@@ -326,7 +327,7 @@ body {
   text-transform: uppercase;
 }
 
-/* Home View (12-Column Grid Layout) */
+/* Home View (6-Row Grid Layout) */
 .home-view-wrapper {
   width: 100%;
   max-width: var(--grid-max-width);
@@ -335,14 +336,16 @@ body {
   min-height: 100vh;
   display: grid;
   grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: repeat(6, 1fr);
   gap: var(--grid-gutter);
-  padding: clamp(80px, 15vh, 160px) var(--grid-margin) 32px;
+  padding: 40px var(--grid-margin);
   background-color: var(--bg-darker);
   color: var(--primary);
 }
 
 .home-definition-block {
   grid-column: 1 / span 4;
+  grid-row: 2;
   align-self: flex-start;
   max-width: clamp(280px, 30vw, 468px);
   font-family: var(--font-sans);
@@ -351,30 +354,39 @@ body {
   color: var(--text-main);
   line-height: 1.2;
   letter-spacing: -0.03em;
+  padding-top: 0;
 }
 
-.home-hero-center {
+.home-hero-logo-container {
   grid-column: 1 / span 12;
+  grid-row: 3;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.home-hero-text-container {
+  grid-column: 1 / span 12;
+  grid-row: 4;
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
   align-items: center;
-  text-align: center;
-  margin: auto;
+  gap: clamp(16px, 3vh, 24px);
 }
 
 .home-hero-logo {
   width: auto;
-  height: clamp(60px, 10vw, 122px);
+  height: clamp(55px, 6vw, 75px);
   max-width: 90%;
 }
 
 .home-hero-subtitle {
   font-family: var(--font-sans);
-  font-size: clamp(24px, 4vw, 48px);
+  font-size: clamp(20px, 2.5vw, 32px);
   font-weight: 500;
   color: var(--primary);
-  margin-top: clamp(16px, 3vh, 24px);
-  margin-bottom: clamp(24px, 5vh, 40px);
+  margin: 0;
   letter-spacing: -0.03em;
   line-height: 1.15;
 }
@@ -383,10 +395,10 @@ body {
   background-color: var(--hero-btn-bg);
   color: var(--hero-btn-text);
   border: none;
-  width: clamp(160px, 20vw, 220px);
-  height: clamp(50px, 8vh, 70px);
+  width: clamp(160px, 18vw, 200px);
+  height: clamp(44px, 6vh, 54px);
   font-family: var(--font-sans);
-  font-size: clamp(18px, 2.5vw, 28px);
+  font-size: clamp(18px, 2vw, 22px);
   font-weight: 500;
   border-radius: 5px;
   cursor: pointer;
@@ -2585,8 +2597,41 @@ body {
 /* ==========================================================================
    DEVELOPMENT GRID OVERLAY (12 Columns: 40px Margin, 32px Gutter)
    ========================================================================== */
+/* Horizontal Row Layer (1fr grid) */
+.dev-grid-rows-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  padding: 40px 0;
+  box-sizing: border-box;
+}
+
+.dev-grid-overlay.mode-home .dev-grid-rows-layer {
+  grid-template-rows: repeat(6, 1fr);
+  gap: var(--grid-gutter);
+}
+
+.dev-grid-overlay.mode-internal .dev-grid-rows-layer {
+  grid-template-rows: repeat(3, 1fr);
+  gap: var(--grid-gutter);
+}
+
+.dev-grid-row {
+  background-color: rgba(255, 60, 60, 0.03);
+  border-top: 1px dashed rgba(255, 80, 80, 0.3);
+  border-bottom: 1px dashed rgba(255, 80, 80, 0.3);
+  display: flex;
+  align-items: flex-start;
+  padding-left: 12px;
+  padding-top: 4px;
+  box-sizing: border-box;
+}
+
 .dev-grid-overlay-wrapper {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
@@ -2595,6 +2640,7 @@ body {
   z-index: 9999;
   display: flex;
   justify-content: center;
+  overflow: hidden;
 }
 
 .dev-grid-overlay {

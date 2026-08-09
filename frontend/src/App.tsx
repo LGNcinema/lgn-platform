@@ -112,6 +112,13 @@ function App() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Determine if we are in a development environment or debugging mode
+  const isDev = import.meta.env.DEV ||
+                window.location.hostname === 'localhost' ||
+                window.location.hostname === '127.0.0.1' ||
+                new URLSearchParams(window.location.search).get('debug') === 'true' ||
+                new URLSearchParams(window.location.search).get('dev') === 'true';
+
   // Tabbed Navigation state for Capsule view is managed in parent/components
 
   // Form states
@@ -303,8 +310,11 @@ function App() {
               LGN (n.)&nbsp; A community platform that offers one short film each month as common ground for reflection, discussion, and practice.
             </div>
 
-            <div className="home-hero-center">
+            <div className="home-hero-logo-container">
               <img className="home-hero-logo" src={theme === 'dark' ? '/images/lgn-logo-registered-white.svg' : '/images/lgn-logo-registered.svg'} alt="Life is Greater than Numbers" />
+            </div>
+            
+            <div className="home-hero-text-container">
               <p className="home-hero-subtitle">Great stories for greater living.</p>
               <button className="home-hero-btn" onClick={() => setCurrentView('capsule')}>Lightpoles</button>
             </div>
@@ -847,41 +857,54 @@ function App() {
 
       {showGridOverlay && (
         <div className="dev-grid-overlay-wrapper">
-          <div className="dev-grid-overlay">
-            <div className="dev-grid-col col-1"><span className="dev-grid-label">Col 1</span></div>
-            <div className="dev-grid-col col-2"><span className="dev-grid-label">Col 2</span></div>
-            <div className="dev-grid-col col-3"><span className="dev-grid-label">Col 3</span></div>
-            <div className="dev-grid-col col-4"><span className="dev-grid-label">Col 4</span></div>
-            <div className="dev-grid-col col-5"><span className="dev-grid-label">Col 5</span></div>
-            <div className="dev-grid-col col-6"><span className="dev-grid-label">Col 6</span></div>
-            <div className="dev-grid-col col-7"><span className="dev-grid-label">Col 7</span></div>
-            <div className="dev-grid-col col-8"><span className="dev-grid-label">Col 8</span></div>
-            <div className="dev-grid-col col-9"><span className="dev-grid-label">Col 9</span></div>
-            <div className="dev-grid-col col-10"><span className="dev-grid-label">Col 10</span></div>
-            <div className="dev-grid-col col-11"><span className="dev-grid-label">Col 11</span></div>
-            <div className="dev-grid-col col-12"><span className="dev-grid-label">Col 12</span></div>
+          <div className={`dev-grid-overlay ${currentView === 'home' ? 'mode-home' : 'mode-internal'}`}>
+            <div className="dev-grid-cols-layer">
+              <div className="dev-grid-col col-1"><span className="dev-grid-label">Col 1</span></div>
+              <div className="dev-grid-col col-2"><span className="dev-grid-label">Col 2</span></div>
+              <div className="dev-grid-col col-3"><span className="dev-grid-label">Col 3</span></div>
+              <div className="dev-grid-col col-4"><span className="dev-grid-label">Col 4</span></div>
+              <div className="dev-grid-col col-5"><span className="dev-grid-label">Col 5</span></div>
+              <div className="dev-grid-col col-6"><span className="dev-grid-label">Col 6</span></div>
+              <div className="dev-grid-col col-7"><span className="dev-grid-label">Col 7</span></div>
+              <div className="dev-grid-col col-8"><span className="dev-grid-label">Col 8</span></div>
+              <div className="dev-grid-col col-9"><span className="dev-grid-label">Col 9</span></div>
+              <div className="dev-grid-col col-10"><span className="dev-grid-label">Col 10</span></div>
+              <div className="dev-grid-col col-11"><span className="dev-grid-label">Col 11</span></div>
+              <div className="dev-grid-col col-12"><span className="dev-grid-label">Col 12</span></div>
+            </div>
+            <div className="dev-grid-rows-layer">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="dev-grid-row">
+                  <span className="dev-grid-label">R{i + 1}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
 
-      <button
-        className="grid-toggle-btn"
-        style={{ bottom: '76px' }}
-        onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
-        title="Toggle Light / Dark Theme"
-      >
-        <span>{theme === 'light' ? '☀️' : '🌙'}</span>
-        <span>Theme: {theme === 'light' ? 'Light' : 'Dark'}</span>
-      </button>
+      {isDev && (
+        <>
+          <button
+            className="grid-toggle-btn"
+            style={{ bottom: '76px' }}
+            onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
+            title="Toggle Light / Dark Theme"
+          >
+            <span>{theme === 'light' ? '☀️' : '🌙'}</span>
+            <span>Theme: {theme === 'light' ? 'Light' : 'Dark'}</span>
+          </button>
 
-      <button
-        className={`grid-toggle-btn${showGridOverlay ? ' active' : ''}`}
-        onClick={() => setShowGridOverlay(!showGridOverlay)}
-        title="Toggle 6-Column Grid Overlay (Ctrl+G)"
-      >
-        <span>🌐</span>
-        <span>Grid Overlay {showGridOverlay ? 'ON' : 'OFF'}</span>
-      </button>
+          <button
+            className={`grid-toggle-btn${showGridOverlay ? ' active' : ''}`}
+            onClick={() => setShowGridOverlay(!showGridOverlay)}
+            title="Toggle 6-Column Grid Overlay (Ctrl+G)"
+          >
+            <span>🌐</span>
+            <span>Grid Overlay {showGridOverlay ? 'ON' : 'OFF'}</span>
+          </button>
+        </>
+      )}
     </>
   );
 }
