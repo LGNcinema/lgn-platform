@@ -30,8 +30,6 @@ export const CapsuleReflect: React.FC<Props> = ({ capsule, onBack }) => {
 
   return (
     <div className="reflect-v2-container">
-      <button className="reflect-back-btn" onClick={onBack}>← Back</button>
-
       <h1 className="reflect-capsule-heading">{capsule.title}</h1>
       {film && (
         <p className="reflect-film-info">
@@ -39,30 +37,34 @@ export const CapsuleReflect: React.FC<Props> = ({ capsule, onBack }) => {
         </p>
       )}
 
-      <div className="reflect-section-header">
-        <h2 className="reflect-section-title">Reflect</h2>
-        <p className="reflect-private-notice">Your reflections are private. Only you can see them.</p>
-      </div>
+      <div className="reflect-inner-panel">
+        <button className="reflect-back-btn" onClick={onBack}>← Back</button>
 
-      <div className="reflect-questions-list">
-        {REFLECT_QUESTIONS.map((question, idx) => (
-          <div key={idx} className="reflect-question-block">
-            <h3 className="reflect-question-text">{question}</h3>
-            <textarea
-              className="reflect-textarea"
-              placeholder="Take your time..."
-              value={answers[idx] || ''}
-              onChange={(e) => handleChange(idx, e.target.value)}
-              aria-label={question}
-            />
-            <button
-              className={`reflect-save-btn${saved[idx] ? ' saved' : ''}`}
-              onClick={() => handleSave(idx)}
-            >
-              {saved[idx] ? 'Saved' : 'Save'}
-            </button>
-          </div>
-        ))}
+        <div className="reflect-section-header">
+          <h2 className="reflect-section-title">Reflect</h2>
+          <p className="reflect-private-notice">Your reflections are private. Only you can see them.</p>
+        </div>
+
+        <div className="reflect-questions-list">
+          {REFLECT_QUESTIONS.map((question, idx) => (
+            <div key={idx} className="reflect-question-block">
+              <h3 className="reflect-question-text">{question}</h3>
+              <textarea
+                className="reflect-textarea"
+                placeholder="Take your time..."
+                value={answers[idx] || ''}
+                onChange={(e) => handleChange(idx, e.target.value)}
+                aria-label={question}
+              />
+              <button
+                className={`reflect-save-btn${saved[idx] ? ' saved' : ''}`}
+                onClick={() => handleSave(idx)}
+              >
+                {saved[idx] ? 'Saved' : 'Save'}
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { CapsuleDetail } from '../types';
 
 interface Props {
@@ -6,92 +6,90 @@ interface Props {
   onBack: () => void;
 }
 
-// Placeholder community responses
-const COMMUNITY_RESPONSES = [
+interface DiscussCircle {
+  title: string;
+  openingRound: string[];
+  discuss: string[];
+  closingQuestion: string;
+}
+
+const CIRCLES: DiscussCircle[] = [
   {
-    id: 1,
-    user: "User No.1",
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-    featured: true,
+    title: 'Circle 1: Light and Darkness',
+    openingRound: [
+      'Each person shares the first word that comes to mind when they hear "light," followed by the first word that comes to mind when they hear "darkness."',
+    ],
+    discuss: [
+      'What patterns or differences do you notice?',
+      'When can light expose, overwhelm, or harm?',
+      'When can darkness offer rest, privacy, mystery, or protection?',
+    ],
+    closingQuestion: 'What kind of light do you want to bring into the lives around you?',
   },
   {
-    id: 2,
-    user: "User No.1",
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-    featured: false,
-  },
-  {
-    id: 3,
-    user: "User No.1",
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-    featured: false,
-  },
-  {
-    id: 4,
-    user: "User No.1",
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-    featured: false,
+    title: 'Circle 2: Resilience and Mourning',
+    openingRound: [
+      'Choose one: share a time when you had to endure, or a time when you allowed yourself to mourn.',
+      'What did the experience reveal about what mattered to you?',
+    ],
+    discuss: [
+      'When is resilience life-giving?',
+      'When can resilience become a way of avoiding grief?',
+      'What can mourning teach us that achievement cannot?',
+    ],
+    closingQuestion: 'What does the way you respond to difficulty reveal about your values?',
   },
 ];
 
+const OVERALL_CLOSING_QUESTION = 'Is purpose something we find, choose, receive, or practice?';
+
 export const CapsuleDiscuss: React.FC<Props> = ({ capsule, onBack }) => {
-  const [experience, setExperience] = useState('');
-  const [saved, setSaved] = useState(false);
-
-  const handleSave = () => {
-    localStorage.setItem(`discuss_${capsule.id}`, experience);
-    setSaved(true);
-  };
-
-  const featuredResponse = COMMUNITY_RESPONSES.find(r => r.featured);
-  const otherResponses = COMMUNITY_RESPONSES.filter(r => !r.featured);
+  const film = capsule.film;
 
   return (
-    <div className="discuss-v2-container">
-      <button className="reflect-back-btn" onClick={onBack}>← Back</button>
+    <div className="discuss-guide-container">
+      <h1 className="reflect-capsule-heading">{capsule.title}</h1>
+      {film && (
+        <p className="reflect-film-info">
+          SISTERS WITH TRANSISTORS a film by LISA ROVNER narrated by LAURIE ANDERSON. 2020. USA. 86 min. A patchwork portrait of several female electronic music pioneers. GUEST-PROGRAMMED BY CYRUS GOBERVILLE FOR OUR SUMMER MUSIC FESTIVAL.
+        </p>
+      )}
 
-      <h1 className="discuss-v2-heading">Share about your experience</h1>
+      <div className="discuss-guide-inner-panel">
+        <button className="reflect-back-btn" onClick={onBack}>← Back</button>
 
-      {/* Top two-col: textarea left, featured community card right */}
-      <div className="discuss-v2-top-grid">
-        <div className="discuss-v2-input-col">
-          <textarea
-            className="discuss-v2-textarea"
-            placeholder="Take your time..."
-            value={experience}
-            onChange={(e) => { setExperience(e.target.value); setSaved(false); }}
-            aria-label="Share your experience"
-          />
-          <button
-            className={`reflect-save-btn${saved ? ' saved' : ''}`}
-            onClick={handleSave}
-          >
-            {saved ? 'Saved' : 'Save'}
-          </button>
-        </div>
+        <h2 className="reflect-section-title">Discuss</h2>
+        <p className="discuss-guide-note">
+          Note for the circle: Listen without trying to fix one another. Authenticity is crucial. Passing is always welcome.
+        </p>
 
-        {featuredResponse && (
-          <div className="discuss-community-card featured">
-            <div className="discuss-card-user">
-              <div className="discuss-avatar" />
-              <span className="discuss-username">{featuredResponse.user}</span>
+        {CIRCLES.map((circle, idx) => (
+          <div key={idx} className="discuss-guide-circle">
+            <h3 className="discuss-guide-circle-title">{circle.title}</h3>
+            <div className="discuss-guide-columns">
+              <div className="discuss-guide-col">
+                <span className="discuss-guide-col-label">Opening round</span>
+                {circle.openingRound.map((line, i) => (
+                  <p key={i} className="discuss-guide-col-text">{line}</p>
+                ))}
+              </div>
+              <div className="discuss-guide-col">
+                <span className="discuss-guide-col-label">Discuss:</span>
+                {circle.discuss.map((line, i) => (
+                  <p key={i} className="discuss-guide-col-text">{line}</p>
+                ))}
+              </div>
+              <div className="discuss-guide-col">
+                <span className="discuss-guide-col-label">Closing question:</span>
+                <p className="discuss-guide-col-text">{circle.closingQuestion}</p>
+              </div>
             </div>
-            <p className="discuss-card-text">{featuredResponse.text}</p>
-          </div>
-        )}
-      </div>
-
-      {/* Bottom row: 3 community cards */}
-      <div className="discuss-v2-cards-row">
-        {otherResponses.map((resp) => (
-          <div key={resp.id} className="discuss-community-card">
-            <div className="discuss-card-user">
-              <div className="discuss-avatar" />
-              <span className="discuss-username">{resp.user}</span>
-            </div>
-            <p className="discuss-card-text">{resp.text}</p>
           </div>
         ))}
+
+        <p className="discuss-guide-overall-closing">
+          Closing question: {OVERALL_CLOSING_QUESTION}
+        </p>
       </div>
     </div>
   );

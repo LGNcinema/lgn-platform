@@ -101,10 +101,44 @@ const formatTag = (tag: string) => {
   });
 };
 
+// Renders inline inset:0 within the current page's own wrapper element (not a separate
+// full-page overlay) so its columns/rows always match that wrapper's real box -- whatever
+// its actual padding/aspect-ratio/height happens to be -- instead of independently guessing it.
+const GridOverlay = ({ cols, rows }: { cols: number; rows: number }) => (
+  <div className={`dev-grid-overlay ${cols === 12 ? 'mode-home' : 'mode-internal'}`}>
+    <div className="dev-grid-cols-layer">
+      {Array.from({ length: cols }).map((_, i) => (
+        <div key={`col-${i}`} className={`dev-grid-col col-${i + 1}`}>
+          <span className="dev-grid-label">Col {i + 1}</span>
+        </div>
+      ))}
+    </div>
+    <div className="dev-grid-rows-layer">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="dev-grid-row">
+          <span className="dev-grid-label">R{i + 1}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const VALID_VIEWS = ['home', 'capsule', 'timeline', 'about', 'invest', 'contact', 'submit-film'] as const;
+const VALID_ABOUT_SUBVIEWS = ['purpose', 'mission-vision', 'board-staff'] as const;
+const VALID_CAPSULE_ACTIONS = ['reflect', 'gather', 'practice', 'discuss'] as const;
+
 function App() {
   // Navigation / Router States
-  const [currentView, setCurrentView] = useState<'home' | 'capsule' | 'timeline' | 'about' | 'invest' | 'contact' | 'submit-film'>('home');
-  const [aboutSubView, setAboutSubView] = useState<'purpose' | 'mission-vision' | 'board-staff'>('mission-vision');
+  // Initial view/sub-view/action can be set via ?view=, ?sub=, ?action= URL params for debugging/QA
+  // (mirrors the existing ?theme= / ?debug= param pattern below).
+  const [currentView, setCurrentView] = useState<'home' | 'capsule' | 'timeline' | 'about' | 'invest' | 'contact' | 'submit-film'>(() => {
+    const viewParam = new URLSearchParams(window.location.search).get('view');
+    return (VALID_VIEWS as readonly string[]).includes(viewParam || '') ? (viewParam as typeof VALID_VIEWS[number]) : 'home';
+  });
+  const [aboutSubView, setAboutSubView] = useState<'purpose' | 'mission-vision' | 'board-staff'>(() => {
+    const subParam = new URLSearchParams(window.location.search).get('sub');
+    return (VALID_ABOUT_SUBVIEWS as readonly string[]).includes(subParam || '') ? (subParam as typeof VALID_ABOUT_SUBVIEWS[number]) : 'mission-vision';
+  });
 
   // Database API States
   const [activeCapsule, setActiveCapsule] = useState<CapsuleDetail | null>(null);
@@ -140,8 +174,14 @@ function App() {
   const [aboutMenuOpen, setAboutMenuOpen] = useState(false);
   const [activeTimelineEra, setActiveTimelineEra] = useState<string>('Before The Common Era');
   const [investExpandedRow, setInvestExpandedRow] = useState<string | null>(null);
-  const [capsuleActiveAction, setCapsuleActiveAction] = useState<'reflect' | 'gather' | 'practice' | 'discuss' | null>(null);
-  const [showGridOverlay, setShowGridOverlay] = useState<boolean>(false);
+  const [capsuleActiveAction, setCapsuleActiveAction] = useState<'reflect' | 'gather' | 'practice' | 'discuss' | null>(() => {
+    const actionParam = new URLSearchParams(window.location.search).get('action');
+    return (VALID_CAPSULE_ACTIONS as readonly string[]).includes(actionParam || '') ? (actionParam as typeof VALID_CAPSULE_ACTIONS[number]) : null;
+  });
+  const [showGridOverlay, setShowGridOverlay] = useState<boolean>(() => {
+    const gridParam = new URLSearchParams(window.location.search).get('grid');
+    return gridParam === 'true' || gridParam === '1';
+  });
 
   // Theme state: default 'light', optional 'dark' via URL param ?theme=dark or ?dark=true, or localStorage 'lgn_theme'
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -812,7 +852,8 @@ function App() {
         </div>
       </header>
 
-      <main className={['home', 'capsule', 'invest', 'timeline', 'about'].includes(currentView) ? '' : 'container'} style={{ flexGrow: 1, paddingBottom: '60px' }}>
+      <div className="page-body" style={{ position: 'relative', flexGrow: 1 }}>
+      <main className={['home', 'capsule', 'invest', 'timeline', 'about'].includes(currentView) ? '' : 'container'}>
         {renderActiveView()}
       </main>
 
@@ -858,26 +899,8 @@ function App() {
         </div>
       </footer>
 
-      {showGridOverlay && (
-        <div className="dev-grid-overlay-wrapper">
-          <div className={`dev-grid-overlay ${currentView === 'home' ? 'mode-home' : 'mode-internal'}`}>
-            <div className="dev-grid-cols-layer">
-              {Array.from({ length: currentView === 'home' ? 12 : 6 }).map((_, i) => (
-                <div key={`col-${i}`} className={`dev-grid-col col-${i + 1}`}>
-                  <span className="dev-grid-label">Col {i + 1}</span>
-                </div>
-              ))}
-            </div>
-            <div className="dev-grid-rows-layer">
-              {Array.from({ length: currentView === 'home' ? 6 : 3 }).map((_, i) => (
-                <div key={i} className="dev-grid-row">
-                  <span className="dev-grid-label">R{i + 1}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {showGridOverlay && <GridOverlay cols={currentView === 'home' ? 12 : 6} rows={currentView === 'home' ? 6 : 3} />}
+      </div>
 
       {isDev && (
         <>

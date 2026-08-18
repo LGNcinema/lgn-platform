@@ -33,10 +33,24 @@ npm run dev
 | **`?debug=true`** / **`?dev=true`** | Enable Debug Buttons | Unhides floating dev buttons on production URLs |
 | **Floating Dev Toggle** | **`[ ☀️ Theme: Light / Dark ]`** | Button at bottom-right corner; saves choice to `localStorage` |
 
-### 2. Interactive Grid Overlay
+### 2. Direct View Navigation
+
+Since routing is plain `useState` (no router/URL paths), these params set the initial view/sub-view so a specific screen can be linked to directly for QA or screenshotting instead of clicking through nav:
+
+| Parameter | Values | Notes |
+| :--- | :--- | :--- |
+| **`?view=`** | `home` \| `capsule` \| `timeline` \| `about` \| `invest` \| `contact` \| `submit-film` | Sets the initial top-level view. Invalid/missing values fall back to `home`. |
+| **`?sub=`** | `mission-vision` \| `purpose` \| `board-staff` | Sets the initial About sub-view. Only relevant when `view=about`. |
+| **`?action=`** | `reflect` \| `discuss` \| `practice` \| `gather` | Jumps straight into a Capsule sub-page (Reflect/Discuss/Practice). Only relevant when `view=capsule`. |
+
+Example: `?view=capsule&action=discuss` opens the Discuss guide directly. These only set initial state — in-app navigation (clicking nav links/buttons) still works normally and does not update the URL.
+
+### 3. Interactive Grid Overlay
 
 - **Keyboard Shortcut**: Press **`Ctrl + G`** (or **`Alt + G`**) anywhere on the page to toggle grid overlay guides.
 - **Floating Button**: Click **`[ 🌐 Grid Overlay ON / OFF ]`** at the bottom-right corner.
+- **URL Parameter**: **`?grid=true`** turns it on for the initial render — combine with `?view=` (above) to link directly to a specific page with the overlay already showing.
+- **Scoping**: the overlay renders *inside* the current page's own wrapper element (e.g. `.home-view-wrapper`, `.about-container`), so its columns/rows always match that page's real rendered box — not a separate guess spanning header-to-footer. Column/row counts differ by page: Home uses the 12-col/6-row grid, all other pages use 6-col/3-row.
 - **Grid Specifications**:
   - **`Col 1 (Sidebar)`**: Cyan guide starting at `40px`.
   - **`Col 2 (Spacer)`**: Buffer column.
