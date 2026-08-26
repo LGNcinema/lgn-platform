@@ -55,7 +55,7 @@ export const CapsulePractice: React.FC<Props> = ({ capsule, onBack }) => {
 
         {/* Other Ways to Connect */}
         <div className="practice-v2-pathways">
-          <h3 className="practice-v2-pathways-heading">Other Ways to Connect</h3>
+          <h3 className="practice-v2-pathways-heading">Other ways to connect</h3>
           <div className="practice-v2-cards-grid">
             {PATHWAY_CARDS.map((card, idx) => (
               <div key={idx} className="practice-v2-card">

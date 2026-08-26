@@ -24,12 +24,6 @@ const TIMELINE_QUOTES: TimelineQuote[] = [
     quote: "“Although the number of unhappy days is endless, life is better than death.”"
   },
   {
-    period: "8th c. BCE",
-    source: "Homer, Iliad",
-    tag: "Life > Scores",
-    quote: "“I would rather be a paid servant in a poor man’s house… than king of kings among the dead.”"
-  },
-  {
     period: "c. 6th–3rd c. BCE",
     source: "Katha Upanishad",
     tag: "Life > tech",
@@ -48,10 +42,22 @@ const TIMELINE_QUOTES: TimelineQuote[] = [
     quote: "“It is owing to their wonder that men both now begin and at first began to philosophize.”"
   },
   {
+    period: "2nd–1st c. BCE",
+    source: "Bhagavad Gita",
+    tag: "Life > Age",
+    quote: "“For the soul there is neither birth nor death at any time.” (2:20)"
+  },
+  {
     period: "3rd c. BCE",
     source: "Ecclesiastes",
     tag: "Life > Speed",
     quote: "“He has made everything beautiful in its time… He has also set eternity in the human heart…” (3:11)"
+  },
+  {
+    period: "—",
+    source: "Proverbs 3:15",
+    tag: "Life > money",
+    quote: "“She [wisdom] is more precious than rubies; nothing you desire can compare with her.”"
   },
   {
     period: "3rd–1st c. BCE",
@@ -60,16 +66,10 @@ const TIMELINE_QUOTES: TimelineQuote[] = [
     quote: "“Health is the greatest gift, contentment the greatest wealth, faithfulness the best relationship.”"
   },
   {
-    period: "2nd–1st c. BCE",
-    source: "Bhagavad Gita",
-    tag: "Life > Age",
-    quote: "“For the soul there is neither birth nor death at any time.” (2:20)"
-  },
-  {
-    period: "—",
-    source: "Proverbs 3:15",
-    tag: "Life > money",
-    quote: "“She [wisdom] is more precious than rubies; nothing you desire can compare with her.”"
+    period: "8th c. BCE",
+    source: "Homer, Iliad",
+    tag: "Life > Scores",
+    quote: "“I would rather be a paid servant in a poor man’s house… than king of kings among the dead.”"
   }
 ];
 
@@ -173,7 +173,7 @@ function App() {
 
   const [aboutMenuOpen, setAboutMenuOpen] = useState(false);
   const [activeTimelineEra, setActiveTimelineEra] = useState<string>('Before The Common Era');
-  const [investExpandedRow, setInvestExpandedRow] = useState<string | null>(null);
+  const [investExpandedRow, setInvestExpandedRow] = useState<string | null>('time');
   const [capsuleActiveAction, setCapsuleActiveAction] = useState<'reflect' | 'gather' | 'practice' | 'discuss' | null>(() => {
     const actionParam = new URLSearchParams(window.location.search).get('action');
     return (VALID_CAPSULE_ACTIONS as readonly string[]).includes(actionParam || '') ? (actionParam as typeof VALID_CAPSULE_ACTIONS[number]) : null;
@@ -431,7 +431,7 @@ function App() {
           <div className="timeline-view-wrapper">
             <div className="timeline-header-grid">
               <div className="timeline-title-col">
-                A Witness Through<br />Time
+                A Witness through<br />Time
               </div>
               <div className="timeline-desc-col">
                 A chronological chorus affirming the<br />
