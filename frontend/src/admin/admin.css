@@ -162,6 +162,11 @@
   cursor: not-allowed;
 }
 
+/* The "View on site" affordance is a real link, styled as a ghost button. */
+.admin-portal a.admin-btn-ghost {
+  text-decoration: none;
+}
+
 .admin-portal .admin-btn-sm {
   width: auto;
   padding: 8px 16px;
@@ -605,6 +610,99 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 10px;
+}
+
+/* ------------------------------------------------- unsaved-changes guard */
+
+/* Inline confirmation instead of window.confirm, to match the two-step delete
+   in the panels. Fixed to the top of the viewport rather than the top of the
+   document: the header is sticky, so a guard that only lived at the top of the
+   page would be invisible to anyone who had scrolled down to the field they
+   were editing. */
+.admin-portal .admin-guard {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 24px;
+  background: var(--bg-card);
+  border-bottom: 2px solid var(--admin-accent);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+}
+
+.admin-portal .admin-guard-text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-main);
+}
+
+.admin-portal .admin-guard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-portal .admin-btn-danger {
+  color: var(--admin-danger, #a3241c);
+  border-color: var(--admin-danger, #a3241c);
+}
+
+[data-theme='dark'] .admin-portal .admin-btn-danger {
+  color: #f2938c;
+  border-color: #f2938c;
+}
+
+/* --------------------------------------------------------- re-login layer */
+
+/* A session that expired mid-edit keeps the shell mounted underneath (inert),
+   so nothing anyone typed is thrown away by having to sign in again. */
+.admin-portal .admin-relogin {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow: auto;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.admin-portal .admin-relogin-inner {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 460px;
+}
+
+.admin-portal .admin-relogin .admin-login {
+  min-height: 0;
+  padding: 0;
+}
+
+.admin-portal .admin-relogin .admin-session-notice {
+  margin: 0 0 12px;
+}
+
+/* Belt and braces: `inert` is what actually blocks interaction, this makes it
+   look blocked in browsers that are slow to support the attribute. */
+.admin-portal .admin-shell[inert] {
+  user-select: none;
+}
+
+/* --------------------------------------------------------- picker helpers */
+
+.admin-portal .admin-field-help {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text-dark);
 }
 
 /* ------------------------------------------------------------- responsive */

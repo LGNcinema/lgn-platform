@@ -5,11 +5,25 @@
  * admin session dies with the browser session. Every storage access is guarded
  * because `sessionStorage` throws outright in some privacy / sandbox modes; an
  * in-memory fallback keeps the portal usable for the life of the page there.
+ *
+ * Two small registries also live here, because both halves of the portal (the
+ * shell and the panels) already import this module and neither imports the
+ * other:
+ *   - an "unauthorized" broadcast, so a 401 from *any* request can drop the
+ *     shell back to the login screen instead of dying as one inline error, and
+ *   - a shared dirty registry, so the shell knows whether any panel is holding
+ *     unsaved work (and so one `beforeunload` handler can warn on tab close).
  */
 
 export const API_URL: string = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const TOKEN_KEY = 'lgn_admin_token';
+
+/**
+ * Every request gets this long before it is aborted. The film PUT makes a
+ * synchronous Vimeo oEmbed call with its own ~5s budget, so this has headroom.
+ */
+export const ADMIN_TIMEOUT_MS = 20000;
 
 /** Used only when `sessionStorage` is unavailable (privacy mode, sandboxed iframe). */
 let memoryToken: string | null = null;
@@ -17,10 +31,14 @@ let memoryToken: string | null = null;
 export class AdminApiError extends Error {
   status: number;
 
-  constructor(message: string, status: number) {
+  /** True when the request never completed because it was cancelled or timed out. */
+  aborted: boolean;
+
+  constructor(message: string, status: number, aborted = false) {
     super(message);
     this.name = 'AdminApiError';
     this.status = status;
+    this.aborted = aborted;
   }
 }
 
@@ -44,6 +62,100 @@ export function setToken(token: string | null): void {
     /* storage blocked -- the in-memory copy above is the fallback */
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Unauthorized broadcast
+ * `adminFetch` clears the token on a 401, but only the shell can decide what to
+ * show afterwards. Panels deep in the tree would otherwise sit on a dead token
+ * forever, failing every save with a red inline error and never surfacing the
+ * login screen again.
+ * ------------------------------------------------------------------------- */
+
+type Listener = () => void;
+
+const unauthorizedListeners = new Set<Listener>();
+
+/** Subscribe to "a request came back 401". Returns an unsubscribe function. */
+export function onUnauthorized(callback: Listener): () => void {
+  unauthorizedListeners.add(callback);
+  return () => {
+    unauthorizedListeners.delete(callback);
+  };
+}
+
+function notifyUnauthorized(): void {
+  // Copy first: a listener is allowed to unsubscribe itself while we iterate.
+  for (const listener of [...unauthorizedListeners]) {
+    try {
+      listener();
+    } catch {
+      /* one bad subscriber must not break the request that triggered it */
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Dirty registry
+ * Every editable form registers itself under a stable key while it holds
+ * unsaved changes. The shell reads `hasUnsavedChanges()` before it navigates,
+ * and a single `beforeunload` handler is installed for as long as anything is
+ * dirty (and removed the moment nothing is).
+ * ------------------------------------------------------------------------- */
+
+const dirtyKeys = new Set<string>();
+const dirtyListeners = new Set<Listener>();
+
+let beforeUnloadInstalled = false;
+
+function handleBeforeUnload(event: BeforeUnloadEvent): void {
+  // Browsers show their own generic wording; the string is only for old ones.
+  event.preventDefault();
+  event.returnValue = 'You have unsaved changes in the admin portal.';
+}
+
+function syncBeforeUnload(): void {
+  if (typeof window === 'undefined') return;
+  const wanted = dirtyKeys.size > 0;
+  if (wanted === beforeUnloadInstalled) return;
+  beforeUnloadInstalled = wanted;
+  if (wanted) window.addEventListener('beforeunload', handleBeforeUnload);
+  else window.removeEventListener('beforeunload', handleBeforeUnload);
+}
+
+/**
+ * Record whether the form identified by `key` currently holds unsaved changes.
+ * Forms must call this with `false` when they unmount.
+ */
+export function registerDirty(key: string, dirty: boolean): void {
+  const had = dirtyKeys.has(key);
+  if (dirty === had) return;
+  if (dirty) dirtyKeys.add(key);
+  else dirtyKeys.delete(key);
+
+  syncBeforeUnload();
+  for (const listener of [...dirtyListeners]) {
+    try {
+      listener();
+    } catch {
+      /* a bad subscriber must not wedge the registry */
+    }
+  }
+}
+
+/** True when any registered form is holding unsaved changes. */
+export function hasUnsavedChanges(): boolean {
+  return dirtyKeys.size > 0;
+}
+
+/** Subscribe to dirty-state changes. Returns an unsubscribe function. */
+export function subscribeDirty(callback: Listener): () => void {
+  dirtyListeners.add(callback);
+  return () => {
+    dirtyListeners.delete(callback);
+  };
+}
+
+/* ------------------------------------------------------------------- fetch */
 
 /** Pull the most useful human-readable message out of an error response body. */
 function extractDetail(text: string, status: number): string {
@@ -83,58 +195,97 @@ function extractDetail(text: string, status: number): string {
   return fallback;
 }
 
-export async function adminFetch<T>(
-  path: string,
-  options: { method?: string; body?: unknown } = {}
-): Promise<T> {
-  const { method = 'GET', body } = options;
+export interface AdminFetchOptions {
+  method?: string;
+  body?: unknown;
+  /** Caller-owned cancellation, e.g. a capsule load superseded by a newer one. */
+  signal?: AbortSignal;
+  /** Override the default request timeout. */
+  timeoutMs?: number;
+}
+
+export async function adminFetch<T>(path: string, options: AdminFetchOptions = {}): Promise<T> {
+  const { method = 'GET', body, signal, timeoutMs = ADMIN_TIMEOUT_MS } = options;
 
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  let response: Response;
+  // One controller drives both the timeout and the caller's own cancellation, so
+  // a hung backend can never leave a panel stuck on "Saving..." forever.
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = window.setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+
+  const abortFromCaller = () => controller.abort();
+  if (signal) {
+    if (signal.aborted) controller.abort();
+    else signal.addEventListener('abort', abortFromCaller);
+  }
+
   try {
-    response = await fetch(`${API_URL}${path}`, {
-      method,
-      headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
-  } catch {
-    // Status 0 == never reached the server (offline, port closed, CORS preflight).
-    throw new AdminApiError(`Could not reach the server at ${API_URL}.`, 0);
-  }
+    let response: Response;
+    try {
+      response = await fetch(`${API_URL}${path}`, {
+        method,
+        headers,
+        body: body === undefined ? undefined : JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } catch {
+      if (timedOut) {
+        throw new AdminApiError(
+          `The server did not respond within ${Math.round(timeoutMs / 1000)} seconds. Nothing was saved -- check your connection and try again.`,
+          0,
+          true,
+        );
+      }
+      if (signal?.aborted) {
+        throw new AdminApiError('Request cancelled.', 0, true);
+      }
+      // Status 0 == never reached the server (offline, port closed, CORS preflight).
+      throw new AdminApiError(`Could not reach the server at ${API_URL}.`, 0);
+    }
 
-  if (response.status === 401) {
-    // Token is dead -- drop it so the shell falls back to the login screen.
-    setToken(null);
-  }
+    if (response.status === 401) {
+      // Token is dead -- drop it, then tell the shell so it can show the login
+      // screen instead of leaving the user stuck behind an inline error.
+      setToken(null);
+      notifyUnauthorized();
+    }
 
-  if (!response.ok) {
+    if (!response.ok) {
+      let text = '';
+      try {
+        text = await response.text();
+      } catch {
+        /* body unreadable */
+      }
+      throw new AdminApiError(extractDetail(text, response.status), response.status);
+    }
+
+    // 204 / 205 and empty bodies must not be run through JSON.parse.
+    if (response.status === 204 || response.status === 205) return undefined as T;
+
     let text = '';
     try {
       text = await response.text();
     } catch {
-      /* body unreadable */
+      return undefined as T;
     }
-    throw new AdminApiError(extractDetail(text, response.status), response.status);
-  }
+    if (!text.trim()) return undefined as T;
 
-  // 204 / 205 and empty bodies must not be run through JSON.parse.
-  if (response.status === 204 || response.status === 205) return undefined as T;
-
-  let text = '';
-  try {
-    text = await response.text();
-  } catch {
-    return undefined as T;
-  }
-  if (!text.trim()) return undefined as T;
-
-  try {
-    return JSON.parse(text) as T;
-  } catch {
-    throw new AdminApiError('The server returned a malformed response.', response.status);
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      throw new AdminApiError('The server returned a malformed response.', response.status);
+    }
+  } finally {
+    window.clearTimeout(timer);
+    signal?.removeEventListener('abort', abortFromCaller);
   }
 }
 

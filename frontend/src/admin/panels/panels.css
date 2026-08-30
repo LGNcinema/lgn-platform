@@ -261,6 +261,29 @@
   padding-top: 4px;
 }
 
+/*
+ * The single-form panels (Film, Details) run past two screens, which put Save
+ * below the fold. Pinning the bar to the bottom of the viewport keeps it
+ * reachable without hunting. `--bg-darker` is the page behind `.apnl`, so the
+ * bar reads as solid; only the panel-level bars get this, never the per-item
+ * ones in a list, which would stack.
+ */
+.admin-portal .apnl-savedock {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 0;
+  background: var(--bg-darker);
+  border-top: 1px solid var(--border);
+}
+
+.admin-portal .apnl-savedock .apnl-savebar {
+  padding-top: 0;
+}
+
 .admin-portal .apnl-status {
   display: inline-flex;
   align-items: center;
@@ -296,6 +319,22 @@
   .admin-portal .apnl-status--saved {
     animation: none;
   }
+}
+
+/* A state, not a problem: "this will change something when you save". */
+.admin-portal .apnl-note {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-main);
+  background: rgba(var(--primary-rgb), 0.08);
+  border: 1px solid var(--primary);
+  border-radius: var(--border-radius, 5px);
+}
+
+.admin-portal .apnl-note strong {
+  font-weight: 700;
 }
 
 .admin-portal .apnl-alert {

@@ -7,8 +7,8 @@
  * `react/only-export-components`), so the components stay there and everything
  * non-component stays here.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { AdminApiError } from '../adminClient';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { AdminApiError, registerDirty } from '../adminClient';
 
 /* -------------------------------------------------------------- helpers -- */
 
@@ -53,14 +53,43 @@ function shallowEqual(a: Record<string, unknown>, b: Record<string, unknown>): b
   return true;
 }
 
+/* ----------------------------------------------------- dirty registration -- */
+
+/**
+ * Publish one form's dirty state into the shared registry in `adminClient`, so
+ * the shell can warn before it navigates away and `beforeunload` can warn before
+ * the tab closes. The key is a per-instance `useId()`, so several forms on the
+ * same screen (every card in a list panel) each get their own slot.
+ */
+export function useDirtyRegistration(dirty: boolean): void {
+  const key = useId();
+
+  useEffect(() => {
+    registerDirty(key, dirty);
+  }, [key, dirty]);
+
+  // Unmounting always releases the slot, even mid-edit: a form that is gone
+  // cannot be saved, and a stale `true` would warn about nothing forever.
+  useEffect(
+    () => () => {
+      registerDirty(key, false);
+    },
+    [key],
+  );
+}
+
 /* ---------------------------------------------------------- edit  state -- */
 
 export type DraftValue = string | number | boolean;
 
 export interface EditState<T extends Record<string, DraftValue>> {
   draft: T;
+  /** The last known server values. `dirty` is measured against these. */
+  baseline: T;
   dirty: boolean;
   set: (key: Extract<keyof T, string>, value: T[Extract<keyof T, string>]) => void;
+  /** Apply several keys in one render -- used when one field derives others. */
+  setMany: (patch: Partial<T>) => void;
   /** Throw away local edits, back to the last known server values. */
   reset: () => void;
   /** Accept `next` as the new server truth (call after a successful save). */
@@ -76,12 +105,18 @@ export interface EditState<T extends Record<string, DraftValue>> {
  * We adopt it only when there is nothing local to lose. If the user has unsaved
  * edits, the incoming values are ignored, so a background refresh can never
  * yank a half-typed field out from under them.
+ *
+ * That rule is only safe because a panel is remounted (`key={capsule.id}` in the
+ * shell) when the *subject* changes. Refusing incoming values is right for a
+ * refetch of the same row; it would be catastrophic for a different row, which
+ * is why the shell must never reuse a panel instance across capsules.
  */
 export function useEditState<T extends Record<string, DraftValue>>(incoming: T): EditState<T> {
   const [baseline, setBaseline] = useState<T>(incoming);
   const [draft, setDraft] = useState<T>(incoming);
 
   const dirty = !shallowEqual(draft, baseline);
+  useDirtyRegistration(dirty);
 
   const dirtyRef = useRef(dirty);
   const incomingRef = useRef(incoming);
@@ -104,6 +139,10 @@ export function useEditState<T extends Record<string, DraftValue>>(incoming: T):
     setDraft((current) => ({ ...current, [key]: value }) as T);
   }, []);
 
+  const setMany = useCallback<EditState<T>['setMany']>((patch) => {
+    setDraft((current) => ({ ...current, ...patch }) as T);
+  }, []);
+
   const reset = useCallback(() => setDraft(baseline), [baseline]);
 
   const commit = useCallback((next: T) => {
@@ -111,7 +150,7 @@ export function useEditState<T extends Record<string, DraftValue>>(incoming: T):
     setDraft(next);
   }, []);
 
-  return { draft, dirty, set, reset, commit };
+  return { draft, baseline, dirty, set, setMany, reset, commit };
 }
 
 /* ---------------------------------------------------------- save  state -- */

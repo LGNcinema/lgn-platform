@@ -1,9 +1,10 @@
 /** DetailsPanel -- capsule-level metadata and the pre-watch framing. */
-import { useMemo } from 'react';
-import type { CapsuleDetail } from '../../types';
-import { adminFetch } from '../adminClient';
+import { useEffect, useId, useMemo, useState } from 'react';
+import type { CapsuleDetail, CapsuleSummary } from '../../types';
+import { adminFetch, formatMonth } from '../adminClient';
 import {
   FormRow,
+  Note,
   PanelHead,
   ReadOnlyValue,
   SaveBar,
@@ -65,13 +66,48 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
   );
   const { draft, dirty, set, reset, commit } = useEditState<DetailsDraft>(incoming);
   const save = useSaveState();
+  const errorId = useId();
+
+  /**
+   * Publishing is exclusive: the backend demotes every other capsule when
+   * `is_active` is set. A checkbox labelled "Active" gives no hint of that, so
+   * we look up whichever capsule is live right now and name it in the warning.
+   */
+  const [liveElsewhere, setLiveElsewhere] = useState<CapsuleSummary | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const all = await adminFetch<CapsuleSummary[]>('/api/admin/capsules');
+        if (cancelled) return;
+        const live = (Array.isArray(all) ? all : []).find(
+          (item) => item.is_active && item.id !== capsule.id,
+        );
+        setLiveElsewhere(live ?? null);
+      } catch {
+        // Purely advisory -- a failure here must not block editing.
+        if (!cancelled) setLiveElsewhere(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [capsule.id, capsule.is_active]);
+
+  const publishing = draft.is_active && !capsule.is_active;
+  const unpublishing = !draft.is_active && capsule.is_active;
+
+  const monthValid = MONTH_PATTERN.test(draft.month.trim());
+  const invalid = save.error
+    ? { title: draft.title.trim() === '', month: !monthValid }
+    : { title: false, month: false };
 
   const handleSave = () => {
     if (draft.title.trim() === '') {
       save.fail('Title is required.');
       return;
     }
-    if (!MONTH_PATTERN.test(draft.month.trim())) {
+    if (!monthValid) {
       save.fail('Month must look like 2026-09 (four-digit year, dash, two-digit month).');
       return;
     }
@@ -100,7 +136,7 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
     <div className="apnl">
       <PanelHead
         title="Capsule details"
-        description="The month this capsule belongs to, how it is introduced, and whether it is live."
+        description="The month this capsule belongs to, how it is introduced, and whether it is the one the public site serves."
       />
 
       <Section title="Identity">
@@ -110,14 +146,20 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
             value={draft.month}
             required
             mono
+            disabled={save.saving}
             placeholder="2026-09"
+            invalid={invalid.month}
+            errorId={errorId}
             onChange={(value) => set('month', value)}
-            help="Format YYYY-MM. One capsule per month: saving a month another capsule already uses will be rejected by the server."
+            help="Format YYYY-MM, e.g. 2026-09. One capsule per month: saving a month another capsule already uses will be rejected by the server."
           />
           <TextField
             label="Title"
             value={draft.title}
             required
+            disabled={save.saving}
+            invalid={invalid.title}
+            errorId={errorId}
             onChange={(value) => set('title', value)}
           />
         </FormRow>
@@ -133,15 +175,39 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
           label="Description"
           value={draft.description}
           rows={5}
+          disabled={save.saving}
           onChange={(value) => set('description', value)}
           help="The capsule blurb. Line breaks are kept as typed."
         />
+      </Section>
+
+      <Section title="Publishing">
         <Toggle
-          label="Active"
+          label="Publish this capsule (make it the live one on the site)"
           checked={draft.is_active}
+          disabled={save.saving}
           onChange={(checked) => set('is_active', checked)}
-          help="Only an active capsule is served as the current one on the public site."
+          help="Exactly one capsule is live at a time. The live capsule is the one the public site serves at /?view=capsule."
         />
+        {publishing && liveElsewhere ? (
+          <Note>
+            Saving will publish this capsule and replace{' '}
+            <strong>
+              {formatMonth(liveElsewhere.month)}
+              {liveElsewhere.title ? ` -- ${liveElsewhere.title}` : ''}
+            </strong>{' '}
+            as the live capsule. That capsule becomes a draft; nothing about it is deleted.
+          </Note>
+        ) : null}
+        {publishing && !liveElsewhere ? (
+          <Note>Saving will publish this capsule. No other capsule is live right now.</Note>
+        ) : null}
+        {unpublishing ? (
+          <Note>
+            Saving will unpublish this capsule. Unless another capsule is published, the public site
+            will have no live capsule to serve.
+          </Note>
+        ) : null}
       </Section>
 
       <Section title="Before the film">
@@ -149,6 +215,7 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
           label="Pre-watch prompt"
           value={draft.pre_watch_prompt}
           rows={4}
+          disabled={save.saving}
           onChange={(value) => set('pre_watch_prompt', value)}
           help="The question the viewer sits with before pressing play."
         />
@@ -156,12 +223,20 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
           label="Pre-watch supporting text"
           value={draft.pre_watch_supporting_text}
           rows={6}
+          disabled={save.saving}
           onChange={(value) => set('pre_watch_supporting_text', value)}
           help="Anything that frames the prompt -- context, an instruction, a note on how long to sit with it."
         />
       </Section>
 
-      <SaveBar dirty={dirty} save={save} onSave={handleSave} onReset={reset} />
+      <SaveBar
+        dirty={dirty}
+        save={save}
+        onSave={handleSave}
+        onReset={reset}
+        sticky
+        errorId={errorId}
+      />
     </div>
   );
 }

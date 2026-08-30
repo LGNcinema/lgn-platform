@@ -166,3 +166,13 @@ URL, YouTube and Mux URLs, and plain file URLs.
 supplies `video_url` but no `video_provider`, the provider fields are populated
 from it. Explicitly-supplied values are never overwritten, so an admin can paste
 the raw snippet into `video_url` and let the API sort it out.
+
+> **Caution for API clients — changing a film's video.** Explicit provider fields
+> always win over `video_url`. So if you send a *new* `video_url` while echoing
+> back the `video_provider` / `video_id` / `video_hash` from a previous response,
+> the new URL is stored but the old provider fields are kept — and since the
+> player prefers the explicit columns, **the site keeps playing the old film**.
+> When you change the video, send `video_url` with `video_provider`, `video_id`,
+> `video_hash`, `thumbnail_url` and `video_duration_seconds` all omitted or null,
+> so the server re-derives them. The admin portal's Film panel does this for you;
+> anything else calling this API directly must do it deliberately.

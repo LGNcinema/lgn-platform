@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { CapsuleSummary } from '../types';
 import { AdminApiError, adminFetch, formatMonth, nextUnusedMonth } from './adminClient';
 
@@ -10,19 +10,30 @@ interface CapsulePickerProps {
   onUnauthorized: () => void;
 }
 
+/**
+ * Two honest buckets. "Live" holds the single published capsule; everything else
+ * -- next month's draft, last month's archive -- is one list, because a future
+ * capsule is not "archived" and a bucket that can only ever hold one item is not
+ * a filter.
+ */
+type Bucket = 'live' | 'rest';
+
+const BUCKET_LABEL: Record<Bucket, string> = { live: 'Live', rest: 'Drafts & past' };
+
 export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthorized }: CapsulePickerProps) {
   const [capsules, setCapsules] = useState<CapsuleSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [query, setQuery] = useState('');
-  const [bucket, setBucket] = useState<'active' | 'archived'>('active');
+  const [bucket, setBucket] = useState<Bucket>('live');
 
   const [creating, setCreating] = useState(false);
   const [newMonth, setNewMonth] = useState('');
   const [newTitle, setNewTitle] = useState('');
   const [saving, setSaving] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const monthHelpId = useId();
 
   const load = useCallback(async () => {
     setError(null);
@@ -44,6 +55,24 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
     void load();
   }, [load, refreshKey]);
 
+  /**
+   * Follow the selection into whichever bucket holds it, so the capsule you are
+   * editing never vanishes from the list -- most sharply right after you publish
+   * it, when `is_active` flips and it would otherwise filter itself out.
+   *
+   * Keyed on "which capsule, and is it live", so a plain background refresh does
+   * not yank the user out of a bucket they deliberately switched to.
+   */
+  const followed = useRef('');
+  useEffect(() => {
+    const selected = capsules.find((c) => c.id === selectedId);
+    if (!selected) return;
+    const signature = `${selected.id}:${selected.is_active}`;
+    if (followed.current === signature) return;
+    followed.current = signature;
+    setBucket(selected.is_active ? 'live' : 'rest');
+  }, [capsules, selectedId]);
+
   const searched = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return capsules;
@@ -53,9 +82,9 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
     });
   }, [capsules, query]);
 
-  const activeCount = searched.filter((c) => c.is_active).length;
-  const archivedCount = searched.length - activeCount;
-  const visible = searched.filter((c) => (bucket === 'active' ? c.is_active : !c.is_active));
+  const liveCount = searched.filter((c) => c.is_active).length;
+  const restCount = searched.length - liveCount;
+  const visible = searched.filter((c) => (bucket === 'live' ? c.is_active : !c.is_active));
 
   const openCreate = () => {
     setNewMonth(nextUnusedMonth(capsules.map((c) => c.month)));
@@ -71,7 +100,7 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
     const month = newMonth.trim();
     const title = newTitle.trim();
     if (!/^\d{4}-\d{2}$/.test(month)) {
-      setCreateError('Month is required, in YYYY-MM form.');
+      setCreateError('Month is required, in YYYY-MM form (for example 2026-09).');
       return;
     }
     if (!title) {
@@ -89,7 +118,7 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
       setCreating(false);
       await load();
       if (created && typeof created.id === 'number') {
-        setBucket('archived'); // new capsules start as drafts
+        // The bucket follows the selection on its own (see the effect above).
         onSelect(created.id);
       }
     } catch (err) {
@@ -122,8 +151,18 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
               value={newMonth}
               disabled={saving}
               onChange={(e) => setNewMonth(e.target.value)}
+              placeholder="2026-09"
+              pattern="\d{4}-\d{2}"
+              aria-describedby={monthHelpId}
               required
+              aria-required="true"
             />
+            {/* Firefox and Safari fall back to a plain text box for type=month,
+                with no picker at all -- so the expected shape has to be visible
+                before anyone types, not only in an error after a failed save. */}
+            <span className="admin-field-help" id={monthHelpId}>
+              Format YYYY-MM, e.g. 2026-09. One capsule per month.
+            </span>
           </label>
           <label className="admin-field">
             <span className="admin-field-label">Title</span>
@@ -135,6 +174,7 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
               onChange={(e) => setNewTitle(e.target.value)}
               placeholder="Capsule title"
               required
+              aria-required="true"
             />
           </label>
           {createError && <p className="admin-inline-error" role="alert">{createError}</p>}
@@ -166,19 +206,19 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
       <div className="admin-bucket-toggle" role="group" aria-label="Capsule status filter">
         <button
           type="button"
-          className={`admin-bucket${bucket === 'active' ? ' is-active' : ''}`}
-          aria-pressed={bucket === 'active'}
-          onClick={() => setBucket('active')}
+          className={`admin-bucket${bucket === 'live' ? ' is-active' : ''}`}
+          aria-pressed={bucket === 'live'}
+          onClick={() => setBucket('live')}
         >
-          Active ({activeCount})
+          {BUCKET_LABEL.live} ({liveCount})
         </button>
         <button
           type="button"
-          className={`admin-bucket${bucket === 'archived' ? ' is-active' : ''}`}
-          aria-pressed={bucket === 'archived'}
-          onClick={() => setBucket('archived')}
+          className={`admin-bucket${bucket === 'rest' ? ' is-active' : ''}`}
+          aria-pressed={bucket === 'rest'}
+          onClick={() => setBucket('rest')}
         >
-          Archived ({archivedCount})
+          {BUCKET_LABEL.rest} ({restCount})
         </button>
       </div>
 
@@ -193,7 +233,11 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
       )}
       {!loading && !error && visible.length === 0 && (
         <p className="admin-muted">
-          {query.trim() ? 'No capsules match that search.' : `No ${bucket} capsules yet.`}
+          {query.trim()
+            ? 'No capsules match that search.'
+            : bucket === 'live'
+              ? 'No capsule is live yet. Publish one from its Details tab.'
+              : 'No draft or past capsules yet.'}
         </p>
       )}
 

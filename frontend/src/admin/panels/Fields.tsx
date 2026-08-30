@@ -8,10 +8,10 @@
  * so this module can export components only.
  */
 import type { ReactNode } from 'react';
-import { useCallback, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { CapsuleDetail } from '../../types';
 import { adminFetch } from '../adminClient';
-import { orNull, str, useEditState, useSaveState } from './formState';
+import { orNull, str, useDirtyRegistration, useEditState, useSaveState } from './formState';
 import type { EditState, SaveState } from './formState';
 import './panels.css';
 
@@ -46,15 +46,25 @@ export function FormRow({ children }: { children: ReactNode }) {
   return <div className="apnl-row">{children}</div>;
 }
 
+/**
+ * Join the ids a control should point `aria-describedby` at: its own help text,
+ * plus the panel's error alert when this field is the one that failed.
+ */
+function describedBy(helpId: string | undefined, errorId: string | undefined): string | undefined {
+  const ids = [helpId, errorId].filter(Boolean);
+  return ids.length ? ids.join(' ') : undefined;
+}
+
 interface FieldShellProps {
   id: string;
   label: string;
   required?: boolean;
   help?: ReactNode;
+  helpId?: string;
   children: ReactNode;
 }
 
-function FieldShell({ id, label, required, help, children }: FieldShellProps) {
+function FieldShell({ id, label, required, help, helpId, children }: FieldShellProps) {
   return (
     <div className="apnl-field">
       <label className="apnl-label" htmlFor={id}>
@@ -66,7 +76,11 @@ function FieldShell({ id, label, required, help, children }: FieldShellProps) {
         ) : null}
       </label>
       {children}
-      {help ? <p className="apnl-help">{help}</p> : null}
+      {help ? (
+        <p className="apnl-help" id={helpId}>
+          {help}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -82,6 +96,10 @@ export interface TextFieldProps {
   mono?: boolean;
   inputMode?: 'text' | 'numeric' | 'url';
   autoComplete?: string;
+  /** This field is the one the last validation error was about. */
+  invalid?: boolean;
+  /** Id of the alert element that explains the error, for `aria-describedby`. */
+  errorId?: string;
 }
 
 export function TextField({
@@ -95,10 +113,13 @@ export function TextField({
   mono,
   inputMode,
   autoComplete = 'off',
+  invalid,
+  errorId,
 }: TextFieldProps) {
   const id = useId();
+  const helpId = help ? `${id}-help` : undefined;
   return (
-    <FieldShell id={id} label={label} required={required} help={help}>
+    <FieldShell id={id} label={label} required={required} help={help} helpId={helpId}>
       <input
         id={id}
         className={mono ? 'apnl-input apnl-mono' : 'apnl-input'}
@@ -106,6 +127,10 @@ export function TextField({
         value={value}
         placeholder={placeholder}
         disabled={disabled}
+        required={required}
+        aria-required={required || undefined}
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy(helpId, invalid ? errorId : undefined)}
         inputMode={inputMode}
         autoComplete={autoComplete}
         spellCheck={false}
@@ -129,10 +154,13 @@ export function TextArea({
   disabled,
   mono,
   rows = 5,
+  invalid,
+  errorId,
 }: TextAreaProps) {
   const id = useId();
+  const helpId = help ? `${id}-help` : undefined;
   return (
-    <FieldShell id={id} label={label} required={required} help={help}>
+    <FieldShell id={id} label={label} required={required} help={help} helpId={helpId}>
       <textarea
         id={id}
         className={mono ? 'apnl-textarea apnl-mono' : 'apnl-textarea'}
@@ -140,6 +168,10 @@ export function TextArea({
         rows={rows}
         placeholder={placeholder}
         disabled={disabled}
+        required={required}
+        aria-required={required || undefined}
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy(helpId, invalid ? errorId : undefined)}
         onChange={(event) => onChange(event.target.value)}
       />
     </FieldShell>
@@ -169,13 +201,15 @@ export function SelectField<V extends string>({
   disabled,
 }: SelectFieldProps<V>) {
   const id = useId();
+  const helpId = help ? `${id}-help` : undefined;
   return (
-    <FieldShell id={id} label={label} help={help}>
+    <FieldShell id={id} label={label} help={help} helpId={helpId}>
       <select
         id={id}
         className="apnl-select"
         value={value}
         disabled={disabled}
+        aria-describedby={helpId}
         onChange={(event) => onChange(event.target.value as V)}
       >
         {options.map((option) => (
@@ -198,6 +232,7 @@ export interface ToggleProps {
 
 export function Toggle({ label, checked, onChange, help, disabled }: ToggleProps) {
   const id = useId();
+  const helpId = help ? `${id}-help` : undefined;
   return (
     <div className="apnl-field">
       <label className="apnl-check" htmlFor={id}>
@@ -206,11 +241,16 @@ export function Toggle({ label, checked, onChange, help, disabled }: ToggleProps
           type="checkbox"
           checked={checked}
           disabled={disabled}
+          aria-describedby={helpId}
           onChange={(event) => onChange(event.target.checked)}
         />
         <span className="apnl-check-text">
           <span className="apnl-check-label">{label}</span>
-          {help ? <span className="apnl-help">{help}</span> : null}
+          {help ? (
+            <span className="apnl-help" id={helpId}>
+              {help}
+            </span>
+          ) : null}
         </span>
       </label>
     </div>
@@ -240,9 +280,18 @@ export function Disclosure({ summary, children }: { summary: string; children: R
   );
 }
 
-export function Alert({ children }: { children: ReactNode }) {
+/** A quiet, non-destructive note -- explains a state, never an error. */
+export function Note({ children }: { children: ReactNode }) {
   return (
-    <p className="apnl-alert" role="alert">
+    <p className="apnl-note" role="status">
+      {children}
+    </p>
+  );
+}
+
+export function Alert({ children, id }: { children: ReactNode; id?: string }) {
+  return (
+    <p className="apnl-alert" role="alert" id={id}>
       {children}
     </p>
   );
@@ -257,6 +306,10 @@ export interface SaveBarProps {
   savingLabel?: string;
   /** Right-aligned slot -- the delete control on list items. */
   extra?: ReactNode;
+  /** Pin the bar to the bottom of the viewport (the long single-form panels). */
+  sticky?: boolean;
+  /** Id given to the error alert, so fields can point `aria-describedby` at it. */
+  errorId?: string;
 }
 
 export function SaveBar({
@@ -267,10 +320,12 @@ export function SaveBar({
   saveLabel = 'Save changes',
   savingLabel = 'Saving...',
   extra,
+  sticky,
+  errorId,
 }: SaveBarProps) {
-  return (
+  const content = (
     <>
-      {save.error ? <Alert>{save.error}</Alert> : null}
+      {save.error ? <Alert id={errorId}>{save.error}</Alert> : null}
       <div className="apnl-savebar">
         <button
           type="button"
@@ -305,6 +360,10 @@ export function SaveBar({
       </div>
     </>
   );
+
+  // The dock carries the error with the buttons, so a validation message is
+  // never stranded above the fold while the bar itself is pinned to the bottom.
+  return sticky ? <div className="apnl-savedock">{content}</div> : content;
 }
 
 /** Two-step delete: no `window.confirm`, the confirmation is inline. */
@@ -320,14 +379,30 @@ export function DeleteControl({
   onConfirm: () => void;
 }) {
   const [armed, setArmed] = useState(false);
+  const armRef = useRef<HTMLButtonElement | null>(null);
+  const confirmRef = useRef<HTMLButtonElement | null>(null);
+  // The control that had focus is replaced when this swaps, so focus has to be
+  // moved by hand or it falls back to <body> and keyboard users lose their place.
+  const moveFocus = useRef(false);
+
+  useEffect(() => {
+    if (!moveFocus.current) return;
+    moveFocus.current = false;
+    if (armed) confirmRef.current?.focus();
+    else armRef.current?.focus();
+  }, [armed]);
 
   if (!armed) {
     return (
       <button
         type="button"
+        ref={armRef}
         className="apnl-btn apnl-btn--danger"
         disabled={busy}
-        onClick={() => setArmed(true)}
+        onClick={() => {
+          moveFocus.current = true;
+          setArmed(true);
+        }}
       >
         {label}
       </button>
@@ -337,14 +412,23 @@ export function DeleteControl({
   return (
     <span className="apnl-confirm">
       <span>{question}</span>
-      <button type="button" className="apnl-btn apnl-btn--danger" disabled={busy} onClick={onConfirm}>
+      <button
+        type="button"
+        ref={confirmRef}
+        className="apnl-btn apnl-btn--danger"
+        disabled={busy}
+        onClick={onConfirm}
+      >
         {busy ? 'Deleting...' : 'Confirm delete'}
       </button>
       <button
         type="button"
         className="apnl-btn apnl-btn--ghost"
         disabled={busy}
-        onClick={() => setArmed(false)}
+        onClick={() => {
+          moveFocus.current = true;
+          setArmed(false);
+        }}
       >
         Cancel
       </button>
@@ -369,11 +453,15 @@ function DraftFields<D extends Record<string, string>>({
   draft,
   set,
   disabled,
+  invalidKeys,
+  errorId,
 }: {
   fields: ListFieldSpec<D>[];
   draft: D;
   set: EditState<D>['set'];
   disabled: boolean;
+  invalidKeys: string[];
+  errorId: string;
 }) {
   return (
     <>
@@ -388,6 +476,8 @@ function DraftFields<D extends Record<string, string>>({
             placeholder={field.placeholder}
             required={field.required}
             disabled={disabled}
+            invalid={invalidKeys.includes(field.key)}
+            errorId={errorId}
             onChange={(value) => set(field.key, value as D[Extract<keyof D, string>])}
           />
         ) : (
@@ -399,12 +489,23 @@ function DraftFields<D extends Record<string, string>>({
             placeholder={field.placeholder}
             required={field.required}
             disabled={disabled}
+            invalid={invalidKeys.includes(field.key)}
+            errorId={errorId}
             onChange={(value) => set(field.key, value as D[Extract<keyof D, string>])}
           />
         ),
       )}
     </>
   );
+}
+
+function missingRequiredKeys<D extends Record<string, string>>(
+  fields: ListFieldSpec<D>[],
+  draft: D,
+): string[] {
+  return fields
+    .filter((field) => field.required && str(draft[field.key]).trim() === '')
+    .map((field) => field.key as string);
 }
 
 function missingRequired<D extends Record<string, string>>(
@@ -455,8 +556,11 @@ function ItemCard<T extends { id: number }, D extends Record<string, string>>({
   const { draft, dirty, set, reset, commit } = useEditState<D>(toDraft(item));
   const save = useSaveState();
   const remove = useSaveState();
+  const errorId = useId();
 
   const heading = str(draft[nameKey]).trim() || `Untitled ${singular}`;
+  // Recomputed every render, so the red flag clears as soon as the user types.
+  const invalidKeys = save.error ? missingRequiredKeys(fields, draft) : [];
 
   const handleSave = () => {
     const problem = missingRequired(fields, draft);
@@ -489,13 +593,21 @@ function ItemCard<T extends { id: number }, D extends Record<string, string>>({
         </h3>
         <span className="apnl-item-id">id {item.id}</span>
       </div>
-      <DraftFields fields={fields} draft={draft} set={set} disabled={save.saving || remove.saving} />
+      <DraftFields
+        fields={fields}
+        draft={draft}
+        set={set}
+        disabled={save.saving || remove.saving}
+        invalidKeys={invalidKeys}
+        errorId={errorId}
+      />
       {remove.error ? <Alert>{remove.error}</Alert> : null}
       <SaveBar
         dirty={dirty}
         save={save}
         onSave={handleSave}
         onReset={reset}
+        errorId={errorId}
         extra={
           <DeleteControl
             label={`Delete ${singular}`}
@@ -528,21 +640,19 @@ function NewItem<D extends Record<string, string>>({
 }: NewItemProps<D>) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<D>(blank);
+  const [added, setAdded] = useState(0);
   const save = useSaveState();
+  const errorId = useId();
 
   const set = useCallback<EditState<D>['set']>((key, value) => {
     setDraft((current) => ({ ...current, [key]: value }) as D);
   }, []);
 
   const touched = fields.some((field) => str(draft[field.key]) !== str(blank[field.key]));
+  // A half-typed new entry is unsaved work too -- the shell must warn about it.
+  useDirtyRegistration(open && touched);
 
-  if (!open) {
-    return (
-      <button type="button" className="apnl-btn" onClick={() => setOpen(true)}>
-        + Add {singular}
-      </button>
-    );
-  }
+  const invalidKeys = save.error ? missingRequiredKeys(fields, draft) : [];
 
   const handleCreate = () => {
     const problem = missingRequired(fields, draft);
@@ -555,19 +665,41 @@ function NewItem<D extends Record<string, string>>({
         method: 'POST',
         body: toBody(fields, draft),
       });
+      // Stay open, cleared and ready: adding several in a row is the normal
+      // case, and closing after each one meant re-finding this form every time.
       setDraft(blank);
-      setOpen(false);
+      setAdded((count) => count + 1);
       await onSaved();
     });
   };
+
+  if (!open) {
+    return (
+      <button type="button" className="apnl-btn" onClick={() => setOpen(true)}>
+        + Add {singular}
+      </button>
+    );
+  }
 
   return (
     <article className="apnl-item apnl-item--new">
       <div className="apnl-item-head">
         <h3 className="apnl-item-name">New {singular}</h3>
+        {added > 0 ? (
+          <span className="apnl-item-id">
+            {added} added this session
+          </span>
+        ) : null}
       </div>
-      <DraftFields fields={fields} draft={draft} set={set} disabled={save.saving} />
-      {save.error ? <Alert>{save.error}</Alert> : null}
+      <DraftFields
+        fields={fields}
+        draft={draft}
+        set={set}
+        disabled={save.saving}
+        invalidKeys={invalidKeys}
+        errorId={errorId}
+      />
+      {save.error ? <Alert id={errorId}>{save.error}</Alert> : null}
       <div className="apnl-savebar">
         <button
           type="button"
@@ -587,10 +719,13 @@ function NewItem<D extends Record<string, string>>({
             setOpen(false);
           }}
         >
-          Cancel
+          {touched ? 'Discard' : 'Close'}
         </button>
         {touched && !save.saving ? (
           <span className="apnl-status apnl-status--dirty">Unsaved changes</span>
+        ) : null}
+        {!touched && save.status === 'saved' ? (
+          <span className="apnl-status apnl-status--saved">Added -- ready for the next one</span>
         ) : null}
       </div>
     </article>
@@ -636,9 +771,17 @@ export function ListPanel<T extends { id: number }, D extends Record<string, str
     <div className="apnl">
       <PanelHead title={title} description={description} />
       <div className="apnl-list">
+        <NewItem
+          capsuleId={capsuleId}
+          fields={fields}
+          blank={blank}
+          singular={singular}
+          collection={collection}
+          onSaved={onSaved}
+        />
         {items.length === 0 ? (
           <p className="apnl-empty">
-            No {singular} entries for this capsule yet. Add the first one below.
+            No {singular} entries for this capsule yet. Add the first one above.
           </p>
         ) : (
           items.map((item, index) => (
@@ -655,14 +798,6 @@ export function ListPanel<T extends { id: number }, D extends Record<string, str
             />
           ))
         )}
-        <NewItem
-          capsuleId={capsuleId}
-          fields={fields}
-          blank={blank}
-          singular={singular}
-          collection={collection}
-          onSaved={onSaved}
-        />
       </div>
     </div>
   );
