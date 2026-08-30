@@ -7,7 +7,16 @@ class FilmBase(BaseModel):
     title: str
     director: str
     duration: Optional[str] = None
-    video_url: str
+    # Legacy / `file` provider URL. May also be a raw Vimeo link or a pasted
+    # <iframe> embed snippet on create — the API parses it into the fields below.
+    video_url: Optional[str] = None
+    # Provider-tagged video source.
+    video_provider: Optional[str] = None  # "vimeo" | "mux" | "youtube" | "file"
+    video_id: Optional[str] = None
+    video_hash: Optional[str] = None
+    video_aspect_ratio: Optional[str] = None  # e.g. "16 / 9"
+    video_duration_seconds: Optional[int] = None
+    captions_url: Optional[str] = None
     thumbnail_url: Optional[str] = None
     description: Optional[str] = None
     theme: Optional[str] = None

@@ -1,15 +1,29 @@
+export type VideoProvider = 'vimeo' | 'mux' | 'youtube' | 'file';
+
 export interface Film {
   id: number;
   capsule_id: number;
   title: string;
   director: string;
   duration?: string;
-  video_url: string;
   thumbnail_url?: string;
   description?: string;
   theme?: string;
   bts_text?: string;
   screenplay_text?: string;
+
+  /** Raw source field. May hold a bare URL or a full `<iframe>` embed snippet. */
+  video_url?: string;
+  /** Explicit provider. When null/undefined the provider is inferred from `video_url`. */
+  video_provider?: VideoProvider;
+  /** Provider-native id, e.g. the Vimeo numeric id `1052574030`. */
+  video_id?: string;
+  /** Vimeo private-link hash, e.g. `53c90178cb`. */
+  video_hash?: string;
+  /** CSS aspect-ratio string, e.g. `16 / 9`. Defaults to `16 / 9`. */
+  video_aspect_ratio?: string;
+  video_duration_seconds?: number;
+  captions_url?: string;
 }
 
 export interface Reflection {

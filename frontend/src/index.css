@@ -2008,6 +2008,304 @@ body {
   background-color: #000;
 }
 
+/* ------------------------------------------------------------------ */
+/* VideoPlayer -- facade-loaded, provider-agnostic (VideoPlayer.tsx).   */
+/* The frame itself stays black in both themes (it is a cinema screen); */
+/* every non-film surface -- empty, blocked, unsupported -- falls back  */
+/* to the themed tokens so it reads as a deliberate panel, not a hole.  */
+/* ------------------------------------------------------------------ */
+
+.video-player {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: #000;
+  isolation: isolate;
+}
+
+.video-player .video-embed-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+}
+
+.video-player .screen-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background-color: #000;
+}
+
+/* -- Idle facade: poster + play control ---------------------------- */
+
+.video-facade {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+
+/* Focus ring rides on a pseudo-element so the poster cannot cover it.  */
+/* Double ring (white over dark) so it survives any poster imagery.     */
+.video-facade::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  transition: box-shadow 0.15s ease-in-out;
+}
+
+.video-facade:focus-visible {
+  outline: none;
+}
+
+.video-facade:focus-visible::after {
+  box-shadow:
+    inset 0 0 0 3px #ffffff,
+    inset 0 0 0 6px rgba(0, 0, 0, 0.65);
+}
+
+.video-facade-media {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+}
+
+.video-facade-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.12) 0%, rgba(0, 0, 0, 0.42) 100%);
+  transition: background 0.2s ease-in-out;
+}
+
+.video-facade:hover .video-facade-media::after,
+.video-facade:focus-visible .video-facade-media::after {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.3) 100%);
+}
+
+.video-facade-poster {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+/* Solid fallback when there is no usable poster -- never a broken icon. */
+.video-facade-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: clamp(16px, 1.8vw, 34px);
+  background: linear-gradient(135deg, #1f1f1f 0%, #000000 100%);
+}
+
+.video-facade-fallback-title {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: clamp(18px, 2.2vw, 32px);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: #f5f5f5;
+  text-align: left;
+}
+
+.video-facade .play-trigger-btn {
+  position: relative;
+  z-index: 1;
+  width: clamp(52px, 5vw, 72px);
+  height: clamp(52px, 5vw, 72px);
+  background: rgba(255, 255, 255, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  pointer-events: none;
+  transition:
+    transform 0.2s ease-in-out,
+    background-color 0.2s ease-in-out;
+}
+
+.video-facade:hover .play-trigger-btn {
+  background: rgba(255, 255, 255, 0.45);
+  transform: scale(1.06);
+}
+
+.video-facade:active .play-trigger-btn {
+  transform: scale(0.98);
+}
+
+.video-facade .play-trigger-btn svg {
+  width: 40%;
+  height: 40%;
+  margin-left: 6%;
+}
+
+.video-runtime-badge {
+  position: absolute;
+  z-index: 1;
+  right: clamp(10px, 1vw, 18px);
+  bottom: clamp(10px, 1vw, 18px);
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.62);
+  color: #f5f5f5;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
+/* -- Non-film states: empty / blocked / unsupported / loading ------- */
+
+.video-player.video-player--empty {
+  background-color: var(--bg-card);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.video-status {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: clamp(16px, 1.8vw, 34px);
+  font-family: var(--font-sans);
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.video-status-title {
+  margin: 0;
+  font-size: clamp(15px, 1.4vw, 20px);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: var(--text-main);
+}
+
+.video-status-text {
+  margin: 0;
+  max-width: 42ch;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.video-status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 16px;
+  margin-top: 6px;
+}
+
+.video-status-btn {
+  background-color: var(--bg-card-hover);
+  color: var(--text-main);
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.video-status-btn:hover {
+  background-color: var(--border);
+}
+
+.video-status-link {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.video-status-link:hover {
+  color: var(--primary);
+}
+
+.video-status--loading {
+  background-color: #000;
+}
+
+.video-spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-top-color: rgba(255, 255, 255, 0.85);
+  animation: video-spinner-spin 0.8s linear infinite;
+}
+
+@keyframes video-spinner-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.no-film-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 4px;
+  background-color: var(--bg-card);
+  box-shadow: inset 0 0 0 1px var(--border);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .video-facade::after,
+  .video-facade-media::after,
+  .video-facade .play-trigger-btn,
+  .video-status-btn {
+    transition: none;
+  }
+
+  .video-facade:hover .play-trigger-btn,
+  .video-facade:active .play-trigger-btn {
+    transform: none;
+  }
+
+  .video-spinner {
+    animation: none;
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+}
+
 .capsule-v2-film-info {
   font-family: var(--font-sans);
   font-size: 12px;

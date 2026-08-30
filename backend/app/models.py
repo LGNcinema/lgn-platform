@@ -30,7 +30,17 @@ class Film(Base):
     title = Column(String, nullable=False)
     director = Column(String, nullable=False)
     duration = Column(String, nullable=True)
-    video_url = Column(String, nullable=False)
+    # Legacy / `file` provider playback URL. Nullable: a Vimeo-hosted film is
+    # fully described by video_provider + video_id + video_hash.
+    video_url = Column(String, nullable=True)
+    # Provider-tagged video source. video_provider is one of
+    # "vimeo" | "mux" | "youtube" | "file"; NULL means "infer from video_url".
+    video_provider = Column(String, nullable=True)
+    video_id = Column(String, nullable=True)
+    video_hash = Column(String, nullable=True)  # Vimeo private/unlisted `h=` param
+    video_aspect_ratio = Column(String, nullable=True)  # e.g. "16 / 9"
+    video_duration_seconds = Column(Integer, nullable=True)
+    captions_url = Column(String, nullable=True)  # future WebVTT track
     thumbnail_url = Column(String, nullable=True)
     description = Column(Text, nullable=True)
     theme = Column(String, nullable=True)

@@ -20,24 +20,44 @@ INSERT INTO capsules (
     pre_watch_supporting_text = EXCLUDED.pre_watch_supporting_text;
 
 -- Seed Film
+-- Video is stored as a provider-tagged source. The Vimeo embed the studio sent
+-- was:
+--   <iframe src="https://player.vimeo.com/video/1052574030?h=53c90178cb&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" ...></iframe>
+-- which normalizes to provider 'vimeo', id 1052574030, hash 53c90178cb.
+-- video_url is left NULL: the provider fields fully describe this film.
 INSERT INTO films (
-    capsule_id, title, director, duration, video_url, thumbnail_url, description, theme, bts_text, screenplay_text
+    capsule_id, title, director, duration,
+    video_url, video_provider, video_id, video_hash,
+    video_aspect_ratio, video_duration_seconds, captions_url,
+    thumbnail_url, description, theme, bts_text, screenplay_text
 ) VALUES (
-    1, 
-    'Lightpoles', 
-    'TBD', 
-    '15 mins', 
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', 
+    1,
+    'For the Love of God!',
+    'TBD',
+    '15 mins',
+    NULL,
+    'vimeo',
+    '1052574030',
+    '53c90178cb',
+    '16 / 9',
+    NULL,
+    NULL,
     'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1200&q=80',
     'A short film exploring purpose and light in the darkness.',
     'Purpose',
     'True story of Jon, the filmmaking process, and Cast/Crew',
     'Script text goes here.'
-) ON CONFLICT (capsule_id) DO UPDATE SET 
+) ON CONFLICT (capsule_id) DO UPDATE SET
     title = EXCLUDED.title,
     director = EXCLUDED.director,
     duration = EXCLUDED.duration,
     video_url = EXCLUDED.video_url,
+    video_provider = EXCLUDED.video_provider,
+    video_id = EXCLUDED.video_id,
+    video_hash = EXCLUDED.video_hash,
+    video_aspect_ratio = EXCLUDED.video_aspect_ratio,
+    video_duration_seconds = EXCLUDED.video_duration_seconds,
+    captions_url = EXCLUDED.captions_url,
     thumbnail_url = EXCLUDED.thumbnail_url,
     description = EXCLUDED.description,
     theme = EXCLUDED.theme,

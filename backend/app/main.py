@@ -8,6 +8,7 @@ from typing import List
 from app.database import engine, Base, SessionLocal, get_db
 from app.config import settings
 from app import models, schemas
+from app.video import parse_video_source
 
 # Initialize database tables on startup
 # and seed a sample monthly capsule if none exists
@@ -18,25 +19,31 @@ async def lifespan(app: FastAPI):
     try:
         if db.query(models.Capsule).count() == 0:
             sample_capsule = models.Capsule(
-                month="2026-08",
-                title="SISTERS WITH TRANSISTORS",
-                description="A patchwork portrait of several female electronic music pioneers.",
+                month="2026-07",
+                title="Lightpoles",
+                description="A community platform that offers one short film each month as common ground for reflection, discussion, and practice.",
                 is_active=True,
-                pre_watch_prompt="What was your first encounter with synthesized sound?",
-                pre_watch_supporting_text="Before pressing play, take a moment to listen to the room around you."
+                pre_watch_prompt="Who comes to mind when you hear the phrase “a light in the darkness”? What did they do that made them a light?",
+                pre_watch_supporting_text="You don’t need to write anything down. Simply carry the question with you as you watch."
             )
             db.add(sample_capsule)
             db.commit()
             db.refresh(sample_capsule)
 
+            # Mirrors supabase/seed.sql so local SQLite dev exercises the same
+            # Vimeo embed path as a real capsule, rather than a progressive mp4.
             sample_film = models.Film(
                 capsule_id=sample_capsule.id,
-                title="SISTERS WITH TRANSISTORS",
-                director="Lisa Rovner",
-                duration="86 min",
-                video_url="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
-                thumbnail_url="/images/sisters-thumbnail.jpg",
-                description="Narrated by Laurie Anderson. 2020. USA. 86 min."
+                title="For the Love of God!",
+                director="TBD",
+                duration="15 mins",
+                video_provider="vimeo",
+                video_id="1052574030",
+                video_hash="53c90178cb",
+                video_aspect_ratio="16 / 9",
+                thumbnail_url="https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1200&q=80",
+                description="A short film exploring purpose and light in the darkness.",
+                theme="Purpose"
             )
             db.add(sample_film)
             db.commit()
@@ -248,8 +255,23 @@ def create_film_for_capsule(capsule_id: int, film: schemas.FilmCreate, db: Sessi
     
     if capsule.film:
         raise HTTPException(status_code=400, detail="Capsule already has a film associated with it")
-        
-    db_film = models.Film(**film.model_dump(), capsule_id=capsule_id)
+
+    payload = film.model_dump()
+
+    # An admin may paste whatever the studio sent them (a raw <iframe> embed
+    # snippet, a player.vimeo.com URL, a vimeo.com/ID/HASH link, or an mp4).
+    # If no provider was supplied explicitly, derive the source fields from it.
+    # Explicitly-supplied values always win.
+    if payload.get("video_url") and not payload.get("video_provider"):
+        source = parse_video_source(payload["video_url"])
+        if source.provider:
+            payload["video_provider"] = source.provider
+        if source.video_id and not payload.get("video_id"):
+            payload["video_id"] = source.video_id
+        if source.video_hash and not payload.get("video_hash"):
+            payload["video_hash"] = source.video_hash
+
+    db_film = models.Film(**payload, capsule_id=capsule_id)
     db.add(db_film)
     db.commit()
     db.refresh(db_film)
