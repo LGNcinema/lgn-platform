@@ -26,6 +26,26 @@ class FilmBase(BaseModel):
 class FilmCreate(FilmBase):
     pass
 
+# Admin PATCH body. Every field optional; the API applies it with
+# `model_dump(exclude_unset=True)`, so an omitted field is left untouched while
+# an explicit `null` clears a nullable column.
+class FilmUpdate(BaseModel):
+    title: Optional[str] = None
+    director: Optional[str] = None
+    duration: Optional[str] = None
+    video_url: Optional[str] = None
+    video_provider: Optional[str] = None
+    video_id: Optional[str] = None
+    video_hash: Optional[str] = None
+    video_aspect_ratio: Optional[str] = None
+    video_duration_seconds: Optional[int] = None
+    captions_url: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+    description: Optional[str] = None
+    theme: Optional[str] = None
+    bts_text: Optional[str] = None
+    screenplay_text: Optional[str] = None
+
 class Film(FilmBase):
     id: int
     capsule_id: int
@@ -41,6 +61,12 @@ class ReflectionBase(BaseModel):
 
 class ReflectionCreate(ReflectionBase):
     pass
+
+class ReflectionUpdate(BaseModel):
+    title: Optional[str] = None
+    introduction: Optional[str] = None
+    content: Optional[str] = None
+    author: Optional[str] = None
 
 class Reflection(ReflectionBase):
     id: int
@@ -59,6 +85,12 @@ class DiscussionCircleBase(BaseModel):
 class DiscussionCircleCreate(DiscussionCircleBase):
     pass
 
+class DiscussionCircleUpdate(BaseModel):
+    title: Optional[str] = None
+    opening_round: Optional[str] = None
+    discuss_prompts: Optional[str] = None
+    closing_question: Optional[str] = None
+
 class DiscussionCircle(DiscussionCircleBase):
     id: int
     capsule_id: int
@@ -73,6 +105,11 @@ class PracticeBase(BaseModel):
 
 class PracticeCreate(PracticeBase):
     pass
+
+class PracticeUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    steps: Optional[str] = None
 
 class Practice(PracticeBase):
     id: int
@@ -91,6 +128,14 @@ class CapsuleBase(BaseModel):
 
 class CapsuleCreate(CapsuleBase):
     pass
+
+class CapsuleUpdate(BaseModel):
+    month: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+    pre_watch_prompt: Optional[str] = None
+    pre_watch_supporting_text: Optional[str] = None
 
 class Capsule(CapsuleBase):
     id: int
@@ -175,4 +220,15 @@ class StoryboardSubmission(StoryboardSubmissionBase):
     created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+# Admin portal auth schemas
+class AdminLoginRequest(BaseModel):
+    password: str
+
+class AdminLoginResponse(BaseModel):
+    token: str
+    expires_at: datetime
+
+class AdminSessionResponse(BaseModel):
+    valid: bool
 

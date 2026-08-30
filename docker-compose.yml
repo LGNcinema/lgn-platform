@@ -24,6 +24,12 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/lgn_platform
       - ENV=development
+      # Admin portal password. Compose reads a .env in the project root, so set
+      # ADMIN_PASSWORD there to override the local-dev default below. Never use
+      # the default anywhere but localhost. If this is unset the admin API
+      # refuses every request with 503 rather than running unauthenticated.
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-lgn-dev-admin}
+      - ADMIN_SECRET=${ADMIN_SECRET:-}
     volumes:
       - ./backend/app:/app/app
     depends_on:

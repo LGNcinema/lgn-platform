@@ -15,7 +15,11 @@ Providers: "vimeo", "mux", "youtube", "file".
 from __future__ import annotations
 
 import html
+import json
 import re
+import urllib.error
+import urllib.parse
+import urllib.request
 from dataclasses import dataclass
 from typing import Optional, Tuple
 from urllib.parse import parse_qs, urlparse
@@ -154,3 +158,66 @@ def _first(values: Optional[list]) -> Optional[str]:
         return None
     value = values[0].strip()
     return value or None
+
+
+# ---------------------------------------------------------------------------
+# Vimeo oEmbed lookup
+#
+# The real poster for a Vimeo video lives at a URL containing an opaque content
+# hash (i.vimeocdn.com/video/<id>-<contenthash>-d_1280) that cannot be derived
+# from the video id, so it has to be fetched. We do that once at write time and
+# store the result in films.thumbnail_url rather than looking it up on every
+# page load -- a per-render lookup would spend exactly the latency the player's
+# facade exists to avoid.
+#
+# The oEmbed URL must carry the private hash for unlisted videos or Vimeo 404s.
+# Third-party shortcuts like vumbnail.com cannot do this: they see only the id,
+# so for an unlisted film they quietly serve a ~3KB placeholder instead.
+# ---------------------------------------------------------------------------
+
+VIMEO_OEMBED_ENDPOINT = "https://vimeo.com/api/oembed.json"
+# Poster width requested from oEmbed. 1280 yields a ~90KB JPEG, a reasonable
+# trade for a full-bleed 16/9 panel.
+VIMEO_POSTER_WIDTH = 1280
+
+
+def fetch_vimeo_metadata(
+    video_id: str,
+    video_hash: Optional[str] = None,
+    timeout: float = 5.0,
+) -> dict:
+    """Best-effort fetch of a Vimeo video's poster, runtime, and title.
+
+    Returns any of ``thumbnail_url``, ``duration_seconds``, ``title`` and
+    ``description`` that Vimeo supplied, or ``{}`` on any failure -- callers
+    treat this as optional enrichment, never a hard dependency, so a Vimeo
+    outage cannot block creating a film.
+    """
+    if not video_id:
+        return {}
+
+    video_url = f"https://vimeo.com/{video_id}"
+    if video_hash:
+        video_url = f"{video_url}/{video_hash}"
+
+    query = urllib.parse.urlencode({"url": video_url, "width": VIMEO_POSTER_WIDTH})
+    request = urllib.request.Request(
+        f"{VIMEO_OEMBED_ENDPOINT}?{query}",
+        headers={"User-Agent": "lgn-platform/1.0"},
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (urllib.error.URLError, TimeoutError, ValueError, OSError):
+        return {}
+
+    result: dict = {}
+    if payload.get("thumbnail_url"):
+        result["thumbnail_url"] = payload["thumbnail_url"]
+    if isinstance(payload.get("duration"), int):
+        result["duration_seconds"] = payload["duration"]
+    for key in ("title", "description"):
+        if payload.get(key):
+            result[key] = payload[key]
+    return result

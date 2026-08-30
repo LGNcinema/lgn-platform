@@ -34,15 +34,18 @@ INSERT INTO films (
     1,
     'For the Love of God!',
     'TBD',
-    '15 mins',
+    '10 min',
     NULL,
     'vimeo',
     '1052574030',
     '53c90178cb',
     '16 / 9',
-    NULL,
-    NULL,
-    'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1200&q=80',
+    570,   -- video_duration_seconds, from Vimeo oEmbed
+    NULL,  -- captions_url
+    -- Real poster frame from the film, via Vimeo oEmbed at width=1280. The
+    -- content hash in this URL is not derivable from the video id; refresh it
+    -- with:  curl 'https://vimeo.com/api/oembed.json?url=https://vimeo.com/1052574030/53c90178cb&width=1280'
+    'https://i.vimeocdn.com/video/2092323335-5ccbfc251feefb8e6eda1aa87165cd5a842456682cba26398f8925dd3f5ae655-d_1280?region=us',
     'A short film exploring purpose and light in the darkness.',
     'Purpose',
     'True story of Jon, the filmmaking process, and Cast/Crew',

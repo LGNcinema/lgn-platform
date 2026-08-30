@@ -117,7 +117,12 @@ export function posterCandidates(film: Film, source: VideoSource | null): string
   const candidates: string[] = [];
   const thumb = film.thumbnail_url?.trim();
   if (thumb) candidates.push(thumb);
-  if (source?.provider === 'vimeo') candidates.push(`https://vumbnail.com/${source.id}.jpg`);
+  // No client-side fallback for Vimeo on purpose. A Vimeo poster URL contains an
+  // opaque content hash that cannot be derived from the video id, so it has to be
+  // fetched from oEmbed -- which the backend does once at write time and stores in
+  // thumbnail_url. (Third-party guessers like vumbnail.com only see the id, so for
+  // an unlisted film they return a ~3KB placeholder, which is worse than our own
+  // fallback card.) If thumbnail_url is empty here, the styled card is correct.
   if (source?.provider === 'youtube') {
     candidates.push(`https://i.ytimg.com/vi/${source.id}/maxresdefault.jpg`);
     candidates.push(`https://i.ytimg.com/vi/${source.id}/hqdefault.jpg`);
