@@ -1,13 +1,16 @@
+import json
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
 from typing import List
 
+import anthropic
+
 from app.database import engine, Base, SessionLocal, get_db
 from app.config import settings
-from app import models, schemas
+from app import geme, models, schemas
 
 # Initialize database tables on startup
 # and seed a sample monthly capsule if none exists
@@ -351,3 +354,110 @@ def submit_storyboard(submission: schemas.StoryboardSubmissionCreate, db: Sessio
     db.commit()
     db.refresh(db_submission)
     return db_submission
+
+# Geme -- Practice > Keep Exploring > Take It Inward
+#
+# Geme's chat is stateless on the server: the frontend replays the transcript on
+# every turn and nothing a visitor types is written to the database.
+
+def _geme_system_prompt(capsule_id: int | None, db: Session) -> str:
+    """System prompt for a capsule, so Geme knows what was just watched."""
+    if capsule_id is None:
+        return geme.build_system_prompt()
+
+    capsule = db.query(models.Capsule).filter(models.Capsule.id == capsule_id).first()
+    if not capsule:
+        raise HTTPException(status_code=404, detail="Capsule not found")
+
+    practice = None
+    try:
+        practices = capsule.practices or []
+        practice = practices[0] if practices else None
+    except Exception as e:
+        print(f"Error fetching practices relation for Geme: {e}")
+
+    return geme.build_system_prompt(capsule=capsule, practice=practice)
+
+
+def _geme_client():
+    client = geme.get_client()
+    if client is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Geme is not configured on this server (no ANTHROPIC_API_KEY set)."
+        )
+    return client
+
+
+def _geme_error_detail(exc: Exception) -> str:
+    """Map an SDK failure onto something safe to show a visitor."""
+    if isinstance(exc, anthropic.RateLimitError):
+        return "Geme is talking with a lot of people right now. Try again in a moment."
+    if isinstance(exc, (anthropic.AuthenticationError, anthropic.PermissionDeniedError)):
+        return "Geme isn't set up correctly on this server."
+    if isinstance(exc, anthropic.APIConnectionError):
+        return "Geme couldn't be reached. Check your connection and try again."
+    return "Geme couldn't finish that thought. Try again."
+
+
+@app.get("/api/geme/status", response_model=schemas.GemeStatus)
+def geme_status():
+    """Whether the Geme chat is available, so the frontend can hide it if not."""
+    return schemas.GemeStatus(enabled=geme.is_enabled())
+
+
+@app.post("/api/geme/chat", response_model=schemas.GemeChatResponse)
+async def geme_chat(payload: schemas.GemeChatRequest, db: Session = Depends(get_db)):
+    """One Geme turn, returned whole. The streaming route is what the UI uses."""
+    client = _geme_client()
+    system = _geme_system_prompt(payload.capsule_id, db)
+    messages = geme.build_messages(payload.messages)
+
+    try:
+        response = await client.messages.create(**geme.request_kwargs(system, messages))
+    except anthropic.APIError as e:
+        print(f"Geme chat error: {e}")
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=_geme_error_detail(e))
+
+    text = "".join(block.text for block in response.content if block.type == "text")
+    reply, next_step = geme.split_next_step(text)
+    return schemas.GemeChatResponse(reply=reply, next_step=next_step)
+
+
+@app.post("/api/geme/chat/stream")
+async def geme_chat_stream(payload: schemas.GemeChatRequest, db: Session = Depends(get_db)):
+    """Server-sent events: `delta` as Geme types, then one `done` (or `error`)."""
+    client = _geme_client()
+    system = _geme_system_prompt(payload.capsule_id, db)
+    messages = geme.build_messages(payload.messages)
+
+    async def events():
+        step_filter = geme.NextStepFilter()
+        try:
+            async with client.messages.stream(**geme.request_kwargs(system, messages)) as stream:
+                async for chunk in stream.text_stream:
+                    visible = step_filter.feed(chunk)
+                    if visible:
+                        yield f"data: {json.dumps({'type': 'delta', 'text': visible})}\n\n"
+
+            tail = step_filter.flush()
+            if tail:
+                yield f"data: {json.dumps({'type': 'delta', 'text': tail})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'next_step': step_filter.next_step})}\n\n"
+        except anthropic.APIError as e:
+            print(f"Geme stream error: {e}")
+            yield f"data: {json.dumps({'type': 'error', 'message': _geme_error_detail(e)})}\n\n"
+        except Exception as e:
+            print(f"Geme stream error: {e}")
+            yield f"data: {json.dumps({'type': 'error', 'message': _geme_error_detail(e)})}\n\n"
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            # Tell nginx-style proxies not to buffer, or the stream arrives at once.
+            "X-Accel-Buffering": "no",
+        },
+    )

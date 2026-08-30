@@ -1,6 +1,6 @@
 from datetime import datetime
-from typing import List, Optional
-from pydantic import BaseModel, ConfigDict
+from typing import List, Literal, Optional
+from pydantic import BaseModel, ConfigDict, Field
 
 # Film schemas
 class FilmBase(BaseModel):
@@ -97,6 +97,25 @@ class CapsuleDetail(Capsule):
     practices: List[Practice] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+# Geme chat schemas (Practice -> Keep Exploring -> Take It Inward)
+class GemeTurn(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(max_length=4000)
+
+class GemeChatRequest(BaseModel):
+    capsule_id: Optional[int] = None
+    # The full visible transcript. The conversation is not stored server-side,
+    # so the frontend replays it on every turn; an empty list opens the chat.
+    messages: List[GemeTurn] = Field(default_factory=list, max_length=60)
+
+class GemeChatResponse(BaseModel):
+    reply: str
+    # Set only on the closing turn, once Geme has named a step with the visitor.
+    next_step: Optional[str] = None
+
+class GemeStatus(BaseModel):
+    enabled: bool
 
 # Contact Submission schemas
 class ContactSubmissionBase(BaseModel):

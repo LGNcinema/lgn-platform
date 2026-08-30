@@ -58,3 +58,47 @@ docker compose logs -f frontend
 If you prefer to run the applications locally on your machine without Docker, see the individual READMEs:
 - [Backend Instructions](./backend/README.md)
 - [Frontend Instructions](./frontend/README.md)
+
+---
+
+## Geme (Practice → Keep Exploring → Take It Inward)
+
+The Practice pathway ends in a short chat with Geme, our mascot, who asks a few
+questions and helps the visitor name one small next step. It calls the Anthropic
+Messages API from the backend — the browser never holds the key.
+
+### Setup
+
+1. Create an API key at [console.anthropic.com](https://console.anthropic.com).
+2. Put it in `backend/.env` (gitignored):
+   ```
+   ANTHROPIC_API_KEY=sk-ant-...
+   ```
+   One location covers both ways of running: `uv run uvicorn` reads it directly,
+   and the `backend` service loads the same file via `env_file`. Note that
+   `.env` is per-checkout — a git worktree needs its own copy.
+
+Without a key the platform runs normally: `/api/geme/status` reports
+`{"enabled": false}` and the Practice page shows the Geme card without an
+active button, so nothing 500s for anyone cloning the repo.
+
+### Settings (`backend/app/config.py`, overridable by env var)
+
+| Variable | Default | Notes |
+| :--- | :--- | :--- |
+| `ANTHROPIC_API_KEY` | *(empty)* | Empty disables Geme. |
+| `GEME_MODEL` | `claude-opus-5` | |
+| `GEME_MAX_TOKENS` | `1024` | Geme's replies are meant to be three sentences. |
+
+### Endpoints
+
+| Endpoint | Purpose |
+| :--- | :--- |
+| `GET /api/geme/status` | Whether Geme is configured; the frontend checks this before offering the chat. |
+| `POST /api/geme/chat/stream` | Server-sent events (`delta` → `done`/`error`). What the UI uses. |
+| `POST /api/geme/chat` | Same turn, returned whole. Useful for testing with `curl`. |
+
+Conversations are **not** stored. The frontend holds the transcript in component
+state and replays it on each turn; only the closing step is saved, and only to
+the visitor's own `localStorage`. Geme's persona, guardrails, and the capsule
+context it is given all live in `backend/app/geme.py`.

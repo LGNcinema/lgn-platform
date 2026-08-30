@@ -5,6 +5,7 @@ import { CapsuleReflect } from './components/CapsuleReflect';
 import { CapsulePractice } from './components/CapsulePractice';
 import { CapsuleDiscuss } from './components/CapsuleDiscuss';
 import type { CapsuleDetail, CapsuleSummary } from './types';
+import { API_URL } from './api';
 
 interface TimelineQuote {
   period: string;
@@ -12,8 +13,6 @@ interface TimelineQuote {
   tag: string;
   quote: string;
 }
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // A chronological chorus data representing Figma's "A witness through time"
 const TIMELINE_QUOTES: TimelineQuote[] = [

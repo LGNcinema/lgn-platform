@@ -53,6 +53,13 @@ export interface CapsuleDetail {
   practices: Practice[];
 }
 
+// One turn of a Geme conversation. The transcript lives only in component state --
+// it is replayed to the backend on each turn and never stored on either side.
+export interface GemeTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export interface CapsuleSummary {
   id: number;
   month: string;
