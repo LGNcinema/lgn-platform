@@ -1,22 +1,12 @@
 import React from 'react';
-import type { CapsuleDetail, Film } from '../types';
+import type { CapsuleDetail } from '../types';
+import { buildFilmInfo } from '../filmInfo';
 import { VideoPlayer } from './VideoPlayer';
 
 interface Props {
   capsule: CapsuleDetail;
   onNavigate: (view: 'reflect' | 'practice' | 'discuss') => void;
 }
-
-/** Compose the credit line from whatever the film record actually has. */
-const buildFilmInfo = (film: Film): string => {
-  const title = film.title?.trim();
-  const director = film.director?.trim();
-  const lead = [title, director ? `a film by ${director}` : null].filter(Boolean).join(' ');
-
-  return [lead, film.duration?.trim(), film.description?.trim()]
-    .filter((part): part is string => Boolean(part))
-    .join('. ');
-};
 
 export const CapsuleView: React.FC<Props> = ({ capsule, onNavigate }) => {
   const film = capsule.film;
