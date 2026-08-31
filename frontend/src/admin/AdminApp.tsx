@@ -13,10 +13,19 @@ import {
 } from './adminClient';
 import { AdminLogin } from './AdminLogin';
 import { CapsulePicker } from './CapsulePicker';
-import { DetailsPanel, DiscussPanel, FilmPanel, PracticePanel, ReflectPanel } from './panels';
+import {
+  DetailsPanel,
+  DiscussPanel,
+  FilmPanel,
+  PracticePanel,
+  PreviewPanel,
+  ReflectPanel,
+} from './panels';
+import { publicationState } from './publishing';
+import { StatusPill } from './StatusPill';
 import './admin.css';
 
-type TabId = 'film' | 'reflect' | 'discuss' | 'practice' | 'details';
+type TabId = 'film' | 'reflect' | 'discuss' | 'practice' | 'details' | 'preview';
 
 /**
  * `checking`     -- restoring a stored token
@@ -39,6 +48,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'discuss', label: 'Discuss' },
   { id: 'practice', label: 'Practice' },
   { id: 'details', label: 'Details' },
+  { id: 'preview', label: 'Preview' },
 ];
 
 const isTabId = (value: string | undefined): value is TabId =>
@@ -307,6 +317,8 @@ export function AdminApp() {
         return <PracticePanel key={capsule.id} {...props} />;
       case 'details':
         return <DetailsPanel key={capsule.id} {...props} />;
+      case 'preview':
+        return <PreviewPanel key={capsule.id} {...props} />;
       case 'film':
       default:
         return <FilmPanel key={capsule.id} {...props} />;
@@ -473,22 +485,19 @@ export function AdminApp() {
                   </h2>
                   {capsule && (
                     <>
-                      <span className={`admin-status-pill${capsule.is_active ? ' is-live' : ''}`}>
-                        <span className="admin-status-dot" aria-hidden="true" />
-                        {capsule.is_active ? 'Live' : 'Draft'}
-                      </span>
+                      <StatusPill state={publicationState(capsule)} />
                       <a
                         className="admin-btn-ghost admin-btn-sm"
                         href="/?view=capsule"
                         target="_blank"
                         rel="noreferrer"
                         title={
-                          capsule.is_active
-                            ? 'Open the public capsule page in a new tab'
-                            : 'The public site serves whichever capsule is live -- publish this one on the Details tab to see it there'
+                          publicationState(capsule) === 'published'
+                            ? 'Open the public site in a new tab. It opens on the newest published capsule; every published capsule is reachable from the month tabs.'
+                            : 'This capsule is not published, so the public site will not show it. Use the Preview tab to see it, or publish it from Details.'
                         }
                       >
-                        {capsule.is_active ? 'View on site' : 'View live site'}
+                        {publicationState(capsule) === 'published' ? 'View on site' : 'View live site'}
                         <span aria-hidden="true"> ↗</span>
                       </a>
                     </>

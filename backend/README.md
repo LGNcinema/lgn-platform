@@ -97,10 +97,10 @@ Responses: `401` for a wrong password or a missing/expired/tampered token,
 | --- | --- | --- |
 | `POST` | `/api/admin/login` | `{"password"}` → `{"token", "expires_at"}`. No token required. |
 | `GET` | `/api/admin/session` | `{"valid": true}`. Used to restore a session after a page reload. |
-| `GET` | `/api/admin/capsules` | **All** capsules including inactive ones, `month` descending. |
+| `GET` | `/api/admin/capsules` | **All** capsules including drafts and scheduled ones, `month` descending. |
 | `GET` | `/api/admin/capsules/{id}` | Full `CapsuleDetail` (film + all collections). |
 | `POST` | `/api/admin/capsules` | → 201 |
-| `PATCH` | `/api/admin/capsules/{id}` | Partial update. Setting `is_active` demotes the others. |
+| `PATCH` | `/api/admin/capsules/{id}` | Partial update. Accepts `is_active` and `publish_at`; publishing one capsule does **not** unpublish the others. |
 | `DELETE` | `/api/admin/capsules/{id}` | → 204. Cascades to film, reflections, circles, practices. |
 | `PUT` | `/api/admin/capsules/{id}/film` | **Upsert** — a capsule has at most one film. |
 | `POST` | `/api/admin/capsules/{id}/{collection}` | → 201 |
@@ -134,6 +134,76 @@ Intentionally public: **all** `GET` endpoints, and the visitor submission
 routes `/api/submissions/contact`, `/api/submissions/film`,
 `/api/submissions/reflection`, `/api/submissions/storyboard` — the public
 website posts to these anonymously and must keep working.
+
+Public and open are not the same thing, though: the public capsule `GET`s serve
+**only published capsules**. See *Capsule publication* below.
+
+## Capsule publication
+
+**Many capsules are published at once.** They are the tab bar on the public
+site. The **current** capsule is simply the published capsule with the greatest
+`month` — `month` is `YYYY-MM`, so lexical ordering is chronological. There is
+no "exactly one live capsule" rule any more, and publishing a capsule never
+demotes its siblings.
+
+Two writable columns drive it, and one derived field reports the result:
+
+| field | kind | meaning |
+| --- | --- | --- |
+| `is_active` | writable `bool` | **Means "published".** The column keeps its historical name to avoid a rename migration. It is *not* exclusive — many rows may have it set. |
+| `publish_at` | writable, nullable `datetime` | Scheduled go-live, **naive UTC** (matching `created_at`). NULL = not scheduled. Send an explicit `null` to clear a schedule. |
+| `is_published` | read-only `bool` | Derived server-side. Present on every capsule response; rejected as input. |
+
+### The rule
+
+```
+published  ==  is_active = TRUE
+               OR (publish_at IS NOT NULL AND publish_at <= utcnow())
+```
+
+It is **derived at read time — there is no cron job and no background worker**,
+and nothing ever flips `is_active` on a schedule. The moment `publish_at` slips
+into the past, the next request already sees the capsule; `is_active` stays
+`false` in the database forever.
+
+The rule is written **once**, as the `Capsule.is_published` hybrid property in
+`app/models.py`, whose Python form (one loaded row) and SQL form (the row
+filter) are defined together so they cannot drift. `app/main.py` exposes it as
+`_published_filter()` (a SQLAlchemy condition) and `_is_published(capsule)`; no
+endpoint spells the comparison out again.
+
+`is_published` is returned to clients so the admin portal can label the three
+states without doing its own clock arithmetic — a browser with skewed time
+would otherwise disagree with what the API actually serves:
+
+| state | `is_active` | `publish_at` | `is_published` |
+| --- | --- | --- | --- |
+| draft | `false` | `null` | `false` |
+| scheduled | `false` | future | `false` |
+| published | `true` *or* `false` | anything *or* past | `true` |
+
+### What the public sees
+
+| endpoint | behaviour |
+| --- | --- |
+| `GET /api/capsules` | **Published only**, `month` descending. Feeds the public tab bar. |
+| `GET /api/capsules/{id}` | **404 if not published** — with the *same* detail string as a genuinely missing id. |
+| `GET /api/capsules/active` | The published capsule with the greatest `month`. `404` when nothing is published. |
+
+The matching 404 detail is deliberate: an unpublished capsule must be
+indistinguishable from a typo. A `CapsuleDetail` carries the film's `video_id`
+and `video_hash`, so merely confirming that id 7 exists but is embargoed would
+be enough to make an unreleased film findable by anyone guessing ids.
+
+`GET /api/capsules/active` no longer falls back to the most recently created
+capsule when nothing is published — that fallback served drafts to the public.
+It answers `404 No active monthly capsule found.` instead.
+
+### What the admin sees
+
+`GET /api/admin/capsules` and `GET /api/admin/capsules/{id}` are **never**
+filtered by publication state. Previewing a draft or a scheduled capsule before
+it goes live is the whole point of the editor.
 
 ## Film video sources
 

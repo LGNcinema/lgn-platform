@@ -7,7 +7,7 @@
  * plumbing (dirty tracking, save state, value coercion) lives in `formState.ts`
  * so this module can export components only.
  */
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { CapsuleDetail } from '../../types';
 import { adminFetch } from '../adminClient';
@@ -218,6 +218,58 @@ export function SelectField<V extends string>({
           </option>
         ))}
       </select>
+    </FieldShell>
+  );
+}
+
+export interface DateTimeFieldProps {
+  label: string;
+  /**
+   * A `datetime-local` value -- `YYYY-MM-DDTHH:mm` in the *viewer's own zone*,
+   * carrying no timezone of its own. Conversion to and from the API's naive-UTC
+   * `publish_at` belongs to the caller (see `admin/publishing.ts`); this control
+   * only ever handles local wall-clock text.
+   */
+  value: string;
+  onChange: (value: string) => void;
+  help?: ReactNode;
+  required?: boolean;
+  disabled?: boolean;
+  invalid?: boolean;
+  errorId?: string;
+  /** Lets a panel move focus here when the field is revealed by a choice. */
+  inputRef?: Ref<HTMLInputElement>;
+}
+
+/** Local date + time picker. Minute precision -- the browser gives no seconds. */
+export function DateTimeField({
+  label,
+  value,
+  onChange,
+  help,
+  required,
+  disabled,
+  invalid,
+  errorId,
+  inputRef,
+}: DateTimeFieldProps) {
+  const id = useId();
+  const helpId = help ? `${id}-help` : undefined;
+  return (
+    <FieldShell id={id} label={label} required={required} help={help} helpId={helpId}>
+      <input
+        id={id}
+        ref={inputRef}
+        className="apnl-input apnl-input--datetime"
+        type="datetime-local"
+        value={value}
+        disabled={disabled}
+        required={required}
+        aria-required={required || undefined}
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy(helpId, invalid ? errorId : undefined)}
+        onChange={(event) => onChange(event.target.value)}
+      />
     </FieldShell>
   );
 }

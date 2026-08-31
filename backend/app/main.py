@@ -90,6 +90,43 @@ async def global_exception_handler(request: Request, exc: Exception):
 # Shared helpers
 # ---------------------------------------------------------------------------
 
+def _published_filter():
+    """SQL condition selecting the capsules the public may see.
+
+        published == is_active OR (publish_at IS NOT NULL AND publish_at <= utcnow())
+
+    The rule itself lives in exactly one place -- `Capsule.is_published` in
+    app/models.py, a hybrid property whose Python and SQL forms are written
+    together. This helper and `_is_published` below are the two named doors
+    onto it, so no endpoint ever spells the comparison out again.
+
+    Evaluated at read time, which is why scheduled publishing needs no cron job
+    and no background worker: the moment `publish_at` slips into the past, the
+    next request already sees the capsule.
+    """
+    return models.Capsule.is_published
+
+
+def _is_published(capsule: models.Capsule) -> bool:
+    """The same rule as `_published_filter`, applied to one loaded capsule."""
+    return bool(capsule.is_published)
+
+
+def _capsule_not_found(capsule_id: int) -> HTTPException:
+    """404 for a capsule the caller may not see.
+
+    Deliberately identical to the 404 for an id that does not exist at all: a
+    public request for an unpublished capsule must not be able to tell a hidden
+    draft from a typo. A capsule detail carries the film's video_id and
+    video_hash, so confirming that id 7 exists but is embargoed would be enough
+    to make an unreleased film findable.
+    """
+    return HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"Capsule with id {capsule_id} not found.",
+    )
+
+
 def _capsule_detail(capsule: models.Capsule) -> schemas.CapsuleDetail:
     """Assemble a CapsuleDetail, tolerating a broken/absent relation.
 
@@ -128,6 +165,8 @@ def _capsule_detail(capsule: models.Capsule) -> schemas.CapsuleDetail:
         title=capsule.title,
         description=capsule.description,
         is_active=capsule.is_active,
+        publish_at=capsule.publish_at,
+        is_published=_is_published(capsule),
         pre_watch_prompt=capsule.pre_watch_prompt,
         pre_watch_supporting_text=capsule.pre_watch_supporting_text,
         created_at=capsule.created_at,
@@ -189,14 +228,28 @@ def health_check():
 @app.get("/api/capsules/active", response_model=schemas.CapsuleDetail)
 def get_active_capsule(db: Session = Depends(get_db)):
     """
-    Retrieve the currently active monthly capsule.
+    Retrieve the current monthly capsule: the PUBLISHED capsule with the
+    greatest `month`.
+
+    `month` is `YYYY-MM`, so lexical ordering is chronological. Many capsules
+    may be published at once (together they are the public tab bar); this is
+    simply the newest of them, so publishing an older month never steals the
+    current slot from a newer one.
+
     Includes the monthly film, reflections, gatherings, and practices.
+
+    404s when nothing is published. It deliberately does NOT fall back to the
+    most recently created capsule as it once did -- that fallback would serve a
+    draft or an embargoed capsule, film video ids and all, to anyone.
     """
     try:
-        capsule = db.query(models.Capsule).filter(models.Capsule.is_active == True).first()
-        if not capsule:
-            capsule = db.query(models.Capsule).order_by(models.Capsule.created_at.desc()).first()
-        
+        capsule = (
+            db.query(models.Capsule)
+            .filter(_published_filter())
+            .order_by(models.Capsule.month.desc())
+            .first()
+        )
+
         if not capsule:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -218,22 +271,35 @@ def get_active_capsule(db: Session = Depends(get_db)):
 @app.get("/api/capsules", response_model=List[schemas.Capsule])
 def list_capsules(db: Session = Depends(get_db)):
     """
-    List all historical capsules.
+    List every PUBLISHED capsule, newest month first.
+
+    This feeds the public site's capsule tab bar. Drafts and capsules whose
+    `publish_at` has not arrived yet are omitted entirely -- use
+    GET /api/admin/capsules to see those.
     """
-    return db.query(models.Capsule).order_by(models.Capsule.month.desc()).all()
+    return (
+        db.query(models.Capsule)
+        .filter(_published_filter())
+        .order_by(models.Capsule.month.desc())
+        .all()
+    )
 
 @app.get("/api/capsules/{capsule_id}", response_model=schemas.CapsuleDetail)
 def get_capsule_detail(capsule_id: int, db: Session = Depends(get_db)):
     """
-    Get a specific capsule with all its features.
+    Get a specific PUBLISHED capsule with all its features.
+
+    An unpublished capsule 404s with the same detail as a nonexistent id, so
+    this endpoint cannot be used to confirm that a hidden draft exists.
     """
     try:
-        capsule = db.query(models.Capsule).filter(models.Capsule.id == capsule_id).first()
+        capsule = (
+            db.query(models.Capsule)
+            .filter(models.Capsule.id == capsule_id, _published_filter())
+            .first()
+        )
         if not capsule:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Capsule with id {capsule_id} not found."
-            )
+            raise _capsule_not_found(capsule_id)
 
         return _capsule_detail(capsule)
     except HTTPException:
@@ -256,6 +322,10 @@ def create_capsule(
 ):
     """
     Create a new capsule. Admin only.
+
+    Accepts `is_active` (published now) and `publish_at` (scheduled go-live,
+    naive UTC). Publishing this capsule does NOT unpublish any other -- many
+    capsules are published at once by design.
     """
     db_capsule = db.query(models.Capsule).filter(models.Capsule.month == capsule.month).first()
     if db_capsule:
@@ -263,11 +333,7 @@ def create_capsule(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Capsule for month {capsule.month} already exists."
         )
-    
-    # If the new capsule is set to active, deactivate others
-    if capsule.is_active:
-        db.query(models.Capsule).update({models.Capsule.is_active: False})
-        
+
     db_capsule = models.Capsule(**capsule.model_dump())
     db.add(db_capsule)
     db.commit()
@@ -466,8 +532,11 @@ def admin_list_capsules(
     """
     Every capsule -- past, current, and upcoming -- newest month first.
 
-    Unlike the public GET /api/capsules this deliberately includes inactive
-    capsules, which is the whole point of the editor.
+    Unlike the public GET /api/capsules this deliberately includes drafts and
+    capsules whose `publish_at` has not arrived yet: previewing unpublished
+    content is the whole point of the editor. Each row still carries the
+    derived `is_published`, so the portal can label a capsule
+    draft / scheduled / published without doing its own clock arithmetic.
     """
     return db.query(models.Capsule).order_by(models.Capsule.month.desc()).all()
 
@@ -480,6 +549,9 @@ def admin_get_capsule(
 ):
     """
     A single capsule with its film, reflections, circles, and practices.
+
+    Unfiltered by publication state -- this is how the editor previews a draft
+    or a scheduled capsule before it goes live.
     """
     capsule = _get_or_404(db, models.Capsule, capsule_id, "Capsule")
     return _capsule_detail(capsule)
@@ -506,6 +578,10 @@ def admin_update_capsule(
 ):
     """
     Partially update a capsule. Omitted fields are left untouched.
+
+    Accepts `is_active` (published now) and `publish_at` (scheduled go-live,
+    naive UTC; send an explicit null to clear the schedule and return the
+    capsule to draft). Publishing this capsule does NOT unpublish any other.
     """
     capsule = _get_or_404(db, models.Capsule, capsule_id, "Capsule")
     changes = updates.model_dump(exclude_unset=True)
@@ -522,12 +598,6 @@ def admin_update_capsule(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Capsule for month {new_month} already exists.",
             )
-
-    # Exactly one capsule is live at a time; promoting this one demotes the rest.
-    if changes.get("is_active"):
-        db.query(models.Capsule).filter(models.Capsule.id != capsule_id).update(
-            {models.Capsule.is_active: False}
-        )
 
     for field, value in changes.items():
         setattr(capsule, field, value)

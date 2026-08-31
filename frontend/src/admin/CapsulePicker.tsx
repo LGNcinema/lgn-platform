@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { CapsuleSummary } from '../types';
 import { AdminApiError, adminFetch, formatMonth, nextUnusedMonth } from './adminClient';
+import { currentCapsuleId, publicationState } from './publishing';
+import type { PublicationState } from './publishing';
+import { StatusPill } from './StatusPill';
 
 interface CapsulePickerProps {
   selectedId: number | null;
@@ -11,14 +14,26 @@ interface CapsulePickerProps {
 }
 
 /**
- * Two honest buckets. "Live" holds the single published capsule; everything else
- * -- next month's draft, last month's archive -- is one list, because a future
- * capsule is not "archived" and a bucket that can only ever hold one item is not
- * a filter.
+ * One bucket per publication state, because all three can now hold several
+ * capsules: publishing is no longer exclusive, so "Published" is a real list
+ * rather than a bucket that can only ever contain one row. "Scheduled" earns its
+ * own bucket because it is the one state that changes without anybody touching
+ * the portal.
  */
-type Bucket = 'live' | 'rest';
+type Bucket = 'published' | 'scheduled' | 'drafts';
 
-const BUCKET_LABEL: Record<Bucket, string> = { live: 'Live', rest: 'Drafts & past' };
+const BUCKET_LABEL: Record<Bucket, string> = {
+  published: 'Published',
+  scheduled: 'Scheduled',
+  drafts: 'Drafts',
+};
+
+/** A capsule whose scheduled time has elapsed (`due`) belongs with the published. */
+function bucketFor(state: PublicationState): Bucket {
+  if (state === 'published' || state === 'due') return 'published';
+  if (state === 'scheduled') return 'scheduled';
+  return 'drafts';
+}
 
 export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthorized }: CapsulePickerProps) {
   const [capsules, setCapsules] = useState<CapsuleSummary[]>([]);
@@ -26,7 +41,7 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
   const [error, setError] = useState<string | null>(null);
 
   const [query, setQuery] = useState('');
-  const [bucket, setBucket] = useState<Bucket>('live');
+  const [bucket, setBucket] = useState<Bucket>('published');
 
   const [creating, setCreating] = useState(false);
   const [newMonth, setNewMonth] = useState('');
@@ -55,23 +70,39 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
     void load();
   }, [load, refreshKey]);
 
+  /** Publication state per capsule, computed once per list render. */
+  const states = useMemo(() => {
+    const now = Date.now();
+    const map = new Map<number, PublicationState>();
+    for (const capsule of capsules) map.set(capsule.id, publicationState(capsule, now));
+    return map;
+  }, [capsules]);
+
+  /**
+   * The capsule the public site opens on: the published one with the newest
+   * month. Computed over the whole list, never the filtered one, so searching
+   * cannot move the marker onto a different row.
+   */
+  const currentId = useMemo(() => currentCapsuleId(capsules), [capsules]);
+
   /**
    * Follow the selection into whichever bucket holds it, so the capsule you are
    * editing never vanishes from the list -- most sharply right after you publish
-   * it, when `is_active` flips and it would otherwise filter itself out.
+   * or schedule it, when it would otherwise filter itself out from under you.
    *
-   * Keyed on "which capsule, and is it live", so a plain background refresh does
-   * not yank the user out of a bucket they deliberately switched to.
+   * Keyed on "which capsule, and in what state", so a plain background refresh
+   * does not yank the user out of a bucket they deliberately switched to.
    */
   const followed = useRef('');
   useEffect(() => {
     const selected = capsules.find((c) => c.id === selectedId);
     if (!selected) return;
-    const signature = `${selected.id}:${selected.is_active}`;
+    const state = states.get(selected.id) ?? 'draft';
+    const signature = `${selected.id}:${state}`;
     if (followed.current === signature) return;
     followed.current = signature;
-    setBucket(selected.is_active ? 'live' : 'rest');
-  }, [capsules, selectedId]);
+    setBucket(bucketFor(state));
+  }, [capsules, selectedId, states]);
 
   const searched = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -82,9 +113,15 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
     });
   }, [capsules, query]);
 
-  const liveCount = searched.filter((c) => c.is_active).length;
-  const restCount = searched.length - liveCount;
-  const visible = searched.filter((c) => (bucket === 'live' ? c.is_active : !c.is_active));
+  const counts = useMemo(() => {
+    const tally: Record<Bucket, number> = { published: 0, scheduled: 0, drafts: 0 };
+    for (const capsule of searched) tally[bucketFor(states.get(capsule.id) ?? 'draft')] += 1;
+    return tally;
+  }, [searched, states]);
+
+  const visible = searched.filter(
+    (c) => bucketFor(states.get(c.id) ?? 'draft') === bucket,
+  );
 
   const openCreate = () => {
     setNewMonth(nextUnusedMonth(capsules.map((c) => c.month)));
@@ -113,7 +150,7 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
     try {
       const created = await adminFetch<{ id: number }>('/api/admin/capsules', {
         method: 'POST',
-        body: { month, title, is_active: false },
+        body: { month, title, is_active: false, publish_at: null },
       });
       setCreating(false);
       await load();
@@ -131,6 +168,13 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
       setSaving(false);
     }
   };
+
+  const emptyMessage = (() => {
+    if (query.trim()) return 'No capsules match that search.';
+    if (bucket === 'published') return 'Nothing is published yet. Publish a capsule from its Details tab.';
+    if (bucket === 'scheduled') return 'Nothing is scheduled. Set a go-live time on the Details tab of any capsule.';
+    return 'No drafts. Every capsule is published or scheduled.';
+  })();
 
   return (
     <section className="admin-picker" aria-label="Capsules">
@@ -204,22 +248,17 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
       />
 
       <div className="admin-bucket-toggle" role="group" aria-label="Capsule status filter">
-        <button
-          type="button"
-          className={`admin-bucket${bucket === 'live' ? ' is-active' : ''}`}
-          aria-pressed={bucket === 'live'}
-          onClick={() => setBucket('live')}
-        >
-          {BUCKET_LABEL.live} ({liveCount})
-        </button>
-        <button
-          type="button"
-          className={`admin-bucket${bucket === 'rest' ? ' is-active' : ''}`}
-          aria-pressed={bucket === 'rest'}
-          onClick={() => setBucket('rest')}
-        >
-          {BUCKET_LABEL.rest} ({restCount})
-        </button>
+        {(['published', 'scheduled', 'drafts'] as Bucket[]).map((id) => (
+          <button
+            key={id}
+            type="button"
+            className={`admin-bucket${bucket === id ? ' is-active' : ''}`}
+            aria-pressed={bucket === id}
+            onClick={() => setBucket(id)}
+          >
+            {BUCKET_LABEL[id]} ({counts[id]})
+          </button>
+        ))}
       </div>
 
       {loading && <p className="admin-muted">Loading capsules...</p>}
@@ -231,36 +270,46 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
           </button>
         </div>
       )}
-      {!loading && !error && visible.length === 0 && (
-        <p className="admin-muted">
-          {query.trim()
-            ? 'No capsules match that search.'
-            : bucket === 'live'
-              ? 'No capsule is live yet. Publish one from its Details tab.'
-              : 'No draft or past capsules yet.'}
+      {!loading && !error && visible.length === 0 && <p className="admin-muted">{emptyMessage}</p>}
+
+      {!loading && !error && bucket === 'published' && visible.length > 1 && (
+        <p className="admin-field-help">
+          Several capsules are published. The site opens on the newest month -- marked{' '}
+          <em>Current</em> -- and the rest stay reachable from the month tabs.
         </p>
       )}
 
       <ul className="admin-capsule-list">
-        {visible.map((capsule) => (
-          <li key={capsule.id}>
-            <button
-              type="button"
-              className={`admin-capsule-row${capsule.id === selectedId ? ' is-selected' : ''}`}
-              onClick={() => onSelect(capsule.id)}
-              aria-current={capsule.id === selectedId ? 'true' : undefined}
-            >
-              <span className="admin-capsule-meta">
-                <span className="admin-capsule-month">{formatMonth(capsule.month)}</span>
-                <span className="admin-capsule-title">{capsule.title || 'Untitled capsule'}</span>
-              </span>
-              <span className={`admin-status-pill${capsule.is_active ? ' is-live' : ''}`}>
-                <span className="admin-status-dot" aria-hidden="true" />
-                {capsule.is_active ? 'Live' : 'Draft'}
-              </span>
-            </button>
-          </li>
-        ))}
+        {visible.map((capsule) => {
+          const state = states.get(capsule.id) ?? 'draft';
+          const isCurrent = capsule.id === currentId;
+          return (
+            <li key={capsule.id}>
+              <button
+                type="button"
+                className={`admin-capsule-row${capsule.id === selectedId ? ' is-selected' : ''}`}
+                onClick={() => onSelect(capsule.id)}
+                aria-current={capsule.id === selectedId ? 'true' : undefined}
+              >
+                <span className="admin-capsule-meta">
+                  <span className="admin-capsule-month">
+                    {formatMonth(capsule.month)}
+                    {isCurrent ? (
+                      <span
+                        className="admin-current-badge"
+                        title="The newest published capsule -- the one the public site opens on."
+                      >
+                        Current
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="admin-capsule-title">{capsule.title || 'Untitled capsule'}</span>
+                </span>
+                <StatusPill state={state} />
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

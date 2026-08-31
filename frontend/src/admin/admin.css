@@ -232,10 +232,27 @@
   border-radius: var(--admin-radius-pill);
 }
 
-.admin-portal .admin-status-pill.is-live {
+/* Three states, and they must be told apart in a strictly monochrome palette:
+   the difference is carried by fill and border *style*, not by hue, so it
+   survives both themes and greyscale. `due` is a scheduled capsule whose time
+   has passed -- the server already treats it as published, so it is drawn as
+   published-with-a-caveat rather than as a fourth colour. */
+
+.admin-portal .admin-status-pill.is-published {
+  color: var(--admin-on-accent);
+  background: var(--admin-gradient);
+  border-color: transparent;
+}
+
+.admin-portal .admin-status-pill.is-scheduled,
+.admin-portal .admin-status-pill.is-due {
   color: var(--text-main);
   background: var(--admin-tint);
   border-color: var(--admin-accent);
+}
+
+.admin-portal .admin-status-pill.is-scheduled {
+  border-style: dashed;
 }
 
 .admin-portal .admin-status-dot {
@@ -245,8 +262,36 @@
   background: var(--text-dark);
 }
 
-.admin-portal .admin-status-pill.is-live .admin-status-dot {
+.admin-portal .admin-status-pill.is-published .admin-status-dot {
+  background: var(--admin-on-accent);
+}
+
+/* Hollow dot: the state is set but has not happened yet. */
+.admin-portal .admin-status-pill.is-scheduled .admin-status-dot {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--admin-accent);
+}
+
+.admin-portal .admin-status-pill.is-due .admin-status-dot {
   background: var(--admin-accent);
+}
+
+/* --------------------------------------------------------- current marker */
+
+/* The published capsule with the newest month -- the one the public site opens
+   on. Several capsules can be published, so exactly one row carries this. */
+.admin-portal .admin-current-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  font-family: var(--font-serif);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--admin-on-accent);
+  background: var(--admin-accent);
+  border-radius: var(--admin-radius-pill);
+  vertical-align: baseline;
 }
 
 /* -------------------------------------------------------------------- login */

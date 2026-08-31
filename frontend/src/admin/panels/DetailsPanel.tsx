@@ -1,8 +1,24 @@
-/** DetailsPanel -- capsule-level metadata and the pre-watch framing. */
-import { useEffect, useId, useMemo, useState } from 'react';
+/** DetailsPanel -- capsule-level metadata, publishing/scheduling, and the pre-watch framing. */
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { CapsuleDetail, CapsuleSummary } from '../../types';
 import { adminFetch, formatMonth } from '../adminClient';
 import {
+  currentCapsuleId,
+  defaultScheduleValue,
+  formatLocal,
+  formatRelative,
+  fromDatetimeLocalValue,
+  inputToPublishAt,
+  isPublished,
+  localTimeLabel,
+  parseNaiveUtc,
+  publicationState,
+  publishAtToInput,
+} from '../publishing';
+import type { PublishMode } from '../publishing';
+import { StatusPill } from '../StatusPill';
+import {
+  DateTimeField,
   FormRow,
   Note,
   PanelHead,
@@ -11,7 +27,6 @@ import {
   Section,
   TextArea,
   TextField,
-  Toggle,
 } from './Fields';
 import type { PanelProps } from './Fields';
 import { orNull, str, useEditState, useSaveState } from './formState';
@@ -19,7 +34,13 @@ import { orNull, str, useEditState, useSaveState } from './formState';
 /** The subset of the capsule this panel owns -- and what PATCH returns. */
 type CapsuleFields = Pick<
   CapsuleDetail,
-  'month' | 'title' | 'description' | 'is_active' | 'pre_watch_prompt' | 'pre_watch_supporting_text'
+  | 'month'
+  | 'title'
+  | 'description'
+  | 'is_active'
+  | 'publish_at'
+  | 'pre_watch_prompt'
+  | 'pre_watch_supporting_text'
 >;
 
 type DetailsDraft = {
@@ -27,6 +48,11 @@ type DetailsDraft = {
   title: string;
   description: string;
   is_active: boolean;
+  /**
+   * A `datetime-local` value in the editor's own zone, or `''` for "no schedule".
+   * The naive-UTC string the API wants is produced at save time, and only there.
+   */
+  publish_at: string;
   pre_watch_prompt: string;
   pre_watch_supporting_text: string;
 };
@@ -39,9 +65,16 @@ function toDraft(capsule: CapsuleFields): DetailsDraft {
     title: str(capsule.title),
     description: str(capsule.description),
     is_active: capsule.is_active === true,
+    publish_at: publishAtToInput(capsule.publish_at),
     pre_watch_prompt: str(capsule.pre_watch_prompt),
     pre_watch_supporting_text: str(capsule.pre_watch_supporting_text),
   };
+}
+
+/** The publication the *draft* describes -- i.e. what saving would leave behind. */
+function draftMode(draft: DetailsDraft): PublishMode {
+  if (draft.is_active) return 'published';
+  return draft.publish_at ? 'scheduled' : 'draft';
 }
 
 export function DetailsPanel({ capsule, onSaved }: PanelProps) {
@@ -52,6 +85,7 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
         title: capsule.title,
         description: capsule.description,
         is_active: capsule.is_active,
+        publish_at: capsule.publish_at,
         pre_watch_prompt: capsule.pre_watch_prompt,
         pre_watch_supporting_text: capsule.pre_watch_supporting_text,
       }),
@@ -60,47 +94,112 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
       capsule.title,
       capsule.description,
       capsule.is_active,
+      capsule.publish_at,
       capsule.pre_watch_prompt,
       capsule.pre_watch_supporting_text,
     ],
   );
-  const { draft, dirty, set, reset, commit } = useEditState<DetailsDraft>(incoming);
+  const { draft, dirty, set, setMany, reset, commit } = useEditState<DetailsDraft>(incoming);
   const save = useSaveState();
   const errorId = useId();
+  const scheduleRef = useRef<HTMLInputElement | null>(null);
+  // Focus follows the choice, but only when the user made one: an auto-focus on
+  // mount would steal the caret every time the Details tab opens on a scheduled
+  // capsule.
+  const focusSchedule = useRef(false);
 
   /**
-   * Publishing is exclusive: the backend demotes every other capsule when
-   * `is_active` is set. A checkbox labelled "Active" gives no hint of that, so
-   * we look up whichever capsule is live right now and name it in the warning.
+   * Publishing is no longer exclusive -- several capsules can be published at
+   * once, and the public site simply opens on the published one with the newest
+   * month. The list is fetched so we can name *that* capsule, which is the only
+   * thing publishing this one might change for a visitor.
    */
-  const [liveElsewhere, setLiveElsewhere] = useState<CapsuleSummary | null>(null);
+  const [siblings, setSiblings] = useState<CapsuleSummary[]>([]);
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const all = await adminFetch<CapsuleSummary[]>('/api/admin/capsules');
-        if (cancelled) return;
-        const live = (Array.isArray(all) ? all : []).find(
-          (item) => item.is_active && item.id !== capsule.id,
-        );
-        setLiveElsewhere(live ?? null);
+        if (!cancelled) setSiblings(Array.isArray(all) ? all : []);
       } catch {
         // Purely advisory -- a failure here must not block editing.
-        if (!cancelled) setLiveElsewhere(null);
+        if (!cancelled) setSiblings([]);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [capsule.id, capsule.is_active]);
+  }, [capsule.id, capsule.is_active, capsule.publish_at, capsule.is_published]);
 
-  const publishing = draft.is_active && !capsule.is_active;
-  const unpublishing = !draft.is_active && capsule.is_active;
+  useEffect(() => {
+    if (!focusSchedule.current) return;
+    focusSchedule.current = false;
+    scheduleRef.current?.focus();
+  }, [draft.publish_at, draft.is_active]);
+
+  /* ---- what the server currently says ---- */
+  const serverState = publicationState(capsule);
+  const serverScheduledAt = parseNaiveUtc(capsule.publish_at);
+
+  const currentId = useMemo(() => currentCapsuleId(siblings), [siblings]);
+  const currentCapsule = siblings.find((item) => item.id === currentId) ?? null;
+  const isCurrent = currentId !== null && currentId === capsule.id;
+
+  /** The newest month already published by some *other* capsule. */
+  const newestOtherPublishedMonth = useMemo(() => {
+    let newest = '';
+    for (const item of siblings) {
+      if (item.id === capsule.id || !isPublished(item)) continue;
+      if ((item.month ?? '') > newest) newest = item.month ?? '';
+    }
+    return newest;
+  }, [siblings, capsule.id]);
+
+  const describeCapsule = (item: CapsuleSummary) =>
+    `${formatMonth(item.month)}${item.title ? ` -- ${item.title}` : ''}`;
+
+  /* ---- what the draft would do ---- */
+  const mode = draftMode(draft);
+  const scheduledDate = mode === 'scheduled' ? fromDatetimeLocalValue(draft.publish_at) : null;
+  const scheduleInPast = scheduledDate !== null && scheduledDate.getTime() <= Date.now();
+  const scheduleUnparseable = mode === 'scheduled' && draft.publish_at !== '' && scheduledDate === null;
+
+  const publicationChanged =
+    draft.is_active !== incoming.is_active || draft.publish_at !== incoming.publish_at;
+
+  const chooseMode = useCallback(
+    (next: PublishMode) => {
+      save.clearError();
+      if (next === 'published') {
+        // Publishing now makes any pending schedule moot; clearing it keeps the
+        // saved record honest instead of leaving a date that can never fire.
+        setMany({ is_active: true, publish_at: '' });
+        return;
+      }
+      if (next === 'scheduled') {
+        // Only when the picker is actually about to appear: re-choosing the
+        // mode it is already in changes nothing, so the focus effect above
+        // would never fire and the flag would go off against some later edit.
+        if (mode !== 'scheduled') focusSchedule.current = true;
+        setMany({
+          is_active: false,
+          publish_at: draft.publish_at || publishAtToInput(capsule.publish_at) || defaultScheduleValue(),
+        });
+        return;
+      }
+      setMany({ is_active: false, publish_at: '' });
+    },
+    [capsule.publish_at, draft.publish_at, mode, save, setMany],
+  );
 
   const monthValid = MONTH_PATTERN.test(draft.month.trim());
   const invalid = save.error
-    ? { title: draft.title.trim() === '', month: !monthValid }
-    : { title: false, month: false };
+    ? {
+        title: draft.title.trim() === '',
+        month: !monthValid,
+        publishAt: mode === 'scheduled' && (draft.publish_at === '' || scheduledDate === null),
+      }
+    : { title: false, month: false, publishAt: false };
 
   const handleSave = () => {
     if (draft.title.trim() === '') {
@@ -109,6 +208,14 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
     }
     if (!monthValid) {
       save.fail('Month must look like 2026-09 (four-digit year, dash, two-digit month).');
+      return;
+    }
+
+    // Local wall clock in, naive UTC out. `undefined` means the picker holds
+    // something that is not a date, which must never be saved as "no schedule".
+    const publishAt = mode === 'scheduled' ? inputToPublishAt(draft.publish_at) : null;
+    if (mode === 'scheduled' && (draft.publish_at === '' || publishAt === undefined)) {
+      save.fail('Pick the date and time this capsule should go live, or choose Publish now instead.');
       return;
     }
 
@@ -122,7 +229,8 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
           month: draft.month.trim(),
           title: draft.title,
           description: orNull(draft.description),
-          is_active: draft.is_active,
+          is_active: mode === 'published',
+          publish_at: publishAt,
           pre_watch_prompt: orNull(draft.pre_watch_prompt),
           pre_watch_supporting_text: orNull(draft.pre_watch_supporting_text),
         },
@@ -132,11 +240,91 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
     });
   };
 
+  /* ---- copy ---- */
+  const currentStateLine = (() => {
+    switch (serverState) {
+      case 'published':
+        if (isCurrent) {
+          return 'Live on the site, and the newest published capsule -- this is the one the site opens on.';
+        }
+        return currentCapsule
+          ? `Live on the site. Visitors land on the newest published capsule, currently ${describeCapsule(currentCapsule)}; this one is reachable from the month tabs.`
+          : 'Live on the site.';
+      case 'scheduled':
+        return serverScheduledAt
+          ? `Goes live ${formatLocal(serverScheduledAt)} -- ${localTimeLabel()}, ${formatRelative(serverScheduledAt)}. Nothing is visible on the site until then.`
+          : 'Scheduled.';
+      case 'due':
+        return serverScheduledAt
+          ? `Its scheduled time (${formatLocal(serverScheduledAt)} -- ${localTimeLabel()}) has passed, so the site is already serving it. Reload the portal to refresh this view.`
+          : 'Its scheduled time has passed; the site is already serving it.';
+      case 'draft':
+      default:
+        return 'Not visible on the public site. Publish it now, or schedule when it should appear.';
+    }
+  })();
+
+  const unpublishLabel = serverState === 'draft' ? 'Keep as draft' : 'Unpublish';
+
+  const pendingNote = (() => {
+    if (!publicationChanged) return null;
+
+    if (mode === 'published') {
+      const overtaken =
+        newestOtherPublishedMonth !== '' && newestOtherPublishedMonth > draft.month.trim();
+      return (
+        <Note>
+          <strong>Not saved yet.</strong> Saving publishes this capsule immediately.{' '}
+          {overtaken
+            ? `${formatMonth(newestOtherPublishedMonth)} is a newer published month, so the site will still open on that one; this capsule joins the month tabs.`
+            : 'It becomes the newest published capsule, so the site will open on it.'}{' '}
+          No other capsule is unpublished by this.
+        </Note>
+      );
+    }
+
+    if (mode === 'scheduled') {
+      if (!scheduledDate) {
+        return (
+          <Note>
+            <strong>Not saved yet.</strong> Pick the date and time this capsule should go live.
+          </Note>
+        );
+      }
+      if (scheduleInPast) {
+        return (
+          <Note>
+            <strong>Not saved yet -- and that time has already passed.</strong> Saving will publish
+            this capsule straight away, because the server publishes anything whose scheduled time
+            is in the past. Pick a future time, or use <em>Publish now</em>, if that is not what you
+            want.
+          </Note>
+        );
+      }
+      return (
+        <Note>
+          <strong>Not saved yet.</strong> Saving schedules this capsule to go live{' '}
+          <strong>{formatLocal(scheduledDate)}</strong> -- {localTimeLabel()},{' '}
+          {formatRelative(scheduledDate)}. It stays invisible on the site until then.
+        </Note>
+      );
+    }
+
+    return (
+      <Note>
+        <strong>Not saved yet.</strong>{' '}
+        {incoming.is_active
+          ? 'Saving takes this capsule off the public site. Nothing is deleted, and no other capsule is affected.'
+          : 'Saving clears the scheduled go-live time, leaving this capsule as a draft.'}
+      </Note>
+    );
+  })();
+
   return (
     <div className="apnl">
       <PanelHead
         title="Capsule details"
-        description="The month this capsule belongs to, how it is introduced, and whether it is the one the public site serves."
+        description="The month this capsule belongs to, how it is introduced, and when it appears on the public site."
       />
 
       <Section title="Identity">
@@ -182,30 +370,72 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
       </Section>
 
       <Section title="Publishing">
-        <Toggle
-          label="Publish this capsule (make it the live one on the site)"
-          checked={draft.is_active}
-          disabled={save.saving}
-          onChange={(checked) => set('is_active', checked)}
-          help="Exactly one capsule is live at a time. The live capsule is the one the public site serves at /?view=capsule."
-        />
-        {publishing && liveElsewhere ? (
-          <Note>
-            Saving will publish this capsule and replace{' '}
-            <strong>
-              {formatMonth(liveElsewhere.month)}
-              {liveElsewhere.title ? ` -- ${liveElsewhere.title}` : ''}
-            </strong>{' '}
-            as the live capsule. That capsule becomes a draft; nothing about it is deleted.
-          </Note>
+        <div className="apnl-publish-state">
+          <StatusPill state={serverState} />
+          <p className="apnl-publish-state-text">{currentStateLine}</p>
+        </div>
+
+        {/* A radio group in behaviour, buttons in appearance: the three choices
+            are mutually exclusive, and `aria-pressed` reports which one holds. */}
+        <div className="apnl-publish-choices" role="group" aria-label="Publication">
+          <button
+            type="button"
+            className={`apnl-btn apnl-publish-choice${mode === 'published' ? ' is-chosen' : ''}`}
+            aria-pressed={mode === 'published'}
+            disabled={save.saving}
+            onClick={() => chooseMode('published')}
+          >
+            Publish now
+          </button>
+          <button
+            type="button"
+            className={`apnl-btn apnl-publish-choice${mode === 'scheduled' ? ' is-chosen' : ''}`}
+            aria-pressed={mode === 'scheduled'}
+            disabled={save.saving}
+            onClick={() => chooseMode('scheduled')}
+          >
+            Schedule...
+          </button>
+          <button
+            type="button"
+            className={`apnl-btn apnl-publish-choice${mode === 'draft' ? ' is-chosen' : ''}`}
+            aria-pressed={mode === 'draft'}
+            disabled={save.saving}
+            onClick={() => chooseMode('draft')}
+          >
+            {unpublishLabel}
+          </button>
+        </div>
+
+        {mode === 'scheduled' ? (
+          <DateTimeField
+            label="Goes live at"
+            value={draft.publish_at}
+            required
+            disabled={save.saving}
+            invalid={invalid.publishAt || scheduleUnparseable}
+            errorId={errorId}
+            inputRef={scheduleRef}
+            onChange={(value) => set('publish_at', value)}
+            help={
+              <>
+                Entered and shown in {localTimeLabel()}; stored in UTC, so it fires at the same
+                moment for everyone.{' '}
+                {scheduledDate
+                  ? `That is ${formatLocal(scheduledDate)} for you.`
+                  : 'Pick a date and time.'}
+              </>
+            }
+          />
         ) : null}
-        {publishing && !liveElsewhere ? (
-          <Note>Saving will publish this capsule. No other capsule is live right now.</Note>
-        ) : null}
-        {unpublishing ? (
+
+        {pendingNote}
+
+        {!publicationChanged && serverState === 'published' && capsule.publish_at ? (
           <Note>
-            Saving will unpublish this capsule. Unless another capsule is published, the public site
-            will have no live capsule to serve.
+            This capsule is published outright, so the go-live time it still carries (
+            {serverScheduledAt ? formatLocal(serverScheduledAt) : str(capsule.publish_at)}) has no
+            further effect. Choosing <em>Publish now</em> and saving clears it.
           </Note>
         ) : null}
       </Section>

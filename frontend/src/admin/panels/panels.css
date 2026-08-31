@@ -492,3 +492,127 @@
 .admin-portal .apnl-spacer {
   flex: 1 1 auto;
 }
+
+/* ------------------------------------------------------------ publishing -- */
+
+/* What the server says right now, above the controls that would change it. */
+.admin-portal .apnl-publish-state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius, 5px);
+}
+
+.admin-portal .apnl-publish-state-text {
+  flex: 1 1 240px;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-main);
+}
+
+.admin-portal .apnl-publish-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Mutually exclusive, so the chosen one is filled rather than merely outlined --
+   `aria-pressed` carries the same fact for anyone not seeing the fill. */
+.admin-portal .apnl-publish-choice.is-chosen,
+.admin-portal .apnl-preview-navbtn.is-chosen {
+  color: var(--bg-card);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.admin-portal .apnl-input--datetime {
+  max-width: 20rem;
+  font-family: var(--font-sans);
+}
+
+/* --------------------------------------------------------------- preview -- */
+
+.admin-portal .apnl--wide {
+  /* The preview renders public page layout; the 940px reading measure the
+     editor forms use would misrepresent it. */
+  max-width: none;
+}
+
+.admin-portal .apnl-preview-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* A dashed frame under a labelled bar: this is a preview, not the site. */
+.admin-portal .apnl-preview-frame {
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg-darker);
+  border: 2px dashed var(--border);
+  border-radius: var(--border-radius, 5px);
+}
+
+.admin-portal .apnl-preview-chrome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-portal .apnl-preview-badge {
+  padding: 3px 9px;
+  font-family: var(--font-serif);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-main);
+  border: 1px solid var(--primary);
+  border-radius: 999px;
+}
+
+.admin-portal .apnl-preview-chrome-text {
+  flex: 1 1 220px;
+  line-height: 1.45;
+}
+
+/*
+ * The stage holds public markup under public classes. `index.css` must not be
+ * touched, so rather than override anything public we re-establish here the few
+ * inherited values the portal would otherwise impose on it: `.admin-portal` and
+ * `.apnl` both set a tighter 1.55 line-height, and `.apnl` sets its own font
+ * stack and colour. These restore what `body` in index.css gives the real page,
+ * so the preview measures type exactly as the site does.
+ */
+.admin-portal .apnl-preview-stage {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-main);
+  text-align: left;
+  background: var(--bg-darker);
+  /* Public layout is built for a full-width viewport; inside the admin column a
+     wide row scrolls here instead of stretching the portal. */
+  overflow-x: auto;
+}
+
+/*
+ * The only public class this file touches, and only inside the preview stage:
+ * `.capsule-view-wrapper` reserves 90-160px at the top for the site header,
+ * which the preview frame does not have, so the frame would otherwise open on a
+ * band of empty grey. Scoped here rather than changed in `index.css`.
+ */
+.admin-portal .apnl-preview-stage .capsule-view-wrapper {
+  padding-top: 28px;
+  padding-bottom: 48px;
+}

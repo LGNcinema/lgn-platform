@@ -59,6 +59,10 @@ export interface CapsuleDetail {
   title: string;
   description?: string;
   is_active: boolean;
+  /** Scheduled go-live time, ISO-8601 **naive UTC** (no `Z`, no offset). */
+  publish_at?: string | null;
+  /** Server-derived, read-only: `is_active OR publish_at <= utcnow()`. */
+  is_published?: boolean;
   pre_watch_prompt?: string;
   pre_watch_supporting_text?: string;
   film?: Film;
@@ -72,4 +76,8 @@ export interface CapsuleSummary {
   month: string;
   title: string;
   is_active: boolean;
+  /** Scheduled go-live time, ISO-8601 **naive UTC** (no `Z`, no offset). */
+  publish_at?: string | null;
+  /** Server-derived, read-only: `is_active OR publish_at <= utcnow()`. */
+  is_published?: boolean;
 }
