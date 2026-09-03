@@ -2884,6 +2884,10 @@ body {
   color: var(--text-main);
 }
 
+/* Currently unrendered: no capsule-level closing question exists in the data
+   model -- each DiscussionCircle carries its own `closing_question`, which the
+   three-column layout above already shows. Kept because the Figma spec has this
+   element; wire it up if a capsule-wide closing question is ever added. */
 .discuss-guide-overall-closing {
   font-family: var(--font-sans);
   font-weight: 500;
