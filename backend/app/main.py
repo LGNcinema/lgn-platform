@@ -1,13 +1,16 @@
+import json
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
 from typing import List
 
+import anthropic
+
 from app.database import engine, Base, SessionLocal, get_db
 from app.config import settings
-from app import models, schemas
+from app import geme, models, schemas
 from app.auth import create_token, require_admin, require_configured, verify_password
 from app.video import fetch_vimeo_metadata, parse_video_source
 
@@ -779,3 +782,157 @@ def admin_delete_practice(
     db.delete(_get_or_404(db, models.Practice, item_id, "Practice"))
     db.commit()
     return None
+
+# Geme -- Practice > Keep Exploring > Take It Inward
+#
+# Geme's chat is stateless on the server: the frontend replays the transcript on
+# every turn and nothing a visitor types is written to the database.
+
+def _geme_system_prompt(capsule_id: int | None, db: Session, persona: str | None = None) -> str:
+    """System prompt for a capsule, so Geme knows what was just watched."""
+    if capsule_id is None:
+        return geme.build_system_prompt(persona=persona)
+
+    capsule = db.query(models.Capsule).filter(models.Capsule.id == capsule_id).first()
+    if not capsule:
+        raise HTTPException(status_code=404, detail="Capsule not found")
+
+    practice = None
+    try:
+        practices = capsule.practices or []
+        practice = practices[0] if practices else None
+    except Exception as e:
+        print(f"Error fetching practices relation for Geme: {e}")
+
+    return geme.build_system_prompt(capsule=capsule, practice=practice, persona=persona)
+
+
+def _geme_tuning(payload: schemas.GemeChatRequest) -> schemas.GemeTuning:
+    """The caller's draft settings, or an empty set when tuning is switched off.
+
+    Overrides let a client supply Geme's whole system prompt, so they are honoured
+    only where GEME_DEBUG says it is safe. Elsewhere they are ignored rather than
+    rejected, so a stale panel can't break an ordinary conversation.
+    """
+    if payload.tuning and geme.debug_enabled():
+        return payload.tuning
+    return schemas.GemeTuning()
+
+
+def _geme_client():
+    client = geme.get_client()
+    if client is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Geme is not configured on this server (no ANTHROPIC_API_KEY set)."
+        )
+    return client
+
+
+def _geme_error_detail(exc: Exception) -> str:
+    """Map an SDK failure onto something safe to show a visitor."""
+    if isinstance(exc, anthropic.RateLimitError):
+        return "Geme is talking with a lot of people right now. Try again in a moment."
+    if isinstance(exc, (anthropic.AuthenticationError, anthropic.PermissionDeniedError)):
+        return "Geme isn't set up correctly on this server."
+    if isinstance(exc, anthropic.APIConnectionError):
+        return "Geme couldn't be reached. Check your connection and try again."
+    return "Geme couldn't finish that thought. Try again."
+
+
+@app.get("/api/geme/status", response_model=schemas.GemeStatus)
+def geme_status():
+    """Whether the Geme chat is available, so the frontend can hide it if not."""
+    return schemas.GemeStatus(enabled=geme.is_enabled(), debug=geme.debug_enabled())
+
+
+@app.get("/api/geme/config", response_model=schemas.GemeConfig)
+def geme_config(capsule_id: int | None = None, db: Session = Depends(get_db)):
+    """Geme's current persona and parameters, for the dev tuning panel to edit."""
+    if not geme.debug_enabled():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Geme tuning is not enabled on this server."
+        )
+
+    config = geme.defaults()
+    return schemas.GemeConfig(
+        **config,
+        assembled_system_prompt=_geme_system_prompt(capsule_id, db),
+    )
+
+
+@app.post("/api/geme/chat", response_model=schemas.GemeChatResponse)
+async def geme_chat(payload: schemas.GemeChatRequest, db: Session = Depends(get_db)):
+    """One Geme turn, returned whole. The streaming route is what the UI uses."""
+    client = _geme_client()
+    tuning = _geme_tuning(payload)
+    system = _geme_system_prompt(payload.capsule_id, db, persona=tuning.persona)
+    messages = geme.build_messages(
+        payload.messages,
+        opening_turn=tuning.opening_turn,
+        max_turns=tuning.max_turns,
+        max_chars=tuning.max_chars_per_turn,
+    )
+
+    try:
+        response = await client.messages.create(**geme.request_kwargs(
+            system, messages,
+            model=tuning.model, max_tokens=tuning.max_tokens, effort=tuning.effort,
+        ))
+    except anthropic.APIError as e:
+        print(f"Geme chat error: {e}")
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=_geme_error_detail(e))
+
+    text = "".join(block.text for block in response.content if block.type == "text")
+    reply, next_step = geme.split_next_step(text)
+    return schemas.GemeChatResponse(reply=reply, next_step=next_step)
+
+
+@app.post("/api/geme/chat/stream")
+async def geme_chat_stream(payload: schemas.GemeChatRequest, db: Session = Depends(get_db)):
+    """Server-sent events: `delta` as Geme types, then one `done` (or `error`)."""
+    client = _geme_client()
+    tuning = _geme_tuning(payload)
+    system = _geme_system_prompt(payload.capsule_id, db, persona=tuning.persona)
+    messages = geme.build_messages(
+        payload.messages,
+        opening_turn=tuning.opening_turn,
+        max_turns=tuning.max_turns,
+        max_chars=tuning.max_chars_per_turn,
+    )
+    kwargs = geme.request_kwargs(
+        system, messages,
+        model=tuning.model, max_tokens=tuning.max_tokens, effort=tuning.effort,
+    )
+
+    async def events():
+        step_filter = geme.NextStepFilter()
+        try:
+            async with client.messages.stream(**kwargs) as stream:
+                async for chunk in stream.text_stream:
+                    visible = step_filter.feed(chunk)
+                    if visible:
+                        yield f"data: {json.dumps({'type': 'delta', 'text': visible})}\n\n"
+
+            tail = step_filter.flush()
+            if tail:
+                yield f"data: {json.dumps({'type': 'delta', 'text': tail})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'next_step': step_filter.next_step})}\n\n"
+        except anthropic.APIError as e:
+            print(f"Geme stream error: {e}")
+            yield f"data: {json.dumps({'type': 'error', 'message': _geme_error_detail(e)})}\n\n"
+        except Exception as e:
+            print(f"Geme stream error: {e}")
+            yield f"data: {json.dumps({'type': 'error', 'message': _geme_error_detail(e)})}\n\n"
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            # Tell nginx-style proxies not to buffer, or the stream arrives at once.
+            "X-Accel-Buffering": "no",
+        },
+    )

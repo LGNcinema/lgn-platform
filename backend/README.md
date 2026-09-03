@@ -246,3 +246,17 @@ the raw snippet into `video_url` and let the API sort it out.
 > `video_hash`, `thumbnail_url` and `video_duration_seconds` all omitted or null,
 > so the server re-derives them. The admin portal's Film panel does this for you;
 > anything else calling this API directly must do it deliberately.
+
+## Environment
+
+Settings live in `app/config.py` and are read from `backend/.env` (gitignored) or
+the environment. `DATABASE_URL` defaults to local SQLite; `ANTHROPIC_API_KEY`
+enables the Geme chat (`/api/geme/*`) and leaves it disabled when unset. See the
+[Geme section of the root README](../README.md#geme-practice--keep-exploring--take-it-inward).
+
+Try a turn without the UI:
+```bash
+curl -s -X POST http://localhost:8000/api/geme/chat \
+  -H "Content-Type: application/json" \
+  -d '{"capsule_id": 1, "messages": []}'
+```

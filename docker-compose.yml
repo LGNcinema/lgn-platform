@@ -24,16 +24,25 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/lgn_platform
       - ENV=development
-      # Admin portal password. Compose reads a .env in the project root, so set
-      # ADMIN_PASSWORD there to override the local-dev default below. Never use
-      # the default anywhere but localhost. If this is unset the admin API
-      # refuses every request with 503 rather than running unauthenticated.
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-lgn-dev-admin}
-      - ADMIN_SECRET=${ADMIN_SECRET:-}
+      # Live Geme prompt tuning. Local development only -- it lets a client
+      # replace Geme's system prompt, so it must stay off in any deployment.
+      - GEME_DEBUG=true
+      # ANTHROPIC_API_KEY (for Geme) and ADMIN_PASSWORD / ADMIN_SECRET (for the
+      # admin portal) both come from backend/.env -- see env_file below.
+      # Don't list them here: anything under `environment:` wins over env_file, so
+      # naming them would blank out the value whenever the host shell doesn't set
+      # it. With ADMIN_PASSWORD unset the admin API fails closed with 503 on every
+      # request rather than running unauthenticated -- see backend/.env.example.
     volumes:
       - ./backend/app:/app/app
     depends_on:
       - db
+    # Same file the bare-metal `uv run uvicorn` reads, so the Anthropic key for
+    # Geme lives in one place either way. Values under `environment:` above still
+    # win, so DATABASE_URL stays pointed at the postgres service.
+    env_file:
+      - path: ./backend/.env
+        required: false
 
   frontend:
     build:

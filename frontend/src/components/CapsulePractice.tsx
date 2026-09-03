@@ -1,26 +1,83 @@
-import React from 'react';
-import type { CapsuleDetail } from '../types';
+import React, { useEffect, useState } from 'react';
+import type { CapsuleDetail, GemeTuning } from '../types';
 import { buildFilmInfo, splitLines } from '../filmInfo';
+import { GemeChat } from './GemeChat';
+import { API_URL } from '../api';
 
 interface Props {
   capsule: CapsuleDetail;
   onBack: () => void;
+  // Dev tuning panel overrides. `tuningVersion` bumps on each Apply so the chat
+  // remounts and the new settings are heard from the first word.
+  gemeTuning?: GemeTuning | null;
+  gemeTuningVersion?: number;
 }
 
-export const CapsulePractice: React.FC<Props> = ({ capsule, onBack }) => {
+// Stand-in copy for capsules that don't have a practice written into the CMS yet.
+// Mirrors the hand-picked Lightpoles exercise: one epigraph, one invitation, a few
+// questions to sit with.
+const FALLBACK_PRACTICE = {
+  title: 'Notice What You Can Offer',
+  epigraph:
+    'Jon looks at the lightpole in daylight and says: “Takes dark to know what it’s for.”',
+  description:
+    'Bring one person in your life to mind. Set a timer for three minutes and give them your full attention.',
+  steps: [
+    'What might they need right now?',
+    'What has one of your own difficult seasons helped you develop — patience, courage, understanding, humor, or simply the ability to be present?',
+    'Choose one small way to offer that to them this week.',
+  ],
+};
+
+export const CapsulePractice: React.FC<Props> = ({
+  capsule, onBack, gemeTuning, gemeTuningVersion = 0,
+}) => {
   const film = capsule.film;
   const filmInfo = film ? buildFilmInfo(film) : '';
   const practices = capsule.practices ?? [];
 
-  /**
-   * The hero carries the section framing rather than a single practice. In the
-   * real content the first practice's `description` is written about the whole
-   * set ("Choose one practice for the month, move through all three, or choose
-   * your own."), and the card grid is a three-up that the three practices fill
-   * exactly -- promoting one practice into the hero would both leave a gap in
-   * the grid and hide that practice's steps, which the hero has no slot for.
-   */
-  const heroText = practices[0]?.description?.trim() ?? '';
+  const [chatOpen, setChatOpen] = useState(false);
+  const [gemeEnabled, setGemeEnabled] = useState<boolean | null>(null);
+  const [savedStep, setSavedStep] = useState<string | null>(null);
+
+  const stepStorageKey = `geme_next_step_${capsule.id}`;
+
+  // The Geme card stays on the page either way, but the button only invites a
+  // conversation the server can actually hold.
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_URL}/api/geme/status`)
+      .then((res) => (res.ok ? res.json() : { enabled: false }))
+      .then((data) => {
+        if (!cancelled) setGemeEnabled(Boolean(data.enabled));
+      })
+      .catch(() => {
+        if (!cancelled) setGemeEnabled(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // A step kept from an earlier conversation lives in this browser only.
+  useEffect(() => {
+    if (chatOpen) return;
+    try {
+      setSavedStep(localStorage.getItem(stepStorageKey));
+    } catch {
+      setSavedStep(null);
+    }
+  }, [chatOpen, stepStorageKey]);
+
+  // The hero features this month's first practice in full. The remaining
+  // practices follow in the card grid below, so nothing the admin writes goes
+  // unrendered -- `splitLines` rather than a bare split('\n') because seeded
+  // rows have historically stored the separator as a literal backslash-n.
+  const featured = practices[0];
+  const practiceTitle = featured?.title?.trim() || FALLBACK_PRACTICE.title;
+  const practiceDescription = featured?.description?.trim() || FALLBACK_PRACTICE.description;
+  const practiceSteps = featured ? splitLines(featured.steps) : FALLBACK_PRACTICE.steps;
+  const otherPractices = practices.slice(1);
 
   return (
     <div className="practice-v2-container">
@@ -32,31 +89,92 @@ export const CapsulePractice: React.FC<Props> = ({ capsule, onBack }) => {
 
         <p className="practice-v2-section-label">Practice</p>
 
-        {/* Hero: section framing left, image right */}
-        {heroText && (
-          <div className="practice-v2-hero">
-            <div className="practice-v2-hero-text">
-              <h2 className="practice-v2-cta-title">{heroText}</h2>
-            </div>
-            <div className="practice-v2-hero-image">
-              <img src="/images/practice-image.jpg" alt="" />
-            </div>
+        {/* This capsule's hand-picked exercise: text left, image right */}
+        <div className="practice-v2-hero">
+          <div className="practice-v2-hero-text">
+            <h2 className="practice-v2-cta-title">{practiceTitle}</h2>
+            {!featured && (
+              <p className="practice-v2-epigraph">{FALLBACK_PRACTICE.epigraph}</p>
+            )}
+            <p className="practice-v2-cta-desc">{practiceDescription}</p>
+            <ul className="practice-v2-steps">
+              {practiceSteps.map((step, idx) => (
+                <li key={idx}>{step}</li>
+              ))}
+            </ul>
           </div>
-        )}
+          <div className="practice-v2-hero-image">
+            <img src="/images/practice-image.jpg" alt="" />
+          </div>
+        </div>
 
-        {/* The practices themselves */}
-        <div className="practice-v2-pathways">
-          <h3 className="practice-v2-pathways-heading">Ways to practice</h3>
-          {practices.length === 0 ? (
-            <p className="practice-v2-cta-desc">
-              This capsule&rsquo;s practices are still being written. Check back soon.
-            </p>
-          ) : (
+        {/* Keep Exploring: inward with Geme, outward with SAWA */}
+        <div className="practice-explore">
+          <h3 className="practice-explore-heading">Keep Exploring</h3>
+          <div className="practice-explore-grid">
+
+            <div className="practice-explore-card">
+              <span className="practice-explore-label">Take It Inward</span>
+              <div className="practice-explore-card-head">
+                <img className="practice-explore-avatar" src="/images/geme.png" alt="Geme" />
+                <h4 className="practice-explore-title">Talk It Through with Geme</h4>
+              </div>
+              <p className="practice-explore-text">
+                Explore what this film and this practice stirred in you. Geme will ask a few
+                thoughtful questions, help you notice what matters to you, and help you name one
+                small next step.
+              </p>
+
+              {savedStep && (
+                <div className="practice-saved-step">
+                  <span className="practice-saved-step-label">Your last step</span>
+                  <p className="practice-saved-step-text">{savedStep}</p>
+                </div>
+              )}
+
+              {gemeEnabled === false ? (
+                <p className="practice-explore-unavailable">
+                  Geme isn’t available right now. Check back soon.
+                </p>
+              ) : (
+                <button
+                  className="practice-explore-btn"
+                  onClick={() => setChatOpen(true)}
+                  disabled={gemeEnabled === null}
+                >
+                  Talk with Geme &nbsp;&#8599;
+                </button>
+              )}
+            </div>
+
+            <div className="practice-explore-card">
+              <span className="practice-explore-label">Take It Outward</span>
+              <div className="practice-explore-card-head">
+                <div className="practice-explore-avatar placeholder" aria-hidden="true" />
+                <h4 className="practice-explore-title">Find a Way to Serve with SAWA</h4>
+              </div>
+              <p className="practice-explore-text">
+                Find a volunteer opportunity connected to what you care about, the time you have,
+                and the community around you.
+              </p>
+              {/* Placeholder until the SAWA integration lands */}
+              <button className="practice-explore-btn" disabled>
+                Explore with SAWA &nbsp;&#8599;
+              </button>
+              <span className="practice-explore-soon">Coming soon</span>
+            </div>
+
+          </div>
+        </div>
+
+        {/* The capsule's remaining practices. Replaces the old hardcoded
+            "Other ways to connect" Lorem ipsum cards with real content. */}
+        {otherPractices.length > 0 && (
+          <div className="practice-v2-pathways">
+            <h3 className="practice-v2-pathways-heading">More ways to practice</h3>
             <div className="practice-v2-cards-grid">
-              {practices.map((practice, idx) => {
+              {otherPractices.map((practice) => {
                 const description = practice.description?.trim();
-                // The first description is already the hero framing -- don't repeat it.
-                const showDescription = Boolean(description) && idx !== 0;
                 const steps = splitLines(practice.steps);
                 const title = practice.title?.trim();
 
@@ -64,7 +182,7 @@ export const CapsulePractice: React.FC<Props> = ({ capsule, onBack }) => {
                   <div key={practice.id} className="practice-v2-card">
                     <div className="practice-v2-card-image" />
                     {title && <h4 className="practice-v2-card-title">{title}</h4>}
-                    {showDescription && <p className="practice-v2-card-text">{description}</p>}
+                    {description && <p className="practice-v2-card-text">{description}</p>}
                     {steps.map((step, i) => (
                       <p key={i} className="practice-v2-card-text">{step}</p>
                     ))}
@@ -72,9 +190,18 @@ export const CapsulePractice: React.FC<Props> = ({ capsule, onBack }) => {
                 );
               })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
+
+      {chatOpen && (
+        <GemeChat
+          key={gemeTuningVersion}
+          capsule={capsule}
+          onClose={() => setChatOpen(false)}
+          tuning={gemeTuning}
+        />
+      )}
     </div>
   );
 };
