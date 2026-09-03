@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { GemeConfig, GemeTuning } from '../types';
 import { API_URL } from '../api';
 
@@ -10,6 +10,11 @@ interface Props {
 }
 
 const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
+
+const SETTING_KEYS = [
+  'persona', 'opening_turn', 'model', 'effort',
+  'max_tokens', 'max_turns', 'max_chars_per_turn',
+] as const;
 
 const MODELS = [
   { id: 'claude-opus-5', label: 'Opus 5 — most capable (default)' },
@@ -30,7 +35,9 @@ export const GemeTuningPanel: React.FC<Props> = ({ capsuleId, tuning, onApply, o
   const [serverConfig, setServerConfig] = useState<GemeConfig | null>(null);
   const [draft, setDraft] = useState<GemeTuning>(tuning || {});
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [showAssembled, setShowAssembled] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load the live values so the panel edits what the server is actually using,
   // rather than a copy that drifts as geme.py changes.
@@ -52,8 +59,10 @@ export const GemeTuningPanel: React.FC<Props> = ({ capsuleId, tuning, onApply, o
     return serverConfig ? serverConfig[field] : '';
   };
 
-  const set = (field: keyof GemeTuning, value: string | number | undefined) =>
+  const set = (field: keyof GemeTuning, value: string | number | undefined) => {
+    setNotice(null);
     setDraft((prev) => ({ ...prev, [field]: value }));
+  };
 
   const changedFields = Object.entries(draft)
     .filter(([, v]) => v !== undefined && v !== null && v !== '')
@@ -67,6 +76,52 @@ export const GemeTuningPanel: React.FC<Props> = ({ capsuleId, tuning, onApply, o
   const handleReset = () => {
     setDraft({});
     onApply(null);
+  };
+
+  // Save a set of settings worth keeping. The file holds every value in full --
+  // not just the edits -- so it can be re-loaded, shared, or read straight into
+  // backend/app/geme.py without the server's defaults needing to match.
+  const handleDownload = () => {
+    if (!serverConfig) return;
+    const settings = Object.fromEntries(
+      SETTING_KEYS.map((key) => [key, valueOf(key)])
+    );
+    const file = {
+      exported_at: new Date().toISOString(),
+      capsule_id: capsuleId ?? null,
+      changed_from_server_defaults: changedFields,
+      settings,
+    };
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' })
+    );
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `geme-settings-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setNotice('Saved. Apply & restart to try these, or send the file on.');
+  };
+
+  const handleUpload = async (file: File) => {
+    try {
+      const parsed = JSON.parse(await file.text());
+      // Accept both the exported shape and a bare settings object.
+      const settings = (parsed.settings ?? parsed) as Record<string, unknown>;
+      const loaded: GemeTuning = {};
+      for (const key of SETTING_KEYS) {
+        const value = settings[key];
+        if (value !== undefined && value !== null && value !== '') {
+          (loaded as Record<string, unknown>)[key] = value;
+        }
+      }
+      if (!Object.keys(loaded).length) throw new Error('No Geme settings in that file.');
+      setDraft(loaded);
+      setError(null);
+      setNotice(`Loaded ${file.name}. Apply & restart to try it.`);
+    } catch (err) {
+      setError(`Couldn't read that file: ${(err as Error).message}`);
+    }
   };
 
   return (
@@ -167,7 +222,11 @@ export const GemeTuningPanel: React.FC<Props> = ({ capsuleId, tuning, onApply, o
               </label>
 
               <label className="geme-tune-field">
-                <span className="geme-tune-label">Max turns — how much history Geme sees</span>
+                <span className="geme-tune-label">
+                  History window — messages kept
+                  <em> — counts both sides; older ones drop off. Not the conversation
+                  length, which the persona sets ("three to five exchanges").</em>
+                </span>
                 <input
                   className="geme-tune-input"
                   type="number"
@@ -193,11 +252,36 @@ export const GemeTuningPanel: React.FC<Props> = ({ capsuleId, tuning, onApply, o
 
         <div className="geme-tune-footer">
           <span className="geme-tune-status">
-            {changedFields.length
+            {notice || (changedFields.length
               ? `${changedFields.length} setting${changedFields.length > 1 ? 's' : ''} changed`
-              : 'Using server defaults'}
+              : 'Using server defaults')}
           </span>
           <div className="geme-tune-actions">
+            {/* Keep a set worth returning to, or hand it to someone else */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleUpload(file);
+                e.target.value = '';
+              }}
+            />
+            <button
+              className="geme-action-btn secondary"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Load file
+            </button>
+            <button
+              className="geme-action-btn secondary"
+              onClick={handleDownload}
+              disabled={!serverConfig}
+            >
+              Save to file
+            </button>
             <button className="geme-action-btn secondary" onClick={handleReset}>
               Reset to defaults
             </button>

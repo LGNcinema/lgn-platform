@@ -3123,7 +3123,13 @@ body {
 
 .geme-tune-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
+}
+
+.geme-tune-status {
+  flex: 1;
+  min-width: 180px;
 }
 
 /* Discuss View -- circle-discussion-guide (Figma "[CAPSULE]-Discuss LIGHT"), shares the
