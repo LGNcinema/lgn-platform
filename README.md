@@ -38,6 +38,27 @@ To bring everything down and remove containers:
 docker compose down
 ```
 
+### After adding a frontend dependency
+
+If you add a package to `frontend/package.json`, a plain `docker compose up --build`
+is **not** enough. You will get:
+
+```
+[plugin:vite:import-analysis] Failed to resolve import "<package>" from "src/main.tsx"
+```
+
+The compose file mounts an anonymous volume at `/app/node_modules` (so the container
+keeps its own Linux-built modules instead of your host's). Compose *reuses* anonymous
+volumes when it recreates a container, so the stale `node_modules` from an earlier run
+keeps masking the newly built image layer — the image has the package, the running
+container does not. Recreate the anonymous volume as well:
+
+```bash
+docker compose up --build -V     # -V = --renew-anon-volumes
+```
+
+The `pgdata` volume is **named**, not anonymous, so `-V` leaves your database alone.
+
 ### Viewing Logs
 If you need to debug or view the logs of the running services:
 ```bash

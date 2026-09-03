@@ -1,41 +1,72 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { CapsuleDetail } from '../types';
+import { buildFilmInfo } from '../filmInfo';
 
 interface Props {
   capsule: CapsuleDetail;
   onBack: () => void;
 }
 
-const REFLECT_QUESTIONS = [
-  "What moment in the film stayed with you the longest?",
-  "Is there a grief or loss you've been walking with?",
-  "What does it mean to you to keep going when the light is dim?",
-];
+/**
+ * Answers are keyed by the reflection's stable database id, not by its position
+ * in the list -- reordering or deleting a reflection in the admin must not make
+ * a visitor's saved answer reattach to a different question.
+ */
+const storageKey = (capsuleId: number, reflectionId: number) =>
+  `reflect_${capsuleId}_${reflectionId}`;
 
 export const CapsuleReflect: React.FC<Props> = ({ capsule, onBack }) => {
   const film = capsule.film;
+  const filmInfo = film ? buildFilmInfo(film) : '';
+  const reflections = useMemo(() => capsule.reflections ?? [], [capsule.reflections]);
+
+  /** Only the first reflection carries the section-level "at your own pace" note. */
+  const intro = reflections.find((r) => r.introduction?.trim())?.introduction?.trim();
+
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [saved, setSaved] = useState<Record<number, boolean>>({});
 
-  const handleChange = (idx: number, value: string) => {
-    setAnswers(prev => ({ ...prev, [idx]: value }));
-    setSaved(prev => ({ ...prev, [idx]: false }));
+  // Restore previously saved answers so they survive a reload.
+  useEffect(() => {
+    const restoredAnswers: Record<number, string> = {};
+    const restoredSaved: Record<number, boolean> = {};
+
+    for (const reflection of reflections) {
+      let stored: string | null = null;
+      try {
+        stored = localStorage.getItem(storageKey(capsule.id, reflection.id));
+      } catch {
+        // Storage can be unavailable (private mode, blocked cookies) -- start blank.
+        stored = null;
+      }
+      if (stored !== null) {
+        restoredAnswers[reflection.id] = stored;
+        restoredSaved[reflection.id] = stored.length > 0;
+      }
+    }
+
+    setAnswers(restoredAnswers);
+    setSaved(restoredSaved);
+  }, [capsule.id, reflections]);
+
+  const handleChange = (reflectionId: number, value: string) => {
+    setAnswers((prev) => ({ ...prev, [reflectionId]: value }));
+    setSaved((prev) => ({ ...prev, [reflectionId]: false }));
   };
 
-  const handleSave = (idx: number) => {
-    const key = `reflect_${capsule.id}_${idx}`;
-    localStorage.setItem(key, answers[idx] || '');
-    setSaved(prev => ({ ...prev, [idx]: true }));
+  const handleSave = (reflectionId: number) => {
+    try {
+      localStorage.setItem(storageKey(capsule.id, reflectionId), answers[reflectionId] || '');
+    } catch {
+      // Saving is a convenience; a blocked store should not break the page.
+    }
+    setSaved((prev) => ({ ...prev, [reflectionId]: true }));
   };
 
   return (
     <div className="reflect-v2-container">
       <h1 className="reflect-capsule-heading">{capsule.title}</h1>
-      {film && (
-        <p className="reflect-film-info">
-          SISTERS WITH TRANSISTORS a film by LISA ROVNER narrated by LAURIE ANDERSON. 2020. USA. 86 min. A patchwork portrait of several female electronic music pioneers. GUEST-PROGRAMMED BY CYRUS GOBERVILLE FOR OUR SUMMER MUSIC FESTIVAL.
-        </p>
-      )}
+      {filmInfo && <p className="reflect-film-info">{filmInfo}</p>}
 
       <div className="reflect-inner-panel">
         <button className="reflect-back-btn" onClick={onBack}>← Back</button>
@@ -43,27 +74,41 @@ export const CapsuleReflect: React.FC<Props> = ({ capsule, onBack }) => {
         <div className="reflect-section-header">
           <h2 className="reflect-section-title">Reflect</h2>
           <p className="reflect-private-notice">Your reflections are private. Only you can see them.</p>
+          {intro && <p className="reflect-private-notice">{intro}</p>}
         </div>
 
         <div className="reflect-questions-list">
-          {REFLECT_QUESTIONS.map((question, idx) => (
-            <div key={idx} className="reflect-question-block">
-              <h3 className="reflect-question-text">{question}</h3>
-              <textarea
-                className="reflect-textarea"
-                placeholder="Take your time..."
-                value={answers[idx] || ''}
-                onChange={(e) => handleChange(idx, e.target.value)}
-                aria-label={question}
-              />
-              <button
-                className={`reflect-save-btn${saved[idx] ? ' saved' : ''}`}
-                onClick={() => handleSave(idx)}
-              >
-                {saved[idx] ? 'Saved' : 'Save'}
-              </button>
-            </div>
-          ))}
+          {reflections.length === 0 ? (
+            <p className="reflect-private-notice">
+              This capsule&rsquo;s reflections are still being written. Check back soon.
+            </p>
+          ) : (
+            reflections.map((reflection) => {
+              const question = reflection.content?.trim() || reflection.title?.trim() || '';
+              const label = reflection.title?.trim();
+              const showLabel = Boolean(label) && label !== question;
+
+              return (
+                <div key={reflection.id} className="reflect-question-block">
+                  {showLabel && <span className="reflect-private-notice">{label}</span>}
+                  <h3 className="reflect-question-text">{question}</h3>
+                  <textarea
+                    className="reflect-textarea"
+                    placeholder="Take your time..."
+                    value={answers[reflection.id] || ''}
+                    onChange={(e) => handleChange(reflection.id, e.target.value)}
+                    aria-label={question || label || 'Reflection'}
+                  />
+                  <button
+                    className={`reflect-save-btn${saved[reflection.id] ? ' saved' : ''}`}
+                    onClick={() => handleSave(reflection.id)}
+                  >
+                    {saved[reflection.id] ? 'Saved' : 'Save'}
+                  </button>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>

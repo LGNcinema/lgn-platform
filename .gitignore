@@ -18,10 +18,16 @@ dist-ssr/
 # Logs and databases
 *.log
 pgdata/
+*.db
+*.sqlite
+*.sqlite3
 
 # Environment variables
 .env
 .env.*
+# ...but template files carry no secrets and must be committed.
+!.env.example
+!.env.sample
 
 # OS / IDE
 .DS_Store

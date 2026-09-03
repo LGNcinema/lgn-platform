@@ -1,59 +1,21 @@
 import React from 'react';
 import type { CapsuleDetail } from '../types';
+import { buildFilmInfo, splitLines } from '../filmInfo';
 
 interface Props {
   capsule: CapsuleDetail;
   onBack: () => void;
 }
 
-interface DiscussCircle {
-  title: string;
-  openingRound: string[];
-  discuss: string[];
-  closingQuestion: string;
-}
-
-const CIRCLES: DiscussCircle[] = [
-  {
-    title: 'Circle 1: Light and Darkness',
-    openingRound: [
-      'Each person shares the first word that comes to mind when they hear "light," followed by the first word that comes to mind when they hear "darkness."',
-    ],
-    discuss: [
-      'What patterns or differences do you notice?',
-      'When can light expose, overwhelm, or harm?',
-      'When can darkness offer rest, privacy, mystery, or protection?',
-    ],
-    closingQuestion: 'What kind of light do you want to bring into the lives around you?',
-  },
-  {
-    title: 'Circle 2: Resilience and Mourning',
-    openingRound: [
-      'Choose one: share a time when you had to endure, or a time when you allowed yourself to mourn.',
-      'What did the experience reveal about what mattered to you?',
-    ],
-    discuss: [
-      'When is resilience life-giving?',
-      'When can resilience become a way of avoiding grief?',
-      'What can mourning teach us that achievement cannot?',
-    ],
-    closingQuestion: 'What does the way you respond to difficulty reveal about your values?',
-  },
-];
-
-const OVERALL_CLOSING_QUESTION = 'Is purpose something we find, choose, receive, or practice?';
-
 export const CapsuleDiscuss: React.FC<Props> = ({ capsule, onBack }) => {
   const film = capsule.film;
+  const filmInfo = film ? buildFilmInfo(film) : '';
+  const circles = capsule.discussion_circles ?? [];
 
   return (
     <div className="discuss-guide-container">
       <h1 className="reflect-capsule-heading">{capsule.title}</h1>
-      {film && (
-        <p className="reflect-film-info">
-          SISTERS WITH TRANSISTORS a film by LISA ROVNER narrated by LAURIE ANDERSON. 2020. USA. 86 min. A patchwork portrait of several female electronic music pioneers. GUEST-PROGRAMMED BY CYRUS GOBERVILLE FOR OUR SUMMER MUSIC FESTIVAL.
-        </p>
-      )}
+      {filmInfo && <p className="reflect-film-info">{filmInfo}</p>}
 
       <div className="discuss-guide-inner-panel">
         <button className="reflect-back-btn" onClick={onBack}>← Back</button>
@@ -63,33 +25,48 @@ export const CapsuleDiscuss: React.FC<Props> = ({ capsule, onBack }) => {
           Note for the circle: Listen without trying to fix one another. Authenticity is crucial. Passing is always welcome.
         </p>
 
-        {CIRCLES.map((circle, idx) => (
-          <div key={idx} className="discuss-guide-circle">
-            <h3 className="discuss-guide-circle-title">{circle.title}</h3>
-            <div className="discuss-guide-columns">
-              <div className="discuss-guide-col">
-                <span className="discuss-guide-col-label">Opening round</span>
-                {circle.openingRound.map((line, i) => (
-                  <p key={i} className="discuss-guide-col-text">{line}</p>
-                ))}
-              </div>
-              <div className="discuss-guide-col">
-                <span className="discuss-guide-col-label">Discuss:</span>
-                {circle.discuss.map((line, i) => (
-                  <p key={i} className="discuss-guide-col-text">{line}</p>
-                ))}
-              </div>
-              <div className="discuss-guide-col">
-                <span className="discuss-guide-col-label">Closing question:</span>
-                <p className="discuss-guide-col-text">{circle.closingQuestion}</p>
-              </div>
-            </div>
+        {circles.length === 0 ? (
+          <div className="discuss-guide-circle">
+            <p className="discuss-guide-col-text">
+              This capsule&rsquo;s discussion circles are still being written. Check back soon.
+            </p>
           </div>
-        ))}
+        ) : (
+          circles.map((circle) => {
+            const openingRound = circle.opening_round?.trim();
+            const prompts = splitLines(circle.discuss_prompts);
+            const closingQuestion = circle.closing_question?.trim();
+            const title = circle.title?.trim();
 
-        <p className="discuss-guide-overall-closing">
-          Closing question: {OVERALL_CLOSING_QUESTION}
-        </p>
+            return (
+              <div key={circle.id} className="discuss-guide-circle">
+                {title && <h3 className="discuss-guide-circle-title">{title}</h3>}
+                <div className="discuss-guide-columns">
+                  {openingRound && (
+                    <div className="discuss-guide-col">
+                      <span className="discuss-guide-col-label">Opening round</span>
+                      <p className="discuss-guide-col-text">{openingRound}</p>
+                    </div>
+                  )}
+                  {prompts.length > 0 && (
+                    <div className="discuss-guide-col">
+                      <span className="discuss-guide-col-label">Discuss:</span>
+                      {prompts.map((prompt, i) => (
+                        <p key={i} className="discuss-guide-col-text">{prompt}</p>
+                      ))}
+                    </div>
+                  )}
+                  {closingQuestion && (
+                    <div className="discuss-guide-col">
+                      <span className="discuss-guide-col-label">Closing question:</span>
+                      <p className="discuss-guide-col-text">{closingQuestion}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

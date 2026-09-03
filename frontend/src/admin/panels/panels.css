@@ -1,0 +1,618 @@
+/*
+ * Editor panels for the LGN internal admin portal.
+ *
+ * Every selector is scoped under `.admin-portal` (the root class the admin shell
+ * renders) so none of this can leak into the public site. Colours come only from
+ * the design tokens declared in `src/index.css`, so the panels follow whichever
+ * theme the site is in. The one exception is the destructive-action accent,
+ * which has no token upstream -- it is declared here once, per theme, as a
+ * scoped custom property rather than sprinkled through the rules.
+ */
+
+.admin-portal {
+  --apnl-danger: #a3241c;
+  --apnl-danger-soft: rgba(163, 36, 28, 0.08);
+}
+
+[data-theme='dark'] .admin-portal {
+  --apnl-danger: #f2938c;
+  --apnl-danger-soft: rgba(242, 147, 140, 0.12);
+}
+
+/* ---------------------------------------------------------------- layout -- */
+
+.admin-portal .apnl {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 940px;
+  font-family: var(--font-sans);
+  color: var(--text-main);
+  line-height: 1.55;
+}
+
+.admin-portal .apnl-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-portal .apnl-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--primary);
+}
+
+.admin-portal .apnl-head p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.admin-portal .apnl-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius, 5px);
+}
+
+.admin-portal .apnl-section-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dark);
+}
+
+.admin-portal .apnl-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+/* ---------------------------------------------------------------- fields -- */
+
+.admin-portal .apnl-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.admin-portal .apnl-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.admin-portal .apnl-req {
+  color: var(--apnl-danger);
+}
+
+.admin-portal .apnl-input,
+.admin-portal .apnl-textarea,
+.admin-portal .apnl-select {
+  width: 100%;
+  padding: 9px 11px;
+  font-family: inherit;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text-main);
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius, 5px);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-portal .apnl-input:hover:not(:disabled),
+.admin-portal .apnl-textarea:hover:not(:disabled),
+.admin-portal .apnl-select:hover:not(:disabled) {
+  border-color: var(--text-dark);
+}
+
+.admin-portal .apnl-input:focus-visible,
+.admin-portal .apnl-textarea:focus-visible,
+.admin-portal .apnl-select:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--border-glow);
+}
+
+.admin-portal .apnl-input:disabled,
+.admin-portal .apnl-textarea:disabled,
+.admin-portal .apnl-select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin-portal .apnl-textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.admin-portal .apnl-mono {
+  font-family: var(--font-mono);
+  font-size: 0.84rem;
+}
+
+.admin-portal .apnl-help {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-dark);
+}
+
+.admin-portal .apnl-help code {
+  padding: 1px 4px;
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  background: var(--bg-card-hover);
+  border-radius: 3px;
+}
+
+.admin-portal .apnl-check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius, 5px);
+  cursor: pointer;
+}
+
+.admin-portal .apnl-check input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.admin-portal .apnl-check-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-portal .apnl-check-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* --------------------------------------------------------------- buttons -- */
+
+.admin-portal .apnl-btn {
+  padding: 9px 16px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main);
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius, 5px);
+  cursor: pointer;
+  transition: var(--transition, all 0.2s ease-in-out);
+}
+
+.admin-portal .apnl-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+}
+
+.admin-portal .apnl-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.admin-portal .apnl-btn--primary {
+  color: var(--bg-card);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.admin-portal .apnl-btn--ghost {
+  background: transparent;
+}
+
+.admin-portal .apnl-btn--danger {
+  color: var(--apnl-danger);
+  background: transparent;
+  border-color: var(--border);
+}
+
+.admin-portal .apnl-btn--danger:hover:not(:disabled) {
+  background: var(--apnl-danger-soft);
+  border-color: var(--apnl-danger);
+}
+
+.admin-portal .apnl-btn--link {
+  padding: 4px 0;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.admin-portal .apnl-btn--link:hover:not(:disabled) {
+  color: var(--text-main);
+}
+
+/* -------------------------------------------------------------- save bar -- */
+
+.admin-portal .apnl-savebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding-top: 4px;
+}
+
+/*
+ * The single-form panels (Film, Details) run past two screens, which put Save
+ * below the fold. Pinning the bar to the bottom of the viewport keeps it
+ * reachable without hunting. `--bg-darker` is the page behind `.apnl`, so the
+ * bar reads as solid; only the panel-level bars get this, never the per-item
+ * ones in a list, which would stack.
+ */
+.admin-portal .apnl-savedock {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 0;
+  background: var(--bg-darker);
+  border-top: 1px solid var(--border);
+}
+
+.admin-portal .apnl-savedock .apnl-savebar {
+  padding-top: 0;
+}
+
+.admin-portal .apnl-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.admin-portal .apnl-status--dirty::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  background: var(--text-muted);
+  border-radius: 50%;
+}
+
+.admin-portal .apnl-status--saved {
+  animation: apnl-fade 2.4s ease-out forwards;
+}
+
+@keyframes apnl-fade {
+  0%,
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-portal .apnl-status--saved {
+    animation: none;
+  }
+}
+
+/* A state, not a problem: "this will change something when you save". */
+.admin-portal .apnl-note {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-main);
+  background: rgba(var(--primary-rgb), 0.08);
+  border: 1px solid var(--primary);
+  border-radius: var(--border-radius, 5px);
+}
+
+.admin-portal .apnl-note strong {
+  font-weight: 700;
+}
+
+.admin-portal .apnl-alert {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  color: var(--apnl-danger);
+  background: var(--apnl-danger-soft);
+  border: 1px solid var(--apnl-danger);
+  border-radius: var(--border-radius, 5px);
+}
+
+/* ------------------------------------------------------- resolved source -- */
+
+.admin-portal .apnl-resolved {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius, 5px);
+}
+
+.admin-portal .apnl-resolved-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.admin-portal .apnl-readonly {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.admin-portal .apnl-readonly-value {
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono);
+  font-size: 0.84rem;
+  color: var(--text-main);
+}
+
+.admin-portal .apnl-readonly-value[data-empty='true'] {
+  color: var(--text-dark);
+}
+
+/* ------------------------------------------------------------ disclosure -- */
+
+.admin-portal .apnl-details {
+  border: 1px dashed var(--border);
+  border-radius: var(--border-radius, 5px);
+}
+
+.admin-portal .apnl-details > summary {
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  list-style: none;
+  cursor: pointer;
+}
+
+.admin-portal .apnl-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-portal .apnl-details > summary::before {
+  content: '\25B8';
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform 0.15s ease;
+}
+
+.admin-portal .apnl-details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.admin-portal .apnl-details > summary:hover {
+  color: var(--text-main);
+}
+
+.admin-portal .apnl-details-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 14px 16px;
+}
+
+/* ------------------------------------------------------------------ list -- */
+
+.admin-portal .apnl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-portal .apnl-item {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius, 5px);
+}
+
+.admin-portal .apnl-item--new {
+  background: transparent;
+  border-style: dashed;
+}
+
+.admin-portal .apnl-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.admin-portal .apnl-item-name {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.admin-portal .apnl-item-id {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-dark);
+}
+
+.admin-portal .apnl-empty {
+  padding: 22px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--border-radius, 5px);
+}
+
+.admin-portal .apnl-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--apnl-danger);
+}
+
+.admin-portal .apnl-spacer {
+  flex: 1 1 auto;
+}
+
+/* ------------------------------------------------------------ publishing -- */
+
+/* What the server says right now, above the controls that would change it. */
+.admin-portal .apnl-publish-state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius, 5px);
+}
+
+.admin-portal .apnl-publish-state-text {
+  flex: 1 1 240px;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-main);
+}
+
+.admin-portal .apnl-publish-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Mutually exclusive, so the chosen one is filled rather than merely outlined --
+   `aria-pressed` carries the same fact for anyone not seeing the fill. */
+.admin-portal .apnl-publish-choice.is-chosen,
+.admin-portal .apnl-preview-navbtn.is-chosen {
+  color: var(--bg-card);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.admin-portal .apnl-input--datetime {
+  max-width: 20rem;
+  font-family: var(--font-sans);
+}
+
+/* --------------------------------------------------------------- preview -- */
+
+.admin-portal .apnl--wide {
+  /* The preview renders public page layout; the 940px reading measure the
+     editor forms use would misrepresent it. */
+  max-width: none;
+}
+
+.admin-portal .apnl-preview-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* A dashed frame under a labelled bar: this is a preview, not the site. */
+.admin-portal .apnl-preview-frame {
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg-darker);
+  border: 2px dashed var(--border);
+  border-radius: var(--border-radius, 5px);
+}
+
+.admin-portal .apnl-preview-chrome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-portal .apnl-preview-badge {
+  padding: 3px 9px;
+  font-family: var(--font-serif);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-main);
+  border: 1px solid var(--primary);
+  border-radius: 999px;
+}
+
+.admin-portal .apnl-preview-chrome-text {
+  flex: 1 1 220px;
+  line-height: 1.45;
+}
+
+/*
+ * The stage holds public markup under public classes. `index.css` must not be
+ * touched, so rather than override anything public we re-establish here the few
+ * inherited values the portal would otherwise impose on it: `.admin-portal` and
+ * `.apnl` both set a tighter 1.55 line-height, and `.apnl` sets its own font
+ * stack and colour. These restore what `body` in index.css gives the real page,
+ * so the preview measures type exactly as the site does.
+ */
+.admin-portal .apnl-preview-stage {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-main);
+  text-align: left;
+  background: var(--bg-darker);
+  /* Public layout is built for a full-width viewport; inside the admin column a
+     wide row scrolls here instead of stretching the portal. */
+  overflow-x: auto;
+}
+
+/*
+ * The only public class this file touches, and only inside the preview stage:
+ * `.capsule-view-wrapper` reserves 90-160px at the top for the site header,
+ * which the preview frame does not have, so the frame would otherwise open on a
+ * band of empty grey. Scoped here rather than changed in `index.css`.
+ */
+.admin-portal .apnl-preview-stage .capsule-view-wrapper {
+  padding-top: 28px;
+  padding-bottom: 48px;
+}

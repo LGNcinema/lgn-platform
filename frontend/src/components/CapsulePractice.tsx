@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import type { CapsuleDetail, GemeTuning } from '../types';
+import { buildFilmInfo, splitLines } from '../filmInfo';
 import { GemeChat } from './GemeChat';
 import { API_URL } from '../api';
 
@@ -28,25 +29,13 @@ const FALLBACK_PRACTICE = {
   ],
 };
 
-const PATHWAY_CARDS = [
-  {
-    title: 'Alternate Pathway Here',
-    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-  },
-  {
-    title: 'Additional Resource Here',
-    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-  },
-  {
-    title: 'Related Material Here',
-    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-  },
-];
-
 export const CapsulePractice: React.FC<Props> = ({
   capsule, onBack, gemeTuning, gemeTuningVersion = 0,
 }) => {
   const film = capsule.film;
+  const filmInfo = film ? buildFilmInfo(film) : '';
+  const practices = capsule.practices ?? [];
+
   const [chatOpen, setChatOpen] = useState(false);
   const [gemeEnabled, setGemeEnabled] = useState<boolean | null>(null);
   const [savedStep, setSavedStep] = useState<string | null>(null);
@@ -73,24 +62,27 @@ export const CapsulePractice: React.FC<Props> = ({
   // A step kept from an earlier conversation lives in this browser only.
   useEffect(() => {
     if (chatOpen) return;
-    setSavedStep(localStorage.getItem(stepStorageKey));
+    try {
+      setSavedStep(localStorage.getItem(stepStorageKey));
+    } catch {
+      setSavedStep(null);
+    }
   }, [chatOpen, stepStorageKey]);
 
-  const practice = capsule.practices?.[0];
-  const practiceTitle = practice?.title || FALLBACK_PRACTICE.title;
-  const practiceDescription = practice?.description || FALLBACK_PRACTICE.description;
-  const practiceSteps = practice?.steps
-    ? practice.steps.split('\n').map((step) => step.trim()).filter(Boolean)
-    : FALLBACK_PRACTICE.steps;
+  // The hero features this month's first practice in full. The remaining
+  // practices follow in the card grid below, so nothing the admin writes goes
+  // unrendered -- `splitLines` rather than a bare split('\n') because seeded
+  // rows have historically stored the separator as a literal backslash-n.
+  const featured = practices[0];
+  const practiceTitle = featured?.title?.trim() || FALLBACK_PRACTICE.title;
+  const practiceDescription = featured?.description?.trim() || FALLBACK_PRACTICE.description;
+  const practiceSteps = featured ? splitLines(featured.steps) : FALLBACK_PRACTICE.steps;
+  const otherPractices = practices.slice(1);
 
   return (
     <div className="practice-v2-container">
       <h1 className="practice-v2-capsule-heading">{capsule.title}</h1>
-      {film && (
-        <p className="reflect-film-info">
-          SISTERS WITH TRANSISTORS a film by LISA ROVNER narrated by LAURIE ANDERSON. 2020. USA. 86 min. A patchwork portrait of several female electronic music pioneers. GUEST-PROGRAMMED BY CYRUS GOBERVILLE FOR OUR SUMMER MUSIC FESTIVAL.
-        </p>
-      )}
+      {filmInfo && <p className="reflect-film-info">{filmInfo}</p>}
 
       <div className="practice-inner-panel">
         <button className="reflect-back-btn" onClick={onBack}>← Back</button>
@@ -101,7 +93,7 @@ export const CapsulePractice: React.FC<Props> = ({
         <div className="practice-v2-hero">
           <div className="practice-v2-hero-text">
             <h2 className="practice-v2-cta-title">{practiceTitle}</h2>
-            {!practice && (
+            {!featured && (
               <p className="practice-v2-epigraph">{FALLBACK_PRACTICE.epigraph}</p>
             )}
             <p className="practice-v2-cta-desc">{practiceDescription}</p>
@@ -112,7 +104,7 @@ export const CapsulePractice: React.FC<Props> = ({
             </ul>
           </div>
           <div className="practice-v2-hero-image">
-            <img src="/images/practice-image.jpg" alt="Practice visual" />
+            <img src="/images/practice-image.jpg" alt="" />
           </div>
         </div>
 
@@ -175,19 +167,31 @@ export const CapsulePractice: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* Other Ways to Connect */}
-        <div className="practice-v2-pathways">
-          <h3 className="practice-v2-pathways-heading">Other ways to connect</h3>
-          <div className="practice-v2-cards-grid">
-            {PATHWAY_CARDS.map((card, idx) => (
-              <div key={idx} className="practice-v2-card">
-                <div className="practice-v2-card-image" />
-                <h4 className="practice-v2-card-title">{card.title}</h4>
-                <p className="practice-v2-card-text">{card.text}</p>
-              </div>
-            ))}
+        {/* The capsule's remaining practices. Replaces the old hardcoded
+            "Other ways to connect" Lorem ipsum cards with real content. */}
+        {otherPractices.length > 0 && (
+          <div className="practice-v2-pathways">
+            <h3 className="practice-v2-pathways-heading">More ways to practice</h3>
+            <div className="practice-v2-cards-grid">
+              {otherPractices.map((practice) => {
+                const description = practice.description?.trim();
+                const steps = splitLines(practice.steps);
+                const title = practice.title?.trim();
+
+                return (
+                  <div key={practice.id} className="practice-v2-card">
+                    <div className="practice-v2-card-image" />
+                    {title && <h4 className="practice-v2-card-title">{title}</h4>}
+                    {description && <p className="practice-v2-card-text">{description}</p>}
+                    {steps.map((step, i) => (
+                      <p key={i} className="practice-v2-card-text">{step}</p>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {chatOpen && (
