@@ -174,10 +174,21 @@ With it off the override is ignored and `/api/geme/config` 404s.
 | Model / Effort | Which model answers, and how hard it thinks. |
 | Max tokens | Reply length cap. Set it too low and a reply can get cut off. |
 | Max chars per turn | Truncates over-long visitor messages. |
-| Max turns | How much history Geme is given. |
+| History window | How many messages Geme is given — see the note below. |
 
 "What Geme actually receives" shows the assembled prompt — persona plus the current
 capsule's film and practice — which is what the model is really sent.
+
+**The history window is not the conversation length.** It counts messages from both
+sides and drops the oldest beyond it, so a window of 4 on a six-message conversation
+hides Geme's own opener and the first reply. How many exchanges Geme has before it
+closes is set in the persona — the line reading *"Three to five exchanges, then you
+close"* — so edit that to make conversations longer or shorter.
+
+**Save to file / Load file.** Settings worth keeping can be saved as JSON and loaded
+back later, or handed to someone else to try. The file records all seven values in
+full (not only what was edited), plus which of them differ from the server's, so the
+persona can be lifted straight into `backend/app/geme.py` from `settings.persona`.
 
 ### Endpoints
 
