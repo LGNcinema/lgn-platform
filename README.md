@@ -82,6 +82,43 @@ If you prefer to run the applications locally on your machine without Docker, se
 
 ---
 
+## Deployment notes
+
+### The frontend needs an SPA rewrite rule
+
+The app uses `react-router-dom` with `BrowserRouter`, so routes like `/admin` and
+`/admin/capsules/1/film` are real URL paths. A static host asked for `/admin` looks
+for a file at that path, finds none, and returns **404 before the React app ever
+boots** — so the router never gets to handle the route. Vite's dev server rewrites
+unknown paths to `index.html` automatically, which is why this only bites in
+production.
+
+On Render: static site → **Redirects/Rewrites** → Source `/*`, Destination
+`/index.html`, Action **Rewrite**.
+
+Use *Rewrite*, not *Redirect*. A redirect rewrites the address bar and breaks deep
+links; a rewrite serves `index.html` while preserving the path so the router can
+read it.
+
+Symptom if it's missing: the site works, but every deep link and every hard refresh
+away from `/` returns a plain-text 404.
+
+### Schema changes must be applied before the code that needs them
+
+`supabase db push` applies migrations (schema) only — it does **not** push
+`supabase/seed.sql`, which is local-development data. Its output says as much
+(`"seeds": []`). Deploying code that reads a column before its migration has run
+produces `UndefinedColumn` 500s on every affected endpoint, so migrate first, then
+merge.
+
+### Backend environment
+
+`ADMIN_PASSWORD` must be set on the deployed backend or the admin portal returns
+`503 Admin portal is not configured` — it fails closed rather than open. See
+[backend/.env.example](./backend/.env.example) for that and the Geme variables.
+
+---
+
 ## Geme (Practice → Keep Exploring → Take It Inward)
 
 The Practice pathway ends in a short chat with Geme, our mascot, who asks a few
