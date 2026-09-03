@@ -112,8 +112,20 @@ export const VideoPlayer: React.FC<Props> = ({ film, className }) => {
       <div className={`${rootClass} video-player--empty`} style={frameStyle}>
         <div className="video-status">
           <p className="video-status-title">The player couldn&rsquo;t load</p>
+          {/* Two different failures reach this state and they need different
+              copy. An embed that never fires `load` is usually blocked by an
+              extension or a network policy. A `file` source, by contrast, fails
+              through <video onError> -- the server answered with 403/404 or the
+              codec is unsupported -- and blaming an extension there sends people
+              hunting for a CORS problem that doesn't exist. */}
           <p className="video-status-text">
-            A browser extension or network policy may be blocking {PROVIDER_LABEL[source.provider]}.
+            {source.provider === 'file' ? (
+              <>The video file couldn&rsquo;t be loaded. The link may have moved, or the
+              file may no longer be available at that address.</>
+            ) : (
+              <>A browser extension or network policy may be blocking{' '}
+              {PROVIDER_LABEL[source.provider]}.</>
+            )}
           </p>
           <div className="video-status-actions">
             <button type="button" className="video-status-btn" onClick={retry}>
