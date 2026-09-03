@@ -360,10 +360,10 @@ def submit_storyboard(submission: schemas.StoryboardSubmissionCreate, db: Sessio
 # Geme's chat is stateless on the server: the frontend replays the transcript on
 # every turn and nothing a visitor types is written to the database.
 
-def _geme_system_prompt(capsule_id: int | None, db: Session) -> str:
+def _geme_system_prompt(capsule_id: int | None, db: Session, persona: str | None = None) -> str:
     """System prompt for a capsule, so Geme knows what was just watched."""
     if capsule_id is None:
-        return geme.build_system_prompt()
+        return geme.build_system_prompt(persona=persona)
 
     capsule = db.query(models.Capsule).filter(models.Capsule.id == capsule_id).first()
     if not capsule:
@@ -376,7 +376,19 @@ def _geme_system_prompt(capsule_id: int | None, db: Session) -> str:
     except Exception as e:
         print(f"Error fetching practices relation for Geme: {e}")
 
-    return geme.build_system_prompt(capsule=capsule, practice=practice)
+    return geme.build_system_prompt(capsule=capsule, practice=practice, persona=persona)
+
+
+def _geme_tuning(payload: schemas.GemeChatRequest) -> schemas.GemeTuning:
+    """The caller's draft settings, or an empty set when tuning is switched off.
+
+    Overrides let a client supply Geme's whole system prompt, so they are honoured
+    only where GEME_DEBUG says it is safe. Elsewhere they are ignored rather than
+    rejected, so a stale panel can't break an ordinary conversation.
+    """
+    if payload.tuning and geme.debug_enabled():
+        return payload.tuning
+    return schemas.GemeTuning()
 
 
 def _geme_client():
@@ -403,18 +415,43 @@ def _geme_error_detail(exc: Exception) -> str:
 @app.get("/api/geme/status", response_model=schemas.GemeStatus)
 def geme_status():
     """Whether the Geme chat is available, so the frontend can hide it if not."""
-    return schemas.GemeStatus(enabled=geme.is_enabled())
+    return schemas.GemeStatus(enabled=geme.is_enabled(), debug=geme.debug_enabled())
+
+
+@app.get("/api/geme/config", response_model=schemas.GemeConfig)
+def geme_config(capsule_id: int | None = None, db: Session = Depends(get_db)):
+    """Geme's current persona and parameters, for the dev tuning panel to edit."""
+    if not geme.debug_enabled():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Geme tuning is not enabled on this server."
+        )
+
+    config = geme.defaults()
+    return schemas.GemeConfig(
+        **config,
+        assembled_system_prompt=_geme_system_prompt(capsule_id, db),
+    )
 
 
 @app.post("/api/geme/chat", response_model=schemas.GemeChatResponse)
 async def geme_chat(payload: schemas.GemeChatRequest, db: Session = Depends(get_db)):
     """One Geme turn, returned whole. The streaming route is what the UI uses."""
     client = _geme_client()
-    system = _geme_system_prompt(payload.capsule_id, db)
-    messages = geme.build_messages(payload.messages)
+    tuning = _geme_tuning(payload)
+    system = _geme_system_prompt(payload.capsule_id, db, persona=tuning.persona)
+    messages = geme.build_messages(
+        payload.messages,
+        opening_turn=tuning.opening_turn,
+        max_turns=tuning.max_turns,
+        max_chars=tuning.max_chars_per_turn,
+    )
 
     try:
-        response = await client.messages.create(**geme.request_kwargs(system, messages))
+        response = await client.messages.create(**geme.request_kwargs(
+            system, messages,
+            model=tuning.model, max_tokens=tuning.max_tokens, effort=tuning.effort,
+        ))
     except anthropic.APIError as e:
         print(f"Geme chat error: {e}")
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=_geme_error_detail(e))
@@ -428,13 +465,23 @@ async def geme_chat(payload: schemas.GemeChatRequest, db: Session = Depends(get_
 async def geme_chat_stream(payload: schemas.GemeChatRequest, db: Session = Depends(get_db)):
     """Server-sent events: `delta` as Geme types, then one `done` (or `error`)."""
     client = _geme_client()
-    system = _geme_system_prompt(payload.capsule_id, db)
-    messages = geme.build_messages(payload.messages)
+    tuning = _geme_tuning(payload)
+    system = _geme_system_prompt(payload.capsule_id, db, persona=tuning.persona)
+    messages = geme.build_messages(
+        payload.messages,
+        opening_turn=tuning.opening_turn,
+        max_turns=tuning.max_turns,
+        max_chars=tuning.max_chars_per_turn,
+    )
+    kwargs = geme.request_kwargs(
+        system, messages,
+        model=tuning.model, max_tokens=tuning.max_tokens, effort=tuning.effort,
+    )
 
     async def events():
         step_filter = geme.NextStepFilter()
         try:
-            async with client.messages.stream(**geme.request_kwargs(system, messages)) as stream:
+            async with client.messages.stream(**kwargs) as stream:
                 async for chunk in stream.text_stream:
                     visible = step_filter.feed(chunk)
                     if visible:

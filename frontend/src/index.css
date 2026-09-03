@@ -2938,6 +2938,194 @@ body {
   cursor: default;
 }
 
+/* Geme tuning panel -- dev only, reached from the floating "Geme Tuning" toggle */
+.geme-tune-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1100;
+}
+
+.geme-tune-panel {
+  width: 100%;
+  max-width: 860px;
+  max-height: min(880px, 100%);
+  background: var(--bg-dark);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.35);
+}
+
+.geme-tune-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.geme-tune-title {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 17px;
+  color: var(--text-main);
+}
+
+.geme-tune-note {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--text-dark);
+  margin-top: 4px;
+  max-width: 620px;
+  line-height: 1.5;
+}
+
+.geme-tune-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.geme-tune-loading,
+.geme-tune-error {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--text-muted);
+  padding: 24px;
+}
+
+.geme-tune-error {
+  color: #b04a4a;
+}
+
+.geme-tune-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.geme-tune-label {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.geme-tune-label em {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-dark);
+}
+
+.geme-tune-textarea,
+.geme-tune-input {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-main);
+  padding: 12px 14px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+.geme-tune-textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.geme-tune-textarea.tall {
+  min-height: 320px;
+}
+
+.geme-tune-textarea:focus,
+.geme-tune-input:focus {
+  outline: none;
+  border-color: var(--text-muted);
+}
+
+.geme-tune-input {
+  font-family: var(--font-sans);
+  padding: 9px 12px;
+}
+
+.geme-tune-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 700px) {
+  .geme-tune-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.geme-tune-disclosure {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.geme-tune-disclosure:hover {
+  color: var(--text-main);
+}
+
+.geme-tune-assembled {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.geme-tune-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.geme-tune-status {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--text-dark);
+}
+
+.geme-tune-actions {
+  display: flex;
+  gap: 10px;
+}
+
 /* Discuss View -- circle-discussion-guide (Figma "[CAPSULE]-Discuss LIGHT"), shares the
    light "card" + "inner panel" treatment with the other Capsule sub-pages */
 .discuss-guide-container {

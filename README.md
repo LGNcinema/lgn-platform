@@ -89,12 +89,44 @@ active button, so nothing 500s for anyone cloning the repo.
 | `ANTHROPIC_API_KEY` | *(empty)* | Empty disables Geme. |
 | `GEME_MODEL` | `claude-opus-5` | |
 | `GEME_MAX_TOKENS` | `1024` | Geme's replies are meant to be three sentences. |
+| `GEME_EFFORT` | `low` | How hard the model thinks: `low`–`max`. |
+| `GEME_DEBUG` | `false` | Enables the tuning panel below. **Local only.** |
+
+### Tuning Geme's persona (local only)
+
+Iterating on Geme's wording by editing `geme.py` and redeploying is a slow loop, so
+there's a live tuning panel: a floating **🧪 Geme Tuning** button, next to the theme
+and grid toggles, which opens Geme's persona and parameters for editing and testing
+against a real conversation.
+
+It appears only when the server reports `GEME_DEBUG` — set in `docker-compose.yml`
+for local development and nowhere else. Edits live in your browser (`localStorage`)
+and ride along with your own chat requests; they never touch the server or change
+what anyone else sees. **Settling on wording still means editing
+`backend/app/geme.py` and committing it.**
+
+`GEME_DEBUG` must stay off in any deployment: with it on, anyone who can reach the
+API can replace Geme's system prompt and spend tokens against the server's key.
+With it off the override is ignored and `/api/geme/config` 404s.
+
+| Field | What it does |
+| :--- | :--- |
+| Persona | Geme's whole system prompt. |
+| Opening turn | The hidden prompt that makes Geme greet you first. |
+| Model / Effort | Which model answers, and how hard it thinks. |
+| Max tokens | Reply length cap. Set it too low and a reply can get cut off. |
+| Max chars per turn | Truncates over-long visitor messages. |
+| Max turns | How much history Geme is given. |
+
+"What Geme actually receives" shows the assembled prompt — persona plus the current
+capsule's film and practice — which is what the model is really sent.
 
 ### Endpoints
 
 | Endpoint | Purpose |
 | :--- | :--- |
 | `GET /api/geme/status` | Whether Geme is configured; the frontend checks this before offering the chat. |
+| `GET /api/geme/config` | Geme's live persona and parameters, for the tuning panel. 404s unless `GEME_DEBUG`. |
 | `POST /api/geme/chat/stream` | Server-sent events (`delta` → `done`/`error`). What the UI uses. |
 | `POST /api/geme/chat` | Same turn, returned whole. Useful for testing with `curl`. |
 

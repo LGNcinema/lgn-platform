@@ -103,11 +103,26 @@ class GemeTurn(BaseModel):
     role: Literal["user", "assistant"]
     content: str = Field(max_length=4000)
 
+class GemeTuning(BaseModel):
+    """Draft settings from the dev tuning panel, for one conversation only.
+
+    Every field is optional and falls back to the server's own value. Honoured
+    only when GEME_DEBUG is on -- otherwise the whole object is ignored.
+    """
+    persona: Optional[str] = Field(default=None, max_length=20000)
+    opening_turn: Optional[str] = Field(default=None, max_length=2000)
+    model: Optional[str] = Field(default=None, max_length=100)
+    effort: Optional[Literal["low", "medium", "high", "xhigh", "max"]] = None
+    max_tokens: Optional[int] = Field(default=None, ge=64, le=8192)
+    max_turns: Optional[int] = Field(default=None, ge=2, le=60)
+    max_chars_per_turn: Optional[int] = Field(default=None, ge=100, le=8000)
+
 class GemeChatRequest(BaseModel):
     capsule_id: Optional[int] = None
     # The full visible transcript. The conversation is not stored server-side,
     # so the frontend replays it on every turn; an empty list opens the chat.
     messages: List[GemeTurn] = Field(default_factory=list, max_length=60)
+    tuning: Optional[GemeTuning] = None
 
 class GemeChatResponse(BaseModel):
     reply: str
@@ -116,6 +131,20 @@ class GemeChatResponse(BaseModel):
 
 class GemeStatus(BaseModel):
     enabled: bool
+    # Whether this server accepts tuning overrides and will serve /api/geme/config.
+    debug: bool = False
+
+class GemeConfig(BaseModel):
+    """Geme's current settings, for the tuning panel to load and edit."""
+    persona: str
+    opening_turn: str
+    model: str
+    effort: str
+    max_tokens: int
+    max_turns: int
+    max_chars_per_turn: int
+    # The persona with this capsule's context appended -- what Geme actually receives.
+    assembled_system_prompt: str
 
 # Contact Submission schemas
 class ContactSubmissionBase(BaseModel):

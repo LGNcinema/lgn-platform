@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import type { CapsuleDetail } from '../types';
+import type { CapsuleDetail, GemeTuning } from '../types';
 import { GemeChat } from './GemeChat';
 import { API_URL } from '../api';
 
 interface Props {
   capsule: CapsuleDetail;
   onBack: () => void;
+  // Dev tuning panel overrides. `tuningVersion` bumps on each Apply so the chat
+  // remounts and the new settings are heard from the first word.
+  gemeTuning?: GemeTuning | null;
+  gemeTuningVersion?: number;
 }
 
 // Stand-in copy for capsules that don't have a practice written into the CMS yet.
@@ -39,7 +43,9 @@ const PATHWAY_CARDS = [
   },
 ];
 
-export const CapsulePractice: React.FC<Props> = ({ capsule, onBack }) => {
+export const CapsulePractice: React.FC<Props> = ({
+  capsule, onBack, gemeTuning, gemeTuningVersion = 0,
+}) => {
   const film = capsule.film;
   const [chatOpen, setChatOpen] = useState(false);
   const [gemeEnabled, setGemeEnabled] = useState<boolean | null>(null);
@@ -184,7 +190,14 @@ export const CapsulePractice: React.FC<Props> = ({ capsule, onBack }) => {
         </div>
       </div>
 
-      {chatOpen && <GemeChat capsule={capsule} onClose={() => setChatOpen(false)} />}
+      {chatOpen && (
+        <GemeChat
+          key={gemeTuningVersion}
+          capsule={capsule}
+          onClose={() => setChatOpen(false)}
+          tuning={gemeTuning}
+        />
+      )}
     </div>
   );
 };

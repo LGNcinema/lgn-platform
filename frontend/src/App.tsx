@@ -4,7 +4,8 @@ import { CapsuleView } from './components/CapsuleView';
 import { CapsuleReflect } from './components/CapsuleReflect';
 import { CapsulePractice } from './components/CapsulePractice';
 import { CapsuleDiscuss } from './components/CapsuleDiscuss';
-import type { CapsuleDetail, CapsuleSummary } from './types';
+import { GemeTuningPanel } from './components/GemeTuningPanel';
+import type { CapsuleDetail, CapsuleSummary, GemeTuning } from './types';
 import { API_URL } from './api';
 
 interface TimelineQuote {
@@ -181,6 +182,39 @@ function App() {
     const gridParam = new URLSearchParams(window.location.search).get('grid');
     return gridParam === 'true' || gridParam === '1';
   });
+
+  // Geme tuning (dev only). The panel edits Geme's persona and parameters for the
+  // next conversation; the server only honours them where GEME_DEBUG is on, which
+  // is also what gates the toggle appearing at all. Drafts are kept in
+  // localStorage so a page reload doesn't lose wording someone was working on.
+  const [gemeDebugAvailable, setGemeDebugAvailable] = useState(false);
+  const [gemeTuningOpen, setGemeTuningOpen] = useState<boolean>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('geme') === 'tuning' || params.get('tune') === 'geme';
+  });
+  const [gemeTuning, setGemeTuning] = useState<GemeTuning | null>(() => {
+    try {
+      const saved = localStorage.getItem('lgn_geme_tuning');
+      return saved ? (JSON.parse(saved) as GemeTuning) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [gemeTuningVersion, setGemeTuningVersion] = useState(0);
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/geme/status`)
+      .then((res) => (res.ok ? res.json() : { debug: false }))
+      .then((data) => setGemeDebugAvailable(Boolean(data.debug)))
+      .catch(() => setGemeDebugAvailable(false));
+  }, []);
+
+  const handleApplyGemeTuning = (tuning: GemeTuning | null) => {
+    setGemeTuning(tuning);
+    setGemeTuningVersion((v) => v + 1);
+    if (tuning) localStorage.setItem('lgn_geme_tuning', JSON.stringify(tuning));
+    else localStorage.removeItem('lgn_geme_tuning');
+  };
 
   // Theme state: default 'light', optional 'dark' via URL param ?theme=dark or ?dark=true, or localStorage 'lgn_theme'
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -400,9 +434,11 @@ function App() {
                 />
               )}
               {capsuleActiveAction === 'practice' && (
-                <CapsulePractice 
-                  capsule={activeCapsule} 
-                  onBack={() => setCapsuleActiveAction(null)} 
+                <CapsulePractice
+                  capsule={activeCapsule}
+                  onBack={() => setCapsuleActiveAction(null)}
+                  gemeTuning={gemeTuning}
+                  gemeTuningVersion={gemeTuningVersion}
                 />
               )}
               {(capsuleActiveAction === 'discuss' || capsuleActiveAction === 'gather') && (
@@ -921,7 +957,30 @@ function App() {
             <span>🌐</span>
             <span>Grid Overlay {showGridOverlay ? 'ON' : 'OFF'}</span>
           </button>
+
+          {/* Only where the server accepts tuning overrides -- i.e. GEME_DEBUG,
+              which is set for local development and nowhere else. */}
+          {gemeDebugAvailable && (
+            <button
+              className={`grid-toggle-btn${gemeTuning ? ' active' : ''}`}
+              style={{ bottom: '152px' }}
+              onClick={() => setGemeTuningOpen(true)}
+              title="Edit Geme's persona and parameters, then test them live"
+            >
+              <span>🧪</span>
+              <span>Geme Tuning{gemeTuning ? ' •' : ''}</span>
+            </button>
+          )}
         </>
+      )}
+
+      {gemeTuningOpen && gemeDebugAvailable && (
+        <GemeTuningPanel
+          capsuleId={activeCapsule?.id}
+          tuning={gemeTuning}
+          onApply={handleApplyGemeTuning}
+          onClose={() => setGemeTuningOpen(false)}
+        />
       )}
     </>
   );

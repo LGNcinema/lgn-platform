@@ -77,8 +77,13 @@ def _clean(text):
     return (text or "").strip()
 
 
-def build_system_prompt(capsule=None, practice=None):
-    """Persona plus whatever this capsule can tell Geme about what was just watched."""
+def build_system_prompt(capsule=None, practice=None, persona=None):
+    """Persona plus whatever this capsule can tell Geme about what was just watched.
+
+    `persona` overrides the built-in text -- used by the tuning panel so a draft
+    can be tried against a live conversation before it is written into the file.
+    """
+    persona = _clean(persona) or PERSONA
     context_lines = []
 
     if capsule is not None:
@@ -105,34 +110,38 @@ def build_system_prompt(capsule=None, practice=None):
             context_lines.append(f"What it asks of them: {_clean(practice.steps)}")
 
     if not context_lines:
-        return PERSONA
+        return persona
 
     return (
-        PERSONA
+        persona
         + "\n\nWhat they have just been sitting with:\n"
         + "\n".join(f"- {line}" for line in context_lines)
     )
 
 
-def build_messages(transcript):
+def build_messages(transcript, opening_turn=None, max_turns=None, max_chars=None):
     """Turn the transcript the frontend sent into a valid Messages API history."""
+    opening_turn = _clean(opening_turn) or OPENING_TURN
+    max_turns = max_turns or MAX_TURNS
+    max_chars = max_chars or MAX_CHARS_PER_TURN
+
     messages = []
-    for turn in transcript[-MAX_TURNS:]:
-        content = _clean(turn.content)[:MAX_CHARS_PER_TURN]
+    for turn in transcript[-max_turns:]:
+        content = _clean(turn.content)[:max_chars]
         if not content:
             continue
         # Geme speaks first, so the transcript normally opens on an assistant turn.
         # The history has to open on a user turn instead -- put the seed turn back
         # in front rather than dropping Geme's opening question from the context.
         if not messages and turn.role != "user":
-            messages.append({"role": "user", "content": OPENING_TURN})
+            messages.append({"role": "user", "content": opening_turn})
         messages.append({"role": turn.role, "content": content})
 
     if not messages:
-        messages = [{"role": "user", "content": OPENING_TURN}]
+        messages = [{"role": "user", "content": opening_turn}]
     elif messages[-1]["role"] != "user":
         # Nothing new to answer -- nudge Geme to continue rather than error out.
-        messages.append({"role": "user", "content": OPENING_TURN})
+        messages.append({"role": "user", "content": opening_turn})
 
     return messages
 
@@ -225,13 +234,30 @@ def get_client():
     return _client
 
 
-def request_kwargs(system, messages):
+def request_kwargs(system, messages, model=None, max_tokens=None, effort=None):
     return {
-        "model": settings.GEME_MODEL,
-        "max_tokens": settings.GEME_MAX_TOKENS,
+        "model": model or settings.GEME_MODEL,
+        "max_tokens": max_tokens or settings.GEME_MAX_TOKENS,
         # A short reflective exchange -- low effort keeps replies quick and
         # unfussy, which is what this conversation wants.
-        "output_config": {"effort": "low"},
+        "output_config": {"effort": effort or settings.GEME_EFFORT},
         "system": system,
         "messages": messages,
     }
+
+
+def defaults():
+    """Everything the tuning panel can read and override, with current values."""
+    return {
+        "persona": PERSONA,
+        "opening_turn": OPENING_TURN,
+        "model": settings.GEME_MODEL,
+        "max_tokens": settings.GEME_MAX_TOKENS,
+        "effort": settings.GEME_EFFORT,
+        "max_turns": MAX_TURNS,
+        "max_chars_per_turn": MAX_CHARS_PER_TURN,
+    }
+
+
+def debug_enabled():
+    return settings.GEME_DEBUG

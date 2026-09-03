@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import type { CapsuleDetail, GemeTurn } from '../types';
+import type { CapsuleDetail, GemeTuning, GemeTurn } from '../types';
 import { API_URL } from '../api';
 
 interface Props {
   capsule: CapsuleDetail;
   onClose: () => void;
+  // Dev tuning panel overrides, applied to this conversation only.
+  tuning?: GemeTuning | null;
 }
 
 interface StreamEvent {
@@ -24,7 +26,7 @@ const GEME_AVATAR = '/images/geme.png';
  * turn; nothing is written to the server. Only the step the visitor chooses to
  * keep is saved, and only to their own browser.
  */
-export const GemeChat: React.FC<Props> = ({ capsule, onClose }) => {
+export const GemeChat: React.FC<Props> = ({ capsule, onClose, tuning }) => {
   const [messages, setMessages] = useState<GemeTurn[]>([]);
   const [streamingText, setStreamingText] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
@@ -63,7 +65,7 @@ export const GemeChat: React.FC<Props> = ({ capsule, onClose }) => {
       const response = await fetch(`${API_URL}/api/geme/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ capsule_id: capsule.id, messages: history }),
+        body: JSON.stringify({ capsule_id: capsule.id, messages: history, tuning }),
         signal: controller.signal,
       });
 
@@ -113,7 +115,7 @@ export const GemeChat: React.FC<Props> = ({ capsule, onClose }) => {
         abortRef.current = null;
       }
     }
-  }, [capsule.id]);
+  }, [capsule.id, tuning]);
 
   // Geme opens the conversation, so the first turn goes out with an empty transcript.
   // The cleanup drops the request if the panel closes mid-stream -- and because

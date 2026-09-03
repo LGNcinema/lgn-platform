@@ -32,6 +32,7 @@ npm run dev
 | **`?theme=light`** | Force Light Theme | Overrides saved local preference |
 | **`?debug=true`** / **`?dev=true`** | Enable Debug Buttons | Unhides floating dev buttons on production URLs |
 | **Floating Dev Toggle** | **`[ ☀️ Theme: Light / Dark ]`** | Button at bottom-right corner; saves choice to `localStorage` |
+| **`?geme=tuning`** / **`?tune=geme`** | Open the Geme Tuning panel | Also reachable from the **`[ 🧪 Geme Tuning ]`** floating button. Only appears when the backend reports `GEME_DEBUG`, which is local development only — see the [Geme section of the root README](../README.md#tuning-gemes-persona-local-only). Edits are kept in `localStorage` under `lgn_geme_tuning`. |
 
 ### 2. Direct View Navigation
 
