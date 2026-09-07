@@ -1,10 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { CapsuleDetail } from '../types';
-import { buildFilmInfo } from '../filmInfo';
 
 interface Props {
   capsule: CapsuleDetail;
-  onBack: () => void;
 }
 
 /**
@@ -15,9 +13,7 @@ interface Props {
 const storageKey = (capsuleId: number, reflectionId: number) =>
   `reflect_${capsuleId}_${reflectionId}`;
 
-export const CapsuleReflect: React.FC<Props> = ({ capsule, onBack }) => {
-  const film = capsule.film;
-  const filmInfo = film ? buildFilmInfo(film) : '';
+export const CapsuleReflect: React.FC<Props> = ({ capsule }) => {
   const reflections = useMemo(() => capsule.reflections ?? [], [capsule.reflections]);
 
   /** Only the first reflection carries the section-level "at your own pace" note. */
@@ -64,52 +60,45 @@ export const CapsuleReflect: React.FC<Props> = ({ capsule, onBack }) => {
   };
 
   return (
-    <div className="reflect-v2-container">
-      <h1 className="reflect-capsule-heading">{capsule.title}</h1>
-      {filmInfo && <p className="reflect-film-info">{filmInfo}</p>}
+    <div className="capsule-shell-panel">
+      <div className="reflect-section-header">
+        <h2 className="reflect-section-title">Reflect</h2>
+        <p className="reflect-private-notice">Your reflections are private. Only you can see them.</p>
+        {intro && <p className="reflect-private-notice">{intro}</p>}
+      </div>
 
-      <div className="reflect-inner-panel">
-        <button className="reflect-back-btn" onClick={onBack}>← Back</button>
+      <div className="reflect-questions-list">
+        {reflections.length === 0 ? (
+          <p className="reflect-private-notice">
+            This capsule&rsquo;s reflections are still being written. Check back soon.
+          </p>
+        ) : (
+          reflections.map((reflection) => {
+            const question = reflection.content?.trim() || reflection.title?.trim() || '';
+            const label = reflection.title?.trim();
+            const showLabel = Boolean(label) && label !== question;
 
-        <div className="reflect-section-header">
-          <h2 className="reflect-section-title">Reflect</h2>
-          <p className="reflect-private-notice">Your reflections are private. Only you can see them.</p>
-          {intro && <p className="reflect-private-notice">{intro}</p>}
-        </div>
-
-        <div className="reflect-questions-list">
-          {reflections.length === 0 ? (
-            <p className="reflect-private-notice">
-              This capsule&rsquo;s reflections are still being written. Check back soon.
-            </p>
-          ) : (
-            reflections.map((reflection) => {
-              const question = reflection.content?.trim() || reflection.title?.trim() || '';
-              const label = reflection.title?.trim();
-              const showLabel = Boolean(label) && label !== question;
-
-              return (
-                <div key={reflection.id} className="reflect-question-block">
-                  {showLabel && <span className="reflect-private-notice">{label}</span>}
-                  <h3 className="reflect-question-text">{question}</h3>
-                  <textarea
-                    className="reflect-textarea"
-                    placeholder="Take your time..."
-                    value={answers[reflection.id] || ''}
-                    onChange={(e) => handleChange(reflection.id, e.target.value)}
-                    aria-label={question || label || 'Reflection'}
-                  />
-                  <button
-                    className={`reflect-save-btn${saved[reflection.id] ? ' saved' : ''}`}
-                    onClick={() => handleSave(reflection.id)}
-                  >
-                    {saved[reflection.id] ? 'Saved' : 'Save'}
-                  </button>
-                </div>
-              );
-            })
-          )}
-        </div>
+            return (
+              <div key={reflection.id} className="reflect-question-block">
+                {showLabel && <span className="reflect-private-notice">{label}</span>}
+                <h3 className="reflect-question-text">{question}</h3>
+                <textarea
+                  className="reflect-textarea"
+                  placeholder="Take your time..."
+                  value={answers[reflection.id] || ''}
+                  onChange={(e) => handleChange(reflection.id, e.target.value)}
+                  aria-label={question || label || 'Reflection'}
+                />
+                <button
+                  className={`reflect-save-btn${saved[reflection.id] ? ' saved' : ''}`}
+                  onClick={() => handleSave(reflection.id)}
+                >
+                  {saved[reflection.id] ? 'Saved' : 'Save'}
+                </button>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

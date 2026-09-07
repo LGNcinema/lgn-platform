@@ -59,6 +59,41 @@
   --col-width: 280px;
   --sidebar-start: 40px;
   --body-start: 664px;
+
+  /* Width between the locked page margins -- the part that flexes on resize.
+     Anything "locked left" starts at --grid-margin and takes a share of this,
+     so it stays aligned with the nav pill and the footer at every width. */
+  --content-width: calc(100% - (2 * var(--grid-margin)));
+
+  /* Header geometry. The floating header does NOT scale with the hero's
+     aspect ratio, so anything that must sit below it is measured from these
+     rather than from a percentage of the hero's height. */
+  --header-top: clamp(16px, 2.0833vw, 40px);
+  /* 40 / 1920 -- matches Figma's Header y=40 at full width */
+  --header-pill-height: 49px;
+  --header-bottom: calc(var(--header-top) + var(--header-pill-height));
+
+  /* Homepage hero (logo / tagline / button) scaled down per design review.
+     One number drives all three -- 1 = the original Figma size. */
+  --home-hero-scale: 0.825;
+
+  /* About page content scaled down 30% per design review. Drives type and
+     vertical rhythm together so the page keeps its proportions. */
+  --about-scale: 0.7;
+
+  /* Invest: one weight shared by the section rules and the +/- icon strokes,
+     so they read as the same line. */
+  --invest-rule-weight: 1.5px;
+
+  /* Every piece of footer copy sits at this one grey -- headers, nav, address,
+     the email field and the fine print alike. The Submit button is deliberately
+     excluded (it keeps the shared button treatment). Header/body contrast in
+     the footer therefore comes from size and weight, not colour. */
+  --footer-text: var(--text-dark);
+  --footer-text-hover: var(--primary);
+  /* A step lighter than --footer-text, so an empty email field still reads as
+     empty. Tracks --footer-text: bump this whenever that changes. */
+  --footer-placeholder: #adadad;
 }
 
 [data-theme="dark"] {
@@ -165,8 +200,7 @@ body {
 /* Floating Header Layout */
 .floating-header-container {
   position: absolute;
-  top: clamp(16px, 2.0833vw, 40px);
-  /* 40 / 1920 -- matches Figma's Header y=40 at full width */
+  top: var(--header-top);
   left: var(--grid-margin);
   right: var(--grid-margin);
   display: flex;
@@ -179,7 +213,8 @@ body {
 
 .header-pill-left {
   background-color: var(--header-pill-bg);
-  height: 49px;
+  /* Figma "Header" instance: 376x49, 10px inset, 22px between menu items. */
+  height: var(--header-pill-height);
   padding: 0 10px;
   border-radius: 5px;
   display: flex;
@@ -191,7 +226,10 @@ body {
 .header-pill-right {
   background-color: var(--header-pill-right-bg);
   height: 44px;
-  padding: 0 17px;
+  /* The label carries the 17/10 inset instead (Figma "Button" 118x44, label at
+     x=17 y=10), so the hover state covers the whole pill rather than just the
+     text -- matching every other nav item. */
+  padding: 0;
   border-radius: 5px;
   display: flex;
   align-items: center;
@@ -199,7 +237,11 @@ body {
 }
 
 .header-pill-right .nav-link-pill {
-  padding: 0;
+  padding: 10px 17px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  border-radius: 5px;
 }
 
 .nav-brand-btn {
@@ -209,9 +251,16 @@ body {
   cursor: pointer;
   display: flex;
   align-items: center;
-  padding: 6px;
+  padding: 0;
   border-radius: 4px;
   transition: var(--transition);
+}
+
+.nav-brand-btn img {
+  /* Figma "LGN-Icon" inside the header pill: 22x23 */
+  width: 22px;
+  height: 23px;
+  display: block;
 }
 
 .nav-brand-btn:hover {
@@ -233,7 +282,10 @@ body {
   cursor: pointer;
   transition: var(--transition);
   text-decoration: none;
-  padding: 4px 12px;
+  /* Figma "Menu Item" is 74x29 around a 24px line box -- the page's 1.6 body
+     leading was silently making every nav item ~34px tall. */
+  line-height: 24px;
+  padding: 2.5px 15px;
   border-radius: 4px;
 }
 
@@ -341,18 +393,19 @@ body {
   box-sizing: border-box;
   position: relative;
   aspect-ratio: 1920 / 1080;
+  min-height: 560px;
   background-color: var(--bg-darker);
   color: var(--primary);
 }
 
 .home-definition-block {
   position: absolute;
-  left: 2.0833%;
-  /* 40 / 1920 */
-  top: 11.1111%;
-  /* 120 / 1080 */
-  width: 24.375%;
-  /* 468 / 1920 */
+  left: var(--grid-margin);
+  /* Figma x=40 -- locked to the same margin as the nav pill and the footer */
+  top: calc(var(--header-bottom) + clamp(20px, 1.6146vw, 31px));
+  /* Figma y=120 == header bottom (89) + 31 */
+  width: max(240px, calc(var(--content-width) * 0.254348));
+  /* 468 / 1840 of the column area -- the column expands, the margin does not */
   font-family: var(--font-sans);
   font-size: clamp(14px, 1.5vw, 16px);
   font-weight: 500;
@@ -402,13 +455,13 @@ body {
 
 .home-hero-logo {
   width: auto;
-  height: 100%;
+  height: calc(100% * var(--home-hero-scale));
   max-width: 90%;
 }
 
 .home-hero-subtitle {
   font-family: var(--font-sans);
-  font-size: clamp(20px, 2.5vw, 32px);
+  font-size: calc(clamp(20px, 2.5vw, 32px) * var(--home-hero-scale));
   font-weight: 500;
   color: var(--primary);
   margin: 0;
@@ -420,12 +473,12 @@ body {
   background-color: var(--hero-btn-bg);
   color: var(--hero-btn-text);
   border: none;
-  width: clamp(160px, 13.3333vw, 256px);
+  width: calc(clamp(160px, 13.3333vw, 256px) * var(--home-hero-scale));
   /* 256 / 1920 */
-  height: clamp(44px, 4.2708vw, 82px);
+  height: calc(clamp(44px, 4.2708vw, 82px) * var(--home-hero-scale));
   /* 82 / 1920 */
   font-family: var(--font-sans);
-  font-size: clamp(16px, 1.25vw, 24px);
+  font-size: calc(clamp(16px, 1.25vw, 24px) * var(--home-hero-scale));
   font-weight: 500;
   border-radius: 5px;
   cursor: pointer;
@@ -800,6 +853,11 @@ body {
   color: var(--text-main);
 }
 
+.interactive-form-grid > .rsvp-button {
+  justify-self: start;
+  width: 100%;
+}
+
 .rsvp-button {
   background: var(--border);
   color: var(--text-light);
@@ -890,6 +948,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0;
+  /* Figma puts the nav at y=181 against content at y=195 -- the nav's first
+     item optically centres on the content's first line. */
+  margin-top: -14px;
 }
 
 .about-nav-btn {
@@ -926,20 +987,25 @@ body {
 
 /* Mission & Vision */
 .about-mv-section {
-  margin-bottom: 80px;
+  margin-bottom: calc(80px * var(--about-scale));
 }
 
 .about-mv-label {
   font-family: var(--font-sans);
-  font-size: 24px;
+  font-size: calc(24px * var(--about-scale));
   color: var(--text-muted);
   font-weight: 500;
-  margin-bottom: 16px;
+  margin-bottom: calc(16px * var(--about-scale));
+}
+
+/* Gap between the Mission block and the Vision block. */
+.about-mv-block + .about-mv-block {
+  margin-top: calc(80px * var(--about-scale));
 }
 
 .about-mv-text {
   font-family: var(--font-sans);
-  font-size: 48px;
+  font-size: calc(48px * var(--about-scale));
   line-height: 1.15;
   color: var(--primary);
   font-weight: 500;
@@ -950,31 +1016,31 @@ body {
 /* Purpose */
 .about-purpose-text {
   font-family: var(--font-sans);
-  font-size: 48px;
+  font-size: calc(48px * var(--about-scale));
   line-height: 1.15;
   color: var(--primary);
   font-weight: 500;
   letter-spacing: -0.03em;
-  margin-bottom: 48px;
+  margin-bottom: calc(48px * var(--about-scale));
 }
 
 /* Board & Staff */
 .team-section {
-  margin-bottom: 80px;
+  margin-bottom: calc(80px * var(--about-scale));
 }
 
 .team-label {
   font-family: var(--font-sans);
-  font-size: 24px;
+  font-size: calc(24px * var(--about-scale));
   color: var(--text-muted);
   font-weight: 500;
-  margin-bottom: 16px;
+  margin-bottom: calc(16px * var(--about-scale));
 }
 
 .team-list-layout {
   display: flex;
   flex-direction: column;
-  gap: 80px;
+  gap: calc(80px * var(--about-scale));
 }
 
 .team-list-item {
@@ -985,7 +1051,7 @@ body {
 
 .team-list-item .person-name {
   font-family: var(--font-sans);
-  font-size: 48px;
+  font-size: calc(48px * var(--about-scale));
   font-weight: 600;
   color: var(--primary);
   margin: 0;
@@ -995,7 +1061,7 @@ body {
 
 .team-list-item .person-title {
   font-family: var(--font-sans);
-  font-size: 24px;
+  font-size: calc(24px * var(--about-scale));
   color: var(--primary);
   margin: 0;
   opacity: 1;
@@ -1003,9 +1069,9 @@ body {
 
 .team-list-item .person-bio {
   font-family: var(--font-sans);
-  font-size: 24px;
+  font-size: calc(24px * var(--about-scale));
   color: var(--text-muted);
-  margin-top: 12px;
+  margin-top: calc(12px * var(--about-scale));
   line-height: 1.3;
   max-width: 800px;
   opacity: 1;
@@ -1055,14 +1121,17 @@ body {
 
 .invest-accordion {
   width: 100%;
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--invest-rule-weight) solid var(--border);
 }
 
 .invest-accordion-row {
-  border-top: 1px solid var(--border);
+  border-top: var(--invest-rule-weight) solid var(--border);
   display: grid;
-  grid-template-columns: clamp(120px, 25vw, 429px) 1fr 40px;
-  padding: 12px 0 48px 0;
+  /* Figma: title column 662->970 of a 1216px content area (25.33%), body
+     column to 1839, then a 40px well for the +/- icon. */
+  grid-template-columns: minmax(120px, 25.33%) 1fr 40px;
+  /* Figma: rule at y=286.5, title at y=295 */
+  padding: 8px 0 48px 0;
   cursor: pointer;
   align-items: start;
   user-select: none;
@@ -1089,12 +1158,23 @@ body {
 }
 
 .invest-row-icon {
-  font-family: var(--font-sans);
-  font-size: 33px;
-  color: var(--primary);
-  text-align: right;
-  line-height: 1.15;
   align-self: start;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  color: var(--primary);
+}
+
+.invest-row-icon svg {
+  /* Figma "+"/"—" glyph box: 24x24, top-aligned with the row title. */
+  width: 24px;
+  height: 24px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--invest-rule-weight);
+  stroke-linecap: butt;
+  vector-effect: non-scaling-stroke;
 }
 
 .invest-bullet-list {
@@ -1234,7 +1314,20 @@ body {
 /* Forms General Layout */
 .form-view-wrapper {
   max-width: 600px;
-  margin: 60px auto;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* Top inset clears the floating header (40px + 49px pill). */
+  padding: clamp(120px, 15vh, 200px) 0 clamp(80px, 10vh, 140px);
+  box-sizing: border-box;
+}
+
+.form-view-wrapper > p {
+  color: var(--text-muted);
+  margin-bottom: 32px;
+  max-width: 600px;
 }
 
 .interactive-form-grid {
@@ -1360,6 +1453,7 @@ body {
 
 /* Footer styling */
 .lgn-footer {
+  color: var(--footer-text);
   border-top: 1px solid var(--border);
   /* 39 / 1920 -- Figma footer instance has ~39px of breathing room above/below its content */
   padding: clamp(24px, 2.0313vw, 39px) var(--grid-margin);
@@ -1400,11 +1494,14 @@ body {
   flex-direction: column;
 }
 
-.footer-brand {
-  font-size: 24px;
-  font-weight: 700;
+/* Scaled down 10% from 380px per design review. The asset itself was the
+   source of the "cropped / weird bounding box" artefacts -- it used to be a
+   4096px PNG wrapped in an SVG pattern whose transform overhung the tile on
+   every edge; it is now the real vector (design/logo_proper_svgs). */
+.footer-logo {
+  width: 100%;
+  max-width: 342px;
   margin-bottom: 24px;
-  color: var(--text-light);
 }
 
 .footer-nav {
@@ -1418,27 +1515,36 @@ body {
 .footer-nav button {
   background: none;
   border: none;
-  color: var(--text-main);
-  font-size: 14px;
+  color: var(--footer-text);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
   cursor: pointer;
   padding: 0;
+  text-align: left;
 }
 
 .footer-nav button:hover {
-  color: var(--text-light);
+  color: var(--footer-text-hover);
 }
 
 .footer-col h3 {
-  font-size: 14px;
-  color: var(--text-muted);
+  font-size: 18px;
+  color: var(--footer-text);
   margin-bottom: 16px;
-  font-weight: 500;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
+/* Mailing address: leading pulled in close to the type size (16/19.2). The
+   design note asks for roughly "32pt type on 32pt leading" -- 1.2 is the
+   eyeballed version of that; it is the one number to nudge if it wants to be
+   tighter still. */
 .footer-col p {
-  font-size: 14px;
-  color: var(--text-main);
-  line-height: 1.6;
+  font-size: 16px;
+  color: var(--footer-text);
+  line-height: 1.2;
   margin-bottom: 24px;
 }
 
@@ -1453,7 +1559,7 @@ body {
 .join-form input {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  color: var(--primary);
+  color: var(--footer-text);
   padding: 12px 16px;
   border-radius: 4px;
   width: 100%;
@@ -1463,7 +1569,7 @@ body {
 }
 
 .join-form input::placeholder {
-  color: var(--text-muted);
+  color: var(--footer-placeholder);
 }
 
 .join-form button {
@@ -1486,7 +1592,7 @@ body {
 
 .footer-bottom-text {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--footer-text);
   margin-top: auto;
 }
 
@@ -1496,12 +1602,12 @@ body {
 }
 
 .social-links a {
-  color: var(--text-muted);
+  color: var(--footer-text);
   text-decoration: none;
 }
 
 .social-links a:hover {
-  color: var(--text-light);
+  color: var(--footer-text-hover);
 }
 
 /* New Timeline Grid/Table Layout */
@@ -1509,10 +1615,10 @@ body {
   position: relative;
   width: 100%;
   max-width: var(--grid-max-width);
-  margin: clamp(110px, 10.2604vw, 197px) auto -60px;
-  /* 197 / 1920 -- matches Figma "A Witness through Time" heading y=197 */
+  margin: clamp(96px, 7.8125vw, 150px) auto -60px;
+  /* Pulled in from the Figma's 197px lead-in per design review. */
   box-sizing: border-box;
-  padding: 0 var(--grid-margin) 100px;
+  padding: 0 var(--grid-margin) 72px;
   background-color: var(--bg-darker);
   color: var(--primary);
   min-height: 100vh;
@@ -1522,7 +1628,7 @@ body {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: var(--grid-gutter);
-  margin-bottom: 72px;
+  margin-bottom: 48px;
   align-items: start;
 }
 
@@ -1591,12 +1697,12 @@ body {
   font-family: var(--font-serif);
   font-size: clamp(14px, 1.25vw, 24px);
   color: var(--primary);
-  padding: 0 0 32px 0;
+  padding: 0 0 24px 0;
   font-weight: normal;
 }
 
 .timeline-table td {
-  padding: 20px 0;
+  padding: 16px 0;
   border-bottom: none;
   vertical-align: top;
   font-family: var(--font-serif);
@@ -1626,18 +1732,18 @@ body {
 .active-era-name {
   font-family: var(--font-serif);
   font-size: clamp(14px, 1.25vw, 24px);
-  color: #ffffff;
+  color: var(--primary);
   text-decoration: underline;
   text-underline-offset: 4px;
   line-height: 1.2;
 }
 
 .timeline-spacer-row td {
-  padding: 32px 0;
+  padding: 24px 0;
 }
 
 .era-nav-row td {
-  padding: 32px 0;
+  padding: 24px 0;
 }
 
 .col-empty-message {
@@ -1962,11 +2068,13 @@ body {
 }
 
 /* Outer Figma "Rectangle 27" card -- light grey panel starting right below the month tabs */
-.capsule-v2-container {
+.capsule-shell {
   width: 100%;
   max-width: var(--grid-max-width);
   margin: 0 auto;
-  padding: clamp(48px, 6.5625vw, 126px) clamp(24px, 2.8646vw, 55px) clamp(24px, 2.8646vw, 55px);
+  /* Tightened from 126px: the section nav now occupies the head of the card,
+     so the old lead-in just pushed the video below the fold. */
+  padding: clamp(40px, 4.6875vw, 90px) clamp(24px, 2.8646vw, 55px) clamp(24px, 2.8646vw, 55px);
   background-color: var(--bg-dark);
   border-radius: 8px;
   display: flex;
@@ -1974,7 +2082,7 @@ body {
   box-sizing: border-box;
 }
 
-.capsule-v2-main-heading {
+.capsule-shell-heading {
   font-family: var(--font-sans);
   font-weight: 500;
   font-size: clamp(28px, 3.5vw, 40px);
@@ -1982,15 +2090,56 @@ body {
   letter-spacing: -0.03em;
   color: var(--text-main);
   text-align: left;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 }
 
-/* Inner Figma "Rectangle 62" panel -- holds the video + read-more link + action cards */
-.capsule-v2-inner-panel {
+.capsule-shell-film-info {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin: 0;
+  max-width: 1000px;
+}
+
+/* Persistent section nav -- the capsule's equivalent of the About sidebar. */
+.capsule-shell-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 22px;
+  margin-top: clamp(24px, 2.6vw, 50px);
+}
+
+.capsule-shell-nav-btn {
+  background: none;
+  border: none;
+  padding: 2.5px 0;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.2s ease;
+  border-bottom: 1.5px solid transparent;
+}
+
+.capsule-shell-nav-btn:hover {
+  color: var(--text-main);
+}
+
+.capsule-shell-nav-btn.active {
+  color: var(--text-main);
+  border-bottom-color: var(--text-main);
+}
+
+/* The swapped grey panel. Every section's body uses this. */
+.capsule-shell-panel {
   background-color: var(--border);
   border-radius: 8px;
   padding: clamp(16px, 1.6667vw, 32px);
-  margin-top: clamp(32px, 5.5vw, 106px);
+  margin-top: clamp(20px, 2.0833vw, 40px);
   display: flex;
   flex-direction: column;
 }
@@ -2306,15 +2455,6 @@ body {
   }
 }
 
-.capsule-v2-film-info {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  color: var(--text-muted);
-  line-height: 1.4;
-  margin-top: 24px;
-  max-width: 1000px;
-}
-
 .read-about-link {
   color: var(--text-muted);
   text-decoration: none;
@@ -2399,61 +2539,6 @@ body {
 }
 
 /* Reflect View V2 (Figma-matching) -- shares the light "card" + "inner panel" treatment with capsule-v2-container */
-.reflect-v2-container {
-  width: 100%;
-  max-width: var(--grid-max-width);
-  margin: 0 auto;
-  padding: clamp(48px, 6.5625vw, 126px) clamp(24px, 2.8646vw, 55px) clamp(24px, 2.8646vw, 55px);
-  background-color: var(--bg-dark);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-.reflect-inner-panel {
-  background-color: var(--border);
-  border-radius: 8px;
-  padding: clamp(16px, 1.6667vw, 32px);
-  margin-top: clamp(24px, 3.5417vw, 68px);
-  display: flex;
-  flex-direction: column;
-}
-
-.reflect-back-btn {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-family: var(--font-sans);
-  font-size: 14px;
-  cursor: pointer;
-  padding: 0;
-  margin-bottom: 32px;
-  align-self: flex-start;
-}
-
-.reflect-back-btn:hover {
-  color: var(--primary);
-}
-
-.reflect-capsule-heading {
-  font-family: var(--font-sans);
-  font-weight: 500;
-  font-size: clamp(28px, 3.5vw, 40px);
-  letter-spacing: -0.02em;
-  color: var(--text-main);
-  margin-bottom: 12px;
-}
-
-.reflect-film-info {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  color: var(--text-muted);
-  line-height: 1.4;
-  margin-bottom: 0;
-  max-width: 900px;
-}
-
 .reflect-section-header {
   margin-bottom: 32px;
 }
@@ -2651,36 +2736,6 @@ body {
 }
 
 /* Practice View V2 (Figma-matching) -- shares the light "card" + "inner panel" treatment */
-.practice-v2-container {
-  width: 100%;
-  max-width: var(--grid-max-width);
-  margin: 0 auto;
-  padding: clamp(48px, 6.5625vw, 126px) clamp(24px, 2.8646vw, 55px) clamp(24px, 2.8646vw, 55px);
-  background-color: var(--bg-dark);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-.practice-inner-panel {
-  background-color: var(--border);
-  border-radius: 8px;
-  padding: clamp(16px, 1.6667vw, 32px);
-  margin-top: clamp(24px, 3.5417vw, 68px);
-  display: flex;
-  flex-direction: column;
-}
-
-.practice-v2-capsule-heading {
-  font-family: var(--font-sans);
-  font-weight: 500;
-  font-size: clamp(28px, 3.5vw, 40px);
-  letter-spacing: -0.02em;
-  color: var(--text-main);
-  margin-bottom: 0;
-}
-
 /* Section label ("PRACTICE") -- small bold caps, matches Reflect/Discuss section labels */
 .practice-v2-section-label {
   font-family: var(--font-sans);
@@ -3432,27 +3487,6 @@ body {
 
 /* Discuss View -- circle-discussion-guide (Figma "[CAPSULE]-Discuss LIGHT"), shares the
    light "card" + "inner panel" treatment with the other Capsule sub-pages */
-.discuss-guide-container {
-  width: 100%;
-  max-width: var(--grid-max-width);
-  margin: 0 auto;
-  padding: clamp(48px, 6.5625vw, 126px) clamp(24px, 2.8646vw, 55px) clamp(24px, 2.8646vw, 55px);
-  background-color: var(--bg-dark);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-.discuss-guide-inner-panel {
-  background-color: var(--border);
-  border-radius: 8px;
-  padding: clamp(16px, 1.6667vw, 32px);
-  margin-top: clamp(24px, 3.5417vw, 68px);
-  display: flex;
-  flex-direction: column;
-}
-
 .discuss-guide-note {
   font-family: var(--font-sans);
   font-size: 14px;
@@ -3707,4 +3741,4 @@ body {
   color: #000000;
   border-color: #00e5ff;
   font-weight: 700;
-}
+}

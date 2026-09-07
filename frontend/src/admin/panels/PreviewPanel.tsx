@@ -4,9 +4,9 @@
  * This mounts the *real* public components (`CapsuleView`, `CapsuleReflect`,
  * `CapsuleDiscuss`, `CapsulePractice`) with the draft the admin already fetched,
  * so what is on screen is the site's own markup and the site's own stylesheet --
- * not a second, drifting copy of it. The four views are wired through those
- * components' existing `onNavigate` / `onBack` callbacks, so the preview also
- * exercises the navigation a visitor would use.
+ * not a second, drifting copy of it. As on the public page, the capsule shell
+ * (title + credit line) stays put and only the grey panel inside it is swapped;
+ * this panel's own view buttons stand in for the shell's section nav.
  *
  * It lives behind the admin token on purpose. An unpublished capsule's film
  * carries a Vimeo id and private hash, so a public preview URL would hand out an
@@ -21,6 +21,7 @@ import { CapsuleDiscuss } from '../../components/CapsuleDiscuss';
 import { CapsulePractice } from '../../components/CapsulePractice';
 import { CapsuleReflect } from '../../components/CapsuleReflect';
 import { CapsuleView } from '../../components/CapsuleView';
+import { buildFilmInfo } from '../../filmInfo';
 import { formatLocal, localTimeLabel, parseNaiveUtc, publicationState } from '../publishing';
 import { StatusPill } from '../StatusPill';
 import { Note, PanelHead } from './Fields';
@@ -105,18 +106,19 @@ export function PreviewPanel({ capsule }: PanelProps) {
         <div className="apnl-preview-stage">
           <div className="capsule-view-wrapper">
             <div className="capsule-content-area">
-              {view === 'capsule' && (
-                <CapsuleView capsule={capsule} onNavigate={(next) => setView(next)} />
-              )}
-              {view === 'reflect' && (
-                <CapsuleReflect capsule={capsule} onBack={() => setView('capsule')} />
-              )}
-              {view === 'discuss' && (
-                <CapsuleDiscuss capsule={capsule} onBack={() => setView('capsule')} />
-              )}
-              {view === 'practice' && (
-                <CapsulePractice capsule={capsule} onBack={() => setView('capsule')} />
-              )}
+              <div className="capsule-shell">
+                <h1 className="capsule-shell-heading">{capsule.title}</h1>
+                {capsule.film && (
+                  <p className="capsule-shell-film-info">{buildFilmInfo(capsule.film)}</p>
+                )}
+
+                {view === 'capsule' && (
+                  <CapsuleView capsule={capsule} onNavigate={(next) => setView(next)} />
+                )}
+                {view === 'reflect' && <CapsuleReflect capsule={capsule} />}
+                {view === 'discuss' && <CapsuleDiscuss capsule={capsule} />}
+                {view === 'practice' && <CapsulePractice capsule={capsule} />}
+              </div>
             </div>
           </div>
         </div>

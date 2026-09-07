@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import type { CapsuleDetail, GemeTuning } from '../types';
-import { buildFilmInfo, splitLines } from '../filmInfo';
+import { splitLines } from '../filmInfo';
 import { GemeChat } from './GemeChat';
 import { API_URL } from '../api';
 
 interface Props {
   capsule: CapsuleDetail;
-  onBack: () => void;
   // Dev tuning panel overrides. `tuningVersion` bumps on each Apply so the chat
   // remounts and the new settings are heard from the first word.
   gemeTuning?: GemeTuning | null;
@@ -30,10 +29,8 @@ const FALLBACK_PRACTICE = {
 };
 
 export const CapsulePractice: React.FC<Props> = ({
-  capsule, onBack, gemeTuning, gemeTuningVersion = 0,
+  capsule, gemeTuning, gemeTuningVersion = 0,
 }) => {
-  const film = capsule.film;
-  const filmInfo = film ? buildFilmInfo(film) : '';
   const practices = capsule.practices ?? [];
 
   const [chatOpen, setChatOpen] = useState(false);
@@ -80,13 +77,8 @@ export const CapsulePractice: React.FC<Props> = ({
   const otherPractices = practices.slice(1);
 
   return (
-    <div className="practice-v2-container">
-      <h1 className="practice-v2-capsule-heading">{capsule.title}</h1>
-      {filmInfo && <p className="reflect-film-info">{filmInfo}</p>}
-
-      <div className="practice-inner-panel">
-        <button className="reflect-back-btn" onClick={onBack}>← Back</button>
-
+    <>
+      <div className="capsule-shell-panel">
         <p className="practice-v2-section-label">Practice</p>
 
         {/* This capsule's hand-picked exercise: text left, image right */}
@@ -202,6 +194,6 @@ export const CapsulePractice: React.FC<Props> = ({
           tuning={gemeTuning}
         />
       )}
-    </div>
+    </>
   );
 };

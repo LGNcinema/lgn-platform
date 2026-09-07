@@ -6,6 +6,7 @@ import { CapsulePractice } from './components/CapsulePractice';
 import { CapsuleDiscuss } from './components/CapsuleDiscuss';
 import { GemeTuningPanel } from './components/GemeTuningPanel';
 import type { CapsuleDetail, CapsuleSummary, GemeTuning } from './types';
+import { buildFilmInfo } from './filmInfo';
 import { API_URL } from './api';
 
 interface TimelineQuote {
@@ -123,9 +124,28 @@ const GridOverlay = ({ cols, rows }: { cols: number; rows: number }) => (
   </div>
 );
 
+
+// Invest accordion +/- glyph. Drawn rather than typed so its stroke weight can
+// be pinned to the same --invest-rule-weight as the section rules, and so its
+// 24px box top-aligns with the row title (Figma has icon y == title y).
+const AccordionIcon = ({ expanded }: { expanded: boolean }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <line x1="2" y1="12" x2="22" y2="12" />
+    {!expanded && <line x1="12" y1="2" x2="12" y2="22" />}
+  </svg>
+);
+
 const VALID_VIEWS = ['home', 'capsule', 'timeline', 'about', 'invest', 'contact', 'submit-film'] as const;
 const VALID_ABOUT_SUBVIEWS = ['purpose', 'mission-vision', 'board-staff'] as const;
 const VALID_CAPSULE_ACTIONS = ['reflect', 'gather', 'practice', 'discuss'] as const;
+
+/** Section nav for the capsule shell. `null` is the film itself. */
+const CAPSULE_SECTIONS: { key: 'reflect' | 'practice' | 'discuss' | null; label: string }[] = [
+  { key: null, label: 'Film' },
+  { key: 'reflect', label: 'Reflect' },
+  { key: 'discuss', label: 'Discuss' },
+  { key: 'practice', label: 'Practice' },
+];
 
 function App() {
   // Navigation / Router States
@@ -421,32 +441,52 @@ function App() {
               })}
             </div>
             <div className="capsule-content-area" style={{ padding: 0 }}>
-              {!capsuleActiveAction && (
-                <CapsuleView 
-                  capsule={activeCapsule} 
-                  onNavigate={(view) => setCapsuleActiveAction(view as 'reflect' | 'practice' | 'discuss' | 'gather')} 
-                />
-              )}
-              {capsuleActiveAction === 'reflect' && (
-                <CapsuleReflect 
-                  capsule={activeCapsule} 
-                  onBack={() => setCapsuleActiveAction(null)} 
-                />
-              )}
-              {capsuleActiveAction === 'practice' && (
-                <CapsulePractice
-                  capsule={activeCapsule}
-                  onBack={() => setCapsuleActiveAction(null)}
-                  gemeTuning={gemeTuning}
-                  gemeTuningVersion={gemeTuningVersion}
-                />
-              )}
-              {(capsuleActiveAction === 'discuss' || capsuleActiveAction === 'gather') && (
-                <CapsuleDiscuss 
-                  capsule={activeCapsule} 
-                  onBack={() => setCapsuleActiveAction(null)} 
-                />
-              )}
+              {/* The shell -- title, credit line, section nav -- stays mounted;
+                  choosing a section only swaps the grey panel inside it. */}
+              <div className="capsule-shell">
+                <h1 className="capsule-shell-heading">{activeCapsule.title}</h1>
+                {activeCapsule.film && (
+                  <p className="capsule-shell-film-info">{buildFilmInfo(activeCapsule.film)}</p>
+                )}
+
+                <nav className="capsule-shell-nav" aria-label="Capsule sections">
+                  {CAPSULE_SECTIONS.map(({ key, label }) => {
+                    const active = key === null
+                      ? capsuleActiveAction === null
+                      : capsuleActiveAction === key || (key === 'discuss' && capsuleActiveAction === 'gather');
+                    return (
+                      <button
+                        key={label}
+                        className={`capsule-shell-nav-btn${active ? ' active' : ''}`}
+                        aria-current={active ? 'page' : undefined}
+                        onClick={() => setCapsuleActiveAction(key)}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </nav>
+
+                {!capsuleActiveAction && (
+                  <CapsuleView
+                    capsule={activeCapsule}
+                    onNavigate={(view) => setCapsuleActiveAction(view as 'reflect' | 'practice' | 'discuss' | 'gather')}
+                  />
+                )}
+                {capsuleActiveAction === 'reflect' && (
+                  <CapsuleReflect capsule={activeCapsule} />
+                )}
+                {capsuleActiveAction === 'practice' && (
+                  <CapsulePractice
+                    capsule={activeCapsule}
+                    gemeTuning={gemeTuning}
+                    gemeTuningVersion={gemeTuningVersion}
+                  />
+                )}
+                {(capsuleActiveAction === 'discuss' || capsuleActiveAction === 'gather') && (
+                  <CapsuleDiscuss capsule={activeCapsule} />
+                )}
+              </div>
             </div>
           </div>
         );
@@ -571,11 +611,11 @@ function App() {
             <div className="about-content">
               {aboutSubView === 'mission-vision' && (
                 <div className="about-mv-section animate-fade">
-                  <div style={{ marginBottom: '80px' }}>
+                  <div className="about-mv-block">
                     <div className="about-mv-label">Mission</div>
                     <h2 className="about-mv-text">To equip short films with pathways for reflection, discussion, and practice.</h2>
                   </div>
-                  <div>
+                  <div className="about-mv-block">
                     <div className="about-mv-label">Vision</div>
                     <h2 className="about-mv-text">A culture of common ground, where life is greater than numbers.</h2>
                   </div>
@@ -663,7 +703,9 @@ function App() {
                       </ul>
                     )}
                   </div>
-                  <div className="invest-row-icon">{investExpandedRow === 'time' ? '−' : '+'}</div>
+                  <div className="invest-row-icon">
+                    <AccordionIcon expanded={investExpandedRow === 'time'} />
+                  </div>
                 </div>
 
                 <div className="invest-accordion-row" onClick={() => setInvestExpandedRow(investExpandedRow === 'talent' ? null : 'talent')}>
@@ -673,7 +715,9 @@ function App() {
                       <p className="invest-row-text">Contribute your skills to our platform. We are currently seeking volunteers with experience in web development, design, and content writing.</p>
                     )}
                   </div>
-                  <div className="invest-row-icon">{investExpandedRow === 'talent' ? '−' : '+'}</div>
+                  <div className="invest-row-icon">
+                    <AccordionIcon expanded={investExpandedRow === 'talent'} />
+                  </div>
                 </div>
 
                 <div className="invest-accordion-row" onClick={() => setInvestExpandedRow(investExpandedRow === 'treasure' ? null : 'treasure')}>
@@ -683,7 +727,9 @@ function App() {
                       <p className="invest-row-text">Your financial support helps us license great films, maintain the platform, and grow the community.</p>
                     )}
                   </div>
-                  <div className="invest-row-icon">{investExpandedRow === 'treasure' ? '−' : '+'}</div>
+                  <div className="invest-row-icon">
+                    <AccordionIcon expanded={investExpandedRow === 'treasure'} />
+                  </div>
                 </div>
               </div>
 
@@ -700,8 +746,7 @@ function App() {
       case 'contact':
         return (
           <div className="form-view-wrapper animate-fade">
-            <span className="panel-category">Reach Out</span>
-            <h1 className="about-title" style={{ marginTop: '8px' }}>Contact LGN Cinema</h1>
+            <h1 className="about-title">Contact LGN Cinema</h1>
             <p style={{ color: 'var(--text-muted)', marginBottom: '32px', maxWidth: '600px' }}>
               Have questions, ideas, or feedback? Send us a message and our team will get back to you shortly.
             </p>
@@ -752,7 +797,7 @@ function App() {
                     style={{ minHeight: '150px' }}
                   />
                 </div>
-                <button type="submit" className="rsvp-button full-width" style={{ marginTop: '8px' }} disabled={contactSubmitting} id="btn-submit-contact">
+                <button type="submit" className="rsvp-button" style={{ marginTop: '8px' }} disabled={contactSubmitting} id="btn-submit-contact">
                   {contactSubmitting ? 'Sending...' : 'Send Message'}
                 </button>
               </form>
@@ -864,7 +909,7 @@ function App() {
       <header className="floating-header-container">
         <div className="header-pill-left">
           <button onClick={() => setCurrentView('home')} className={`nav-brand-btn ${currentView === 'home' ? 'active' : ''}`}>
-            <img src={theme === 'dark' ? '/images/lgn-icon-white.svg' : '/images/lgn-icon-black.svg'} alt="LGN Icon" style={{ width: '24px', height: '24px' }} />
+            <img src={theme === 'dark' ? '/images/lgn-icon-white.svg' : '/images/lgn-icon-black.svg'} alt="LGN Icon" />
           </button>
 
           <div className="nav-dropdown-wrapper" onMouseEnter={() => setAboutMenuOpen(true)} onMouseLeave={() => setAboutMenuOpen(false)}>
@@ -896,7 +941,7 @@ function App() {
         <div className="footer-grid">
           {/* Column 1: Logo & Copyright */}
           <div className="footer-col col-logo">
-            <img src={theme === 'dark' ? '/images/lgn-logo-registered-white.svg' : '/images/lgn-logo-registered.svg'} alt="Life is Greater than Numbers" style={{ width: '100%', maxWidth: '380px', marginBottom: '24px' }} />
+            <img className="footer-logo" src={theme === 'dark' ? '/images/lgn-logo-registered-white.svg' : '/images/lgn-logo-registered.svg'} alt="Life is Greater than Numbers" />
             <div className="footer-bottom-text">&copy;{new Date().getFullYear()} Life is Greater than Numbers, Inc.</div>
           </div>
 
@@ -917,7 +962,6 @@ function App() {
             <h3>Mailing</h3>
             <p>Life is Greater than Numbers, Inc.<br />1950 W Corporate Way, STE 31556<br />Anaheim, CA 92801</p>
             <div className="footer-bottom-text social-links">
-              <a href="#">YT</a>
               <a href="#">Vimeo</a>
             </div>
           </div>
