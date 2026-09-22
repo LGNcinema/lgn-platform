@@ -1,4 +1,5 @@
 import json
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,10 +15,33 @@ from app import geme, models, schemas
 from app.auth import create_token, require_admin, require_configured, verify_password
 from app.video import fetch_vimeo_metadata, parse_video_source
 
-# Initialize database tables on startup
-# and seed a sample monthly capsule if none exists
-@asynccontextmanager
-async def lifespan(app: FastAPI):
+# True on Vercel, at build time and at runtime alike -- Vercel sets VERCEL=1 in
+# both. Used only to keep local-development bootstrapping out of a deployment.
+IS_SERVERLESS = bool(os.getenv("VERCEL"))
+
+
+def _should_bootstrap_database() -> bool:
+    """Whether this process should create and seed tables on startup.
+
+    Local development only. Two reasons it must not run on a deployment:
+
+    1. Supabase owns the deployed schema, through the migrations in
+       `supabase/migrations`. `create_all` would race those -- it creates
+       whatever the *models* currently say and silently skips tables that
+       already exist, so a half-migrated database would be papered over rather
+       than reported.
+    2. This ran once per process. A serverless function starts a new process
+       per cold start, so it would become a schema check and a `SELECT count(*)`
+       against production on every one of them.
+
+    Requires ENV=development explicitly, rather than trusting `!= production`,
+    so a deployment that forgets to set ENV at all still fails safe.
+    """
+    return settings.ENV == "development" and not IS_SERVERLESS
+
+
+def _bootstrap_database():
+    """Create the tables and seed one sample capsule if the database is empty."""
     models.Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
@@ -61,6 +85,12 @@ async def lifespan(app: FastAPI):
         print(f"Database startup/seed error: {e}")
     finally:
         db.close()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if _should_bootstrap_database():
+        _bootstrap_database()
     yield
 
 app = FastAPI(

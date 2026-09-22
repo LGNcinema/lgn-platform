@@ -82,26 +82,79 @@ If you prefer to run the applications locally on your machine without Docker, se
 
 ---
 
-## Deployment notes
+## Deployment
 
-### The frontend needs an SPA rewrite rule
+The site runs on **Vercel**, as one project holding two
+[services](https://vercel.com/docs/services): the Vite frontend and the FastAPI
+backend, both built from this repo and served from one domain. `vercel.json` at
+the repo root is the whole routing story:
+
+| Request        | Goes to             | The service sees |
+| -------------- | ------------------- | ---------------- |
+| `/api/...`     | `backend` (FastAPI) | `/api/...`       |
+| anything else  | `frontend` (static) | the same path    |
+
+The backend receives the **original** path, prefix included, which is why every
+route in `app/main.py` keeps its `/api` prefix and nothing had to be re-rooted.
+
+Because both halves share one origin, the browser's API calls are same-origin:
+`VITE_API_URL` is left unset on Vercel and `frontend/src/api.ts` falls back to a
+relative `/api/...`. That works unchanged on preview deployments, and it means
+**CORS is not involved at all** — `CORS_ORIGINS` only matters locally, where Vite
+(5173) and uvicorn (8000) really are different origins.
+
+### Environment variables to set on the Vercel project
+
+Set these for Production *and* Preview, under Project → Settings → Environment
+Variables. They are shared by both services; only `VITE_*` names reach the
+frontend bundle, so nothing here leaks into the browser.
+
+| Variable            | Value                                                                       |
+| ------------------- | --------------------------------------------------------------------------- |
+| `DATABASE_URL`      | Supabase **transaction pooler** URL — port **6543**, not 5432. See below.     |
+| `ENV`               | `production`                                                                 |
+| `ADMIN_PASSWORD`    | The shared admin-portal password. Without it the portal answers `503`.        |
+| `ANTHROPIC_API_KEY` | Geme's key. Without it the Geme endpoints report unavailable and the UI hides the entry point. |
+
+Leave `GEME_DEBUG` unset — it lets any caller replace Geme's system prompt and
+spend tokens against this key, and is for local development only.
+
+### The database URL must be the transaction pooler
+
+The API is a serverless function that scales horizontally. If each instance kept
+its own SQLAlchemy connection pool, they would multiply into far more Postgres
+connections than Supabase allows. Supabase's transaction-mode pooler (Supavisor,
+port **6543**) does that pooling server-side for all of them at once, so the app
+keeps none of its own — `app/database.py` detects the `:6543` port and switches
+to `NullPool` automatically. Point it at the direct connection or the session
+pooler (5432) instead and it will pool locally, which is exactly the wrong thing.
+
+If `DATABASE_URL` is missing entirely, the config default is SQLite — on a
+read-only, per-instance filesystem. The backend refuses to start in that case
+rather than serving an empty database that silently loses every write.
+
+### Deep links need the SPA rewrite
 
 The app uses `react-router-dom` with `BrowserRouter`, so routes like `/admin` and
-`/admin/capsules/1/film` are real URL paths. A static host asked for `/admin` looks
-for a file at that path, finds none, and returns **404 before the React app ever
-boots** — so the router never gets to handle the route. Vite's dev server rewrites
-unknown paths to `index.html` automatically, which is why this only bites in
-production.
+`/admin/capsules/1/film` are real URL paths. A static host asked for `/admin`
+looks for a file at that path, finds none, and returns **404 before the React app
+ever boots** — so the router never gets to handle the route. Vite's dev server
+rewrites unknown paths to `index.html` automatically, which is why this only
+bites in production.
 
-On Render: static site → **Redirects/Rewrites** → Source `/*`, Destination
-`/index.html`, Action **Rewrite**.
+The `frontend` service's own `rewrites` block in `vercel.json` handles it:
 
-Use *Rewrite*, not *Redirect*. A redirect rewrites the address bar and breaks deep
-links; a rewrite serves `index.html` while preserving the path so the router can
-read it.
+```json
+"rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+```
 
-Symptom if it's missing: the site works, but every deep link and every hard refresh
-away from `/` returns a plain-text 404.
+It is a *rewrite*, not a redirect. A redirect changes the address bar and breaks
+deep links; a rewrite serves `index.html` while preserving the path so the router
+can read it. Static files still win — rewrites are only consulted when nothing on
+disk matches.
+
+Symptom if it goes missing: the site works, but every deep link and every hard
+refresh away from `/` returns a 404.
 
 ### Schema changes must be applied before the code that needs them
 
@@ -111,11 +164,16 @@ away from `/` returns a plain-text 404.
 produces `UndefinedColumn` 500s on every affected endpoint, so migrate first, then
 merge.
 
-### Backend environment
+Nothing in a deploy touches the schema. The startup path that calls
+`create_all()` and seeds a sample capsule is gated to `ENV=development` and off
+on Vercel (`app/main.py`), because Supabase migrations own the deployed schema
+and a serverless process would otherwise re-run that check on every cold start.
 
-`ADMIN_PASSWORD` must be set on the deployed backend or the admin portal returns
-`503 Admin portal is not configured` — it fails closed rather than open. See
-[backend/.env.example](./backend/.env.example) for that and the Geme variables.
+### Local development is unchanged
+
+`docker-compose up` still runs Postgres, uvicorn with `--reload`, and the Vite
+dev server exactly as before; `vercel.json` has no effect there. To exercise the
+Vercel routing locally instead, `vercel dev` runs both services behind one port.
 
 ---
 

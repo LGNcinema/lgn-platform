@@ -1,0 +1,28 @@
+# Files uploaded to Vercel on every deploy. Everything here is local-only, so
+# keeping it out shortens uploads and keeps the function bundle small.
+#
+# Only exclude things NO service needs at build or run time -- an over-eager
+# entry here surfaces as a "module not found" at build, not at review.
+
+# Local Python environment and caches
+backend/.venv/
+**/__pycache__/
+.pytest_cache/
+
+# Figma exports and the one-off scripts that read them. Dev tooling for
+# rebuilding components from design, never imported by the running API.
+design/
+backend/app/design/
+backend/app/inspect_*.py
+backend/app/parse_all_figma.py
+backend/inspect_json.py
+
+# Local build output -- Vercel builds the frontend itself.
+frontend/dist/
+
+# Database migrations are applied with the Supabase CLI, not by a deploy.
+supabase/
+
+# Agent / editor scratch
+.claude/
+.agents/

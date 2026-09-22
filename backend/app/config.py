@@ -5,7 +5,15 @@ class Settings(BaseSettings):
     # In docker-compose, this is overridden to use PostgreSQL.
     DATABASE_URL: str = "sqlite:///./lgn_platform.db"
     ENV: str = "development"
-    CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173,https://lgn-platform-web.onrender.com,https://lgn-platform.onrender.com"
+
+    # Browser origins allowed to call this API.
+    #
+    # On Vercel the site and the API are one deployment behind one domain --
+    # `/api/*` is rewritten to this service -- so the browser makes same-origin
+    # requests and CORS never comes into it. These defaults exist for local
+    # development, where Vite (5173) and uvicorn (8000) are genuinely different
+    # origins, and as the escape hatch if the API is ever fronted separately.
+    CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     # --- Admin portal ------------------------------------------------------
     # A single shared password, held server-side in .env, gates the internal

@@ -20,3 +20,11 @@ dev = [
     "isort>=5.13.2",
     "pytest>=8.0.2",
 ]
+
+[tool.uv]
+# This project is a bare `app/` package run by uvicorn, not an installable
+# distribution -- there is no [build-system] and nothing to build. Vercel runs
+# `uv sync` during the build, which would otherwise try to install the project
+# itself and fail. (The Dockerfile passes `--no-install-project` for the same
+# reason; this makes it the default everywhere.)
+package = false
