@@ -7,8 +7,13 @@ is run them in order, once each, and remember which have run.
 
     uv run python migrate.py status     # what is applied, what is pending
     uv run python migrate.py up         # apply everything pending
-    uv run python migrate.py seed       # apply ./seed.sql (upserts; safe to repeat)
+    uv run python migrate.py seed       # apply ./seed.sql -- LOCAL DEV ONLY
     uv run python migrate.py baseline   # mark all as applied WITHOUT running them
+
+`seed` is local-development data and must never run against the hosted
+database: it upserts a sample capsule and film keyed on `month`, which overwrites
+real content. Nothing applies it automatically, and it is a separate command so
+that using it is always a deliberate act.
 
 `baseline` is for one case only: a database that already has the schema (a
 pg_dump restore, or the old Supabase database) and just needs the tracking table

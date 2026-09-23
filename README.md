@@ -185,8 +185,10 @@ transaction, and stops at the first failure rather than pressing on into
 migrations that assumed it landed. It prefers `DATABASE_URL_UNPOOLED` so DDL
 goes over the direct connection rather than through PgBouncer.
 
-`seed.sql` is development data and is never applied automatically — it is a
-separate command for exactly that reason.
+**`seed.sql` is local-development data. Never run `seed` against the hosted
+database.** It upserts a sample capsule and film over whatever is there, keyed on
+`month` — against production that overwrites real content. It is a separate,
+explicit command for exactly that reason, and nothing applies it automatically.
 
 Deploying code that reads a column before its migration has run produces
 `UndefinedColumn` 500s on every affected endpoint, so **migrate first, then
