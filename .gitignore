@@ -45,3 +45,10 @@ Thumbs.db
 # carries the old project ref and pooler URL. Safe to delete the whole folder
 # once the Neon cutover is verified.
 supabase/
+
+.vercel
+.env*
+# Re-assert after the Vercel CLI's `.env*` above: last match wins in gitignore,
+# and the template files carry no secrets and must stay committable.
+!.env.example
+!.env.sample
