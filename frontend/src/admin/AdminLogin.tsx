@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { API_URL, AdminApiError, adminLogin } from './adminClient';
+import { API_ORIGIN, AdminApiError, adminLogin } from './adminClient';
 
 interface AdminLoginProps {
   /** Called once a token has been stored and the session is good to go. */
@@ -14,18 +14,18 @@ interface LoginError {
 function describe(err: unknown): LoginError {
   if (err instanceof AdminApiError) {
     if (err.status === 401) {
-      return { title: 'Incorrect password.', body: 'Check the value of ADMIN_PASSWORD in the backend .env file.' };
+      return { title: 'Incorrect password.', body: 'Check the value of ADMIN_PASSWORD the API was started with.' };
     }
     if (err.status === 503) {
       return {
         title: 'The server has no admin password configured.',
-        body: 'ADMIN_PASSWORD is not set in the backend .env file. Add a line like ADMIN_PASSWORD=your-password to backend/.env, then restart the API container so it picks the value up.',
+        body: 'ADMIN_PASSWORD is not set on the API. Locally that is a line like ADMIN_PASSWORD=your-password in backend/.env, followed by restarting the API container; on a deployment it is an environment variable on the project, followed by a redeploy.',
       };
     }
     if (err.status === 0) {
       return {
         title: 'Could not reach the server.',
-        body: `No response from ${API_URL}. Check that the backend is running and that VITE_API_URL points at it.`,
+        body: `No response from ${API_ORIGIN}. Check that the backend is running -- locally, that also means VITE_API_URL points at it.`,
       };
     }
     return { title: err.message };

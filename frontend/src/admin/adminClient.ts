@@ -15,7 +15,18 @@
  *     unsaved work (and so one `beforeunload` handler can warn on tab close).
  */
 
-export const API_URL: string = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// One definition, shared with the public site -- see ../api for why the
+// deployed value is the empty string (same-origin `/api/...`).
+import { API_URL } from '../api';
+
+export { API_URL };
+
+/**
+ * The API's origin, spelled out for error messages. `API_URL` is the empty
+ * string on a deployment (same-origin `/api/...`), and "could not reach the
+ * server at ." helps nobody -- so fall back to the page's own origin there.
+ */
+export const API_ORIGIN: string = API_URL || window.location.origin;
 
 const TOKEN_KEY = 'lgn_admin_token';
 
@@ -247,7 +258,7 @@ export async function adminFetch<T>(path: string, options: AdminFetchOptions = {
         throw new AdminApiError('Request cancelled.', 0, true);
       }
       // Status 0 == never reached the server (offline, port closed, CORS preflight).
-      throw new AdminApiError(`Could not reach the server at ${API_URL}.`, 0);
+      throw new AdminApiError(`Could not reach the server at ${API_ORIGIN}.`, 0);
     }
 
     if (response.status === 401) {
