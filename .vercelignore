@@ -20,8 +20,14 @@ backend/inspect_json.py
 # Local build output -- Vercel builds the frontend itself.
 frontend/dist/
 
-# Database migrations are applied with the Supabase CLI, not by a deploy.
-supabase/
+# Schema tooling. Migrations and the seed are applied from a dev machine with
+# backend/migrate.py, never by a deploy -- a serverless function must not be
+# changing the schema it is serving. copy_db.py is the one-off Supabase -> Neon
+# data move and has no business in a deployment at all.
+backend/migrations/
+backend/seed.sql
+backend/migrate.py
+backend/copy_db.py
 
 # Agent / editor scratch
 .claude/

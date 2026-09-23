@@ -17,9 +17,9 @@ class Settings(BaseSettings):
 
     # --- Admin portal ------------------------------------------------------
     # A single shared password, held server-side in .env, gates the internal
-    # content editor. Deliberately NOT Supabase Auth: the platform may not stay
-    # on Supabase, and staff-only editing does not yet warrant per-user
-    # accounts.
+    # content editor. Deliberately not tied to a database vendor's auth
+    # product -- the platform has already outlived one (Supabase) -- and
+    # staff-only editing does not yet warrant per-user accounts.
     #
     # SECURITY: an empty ADMIN_PASSWORD means the admin portal is NOT
     # CONFIGURED, and every admin endpoint answers 503. It must never be read

@@ -39,3 +39,9 @@ Thumbs.db
 *.njsproj
 *.sln
 *.swp
+
+# Leftover Supabase CLI state from before the move to Neon. The tracked files
+# (config.toml, migrations, seed.sql) are gone; what remains is local cache that
+# carries the old project ref and pooler URL. Safe to delete the whole folder
+# once the Neon cutover is verified.
+supabase/

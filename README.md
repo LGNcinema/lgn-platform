@@ -111,7 +111,7 @@ frontend bundle, so nothing here leaks into the browser.
 
 | Variable            | Value                                                                       |
 | ------------------- | --------------------------------------------------------------------------- |
-| `DATABASE_URL`      | Supabase **transaction pooler** URL — port **6543**, not 5432. See below.     |
+| `DATABASE_URL`      | **Don't set this by hand** — the Neon integration injects it. See below.      |
 | `ENV`               | `production`                                                                 |
 | `ADMIN_PASSWORD`    | The shared admin-portal password. Without it the portal answers `503`.        |
 | `ANTHROPIC_API_KEY` | Geme's key. Without it the Geme endpoints report unavailable and the UI hides the entry point. |
@@ -119,15 +119,27 @@ frontend bundle, so nothing here leaks into the browser.
 Leave `GEME_DEBUG` unset — it lets any caller replace Geme's system prompt and
 spend tokens against this key, and is for local development only.
 
-### The database URL must be the transaction pooler
+### The database connection must be the pooled one
+
+The database is **Neon**, provisioned through the Vercel Marketplace. The
+integration injects two connection strings and you should not add your own:
+
+| Variable | Endpoint | Use it for |
+| --- | --- | --- |
+| `DATABASE_URL` | pooled (`-pooler` host) | the app — this is what the API reads |
+| `DATABASE_URL_UNPOOLED` | direct | migrations, the data copy, anything doing DDL |
 
 The API is a serverless function that scales horizontally. If each instance kept
 its own SQLAlchemy connection pool, they would multiply into far more Postgres
-connections than Supabase allows. Supabase's transaction-mode pooler (Supavisor,
-port **6543**) does that pooling server-side for all of them at once, so the app
-keeps none of its own — `app/database.py` detects the `:6543` port and switches
-to `NullPool` automatically. Point it at the direct connection or the session
-pooler (5432) instead and it will pool locally, which is exactly the wrong thing.
+connections than Neon allows. Neon's PgBouncer does that pooling server-side for
+all of them at once, so the app keeps none of its own — `app/database.py` sees
+the pooled host and switches to `NullPool` automatically.
+
+**The detection is host-based, not port-based, and that distinction bit us
+once.** Supabase marked its pooler with a distinct port (`:6543`); Neon marks
+its with a `-pooler` suffix on the hostname and stays on 5432. Code that matched
+only the port silently failed to fire on Neon and left local pooling on. Both
+markers are matched now — see `POOLED_ENDPOINT_MARKERS` in `app/database.py`.
 
 If `DATABASE_URL` is missing entirely, the config default is SQLite — on a
 read-only, per-instance filesystem. The backend refuses to start in that case
@@ -158,15 +170,31 @@ refresh away from `/` returns a 404.
 
 ### Schema changes must be applied before the code that needs them
 
-`supabase db push` applies migrations (schema) only — it does **not** push
-`supabase/seed.sql`, which is local-development data. Its output says as much
-(`"seeds": []`). Deploying code that reads a column before its migration has run
-produces `UndefinedColumn` 500s on every affected endpoint, so migrate first, then
-merge.
+Migrations are plain SQL in `backend/migrations/`, applied with
+`backend/migrate.py` from a dev machine:
+
+```bash
+cd backend
+uv run python migrate.py status     # what is applied, what is pending
+uv run python migrate.py up         # apply everything pending
+uv run python migrate.py seed       # apply seed.sql (upserts; safe to repeat)
+```
+
+It tracks applied files in a `schema_migrations` table, runs each in its own
+transaction, and stops at the first failure rather than pressing on into
+migrations that assumed it landed. It prefers `DATABASE_URL_UNPOOLED` so DDL
+goes over the direct connection rather than through PgBouncer.
+
+`seed.sql` is development data and is never applied automatically — it is a
+separate command for exactly that reason.
+
+Deploying code that reads a column before its migration has run produces
+`UndefinedColumn` 500s on every affected endpoint, so **migrate first, then
+merge**.
 
 Nothing in a deploy touches the schema. The startup path that calls
 `create_all()` and seeds a sample capsule is gated to `ENV=development` and off
-on Vercel (`app/main.py`), because Supabase migrations own the deployed schema
+on Vercel (`app/main.py`), because the SQL migrations own the deployed schema
 and a serverless process would otherwise re-run that check on every cold start.
 
 ### Local development is unchanged
