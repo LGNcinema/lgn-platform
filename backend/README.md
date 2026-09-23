@@ -41,8 +41,8 @@ of any capsule — past, current, or upcoming.
 
 Authentication is **one shared password**, stored in the backend `.env` as
 `ADMIN_PASSWORD` and compared server-side in constant time. Deliberately *not*
-Supabase Auth: the platform may not stay on Supabase, and the gate should not
-depend on a vendor we might drop.
+a database vendor's auth product: the platform has already moved hosts once
+(Supabase -> Neon), and the gate should not depend on a vendor we might drop.
 
 Logging in exchanges the password for a stateless bearer token signed with
 HMAC-SHA256 (`app/auth.py`, standard library only — no JWT dependency). The

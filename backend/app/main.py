@@ -25,8 +25,8 @@ def _should_bootstrap_database() -> bool:
 
     Local development only. Two reasons it must not run on a deployment:
 
-    1. Supabase owns the deployed schema, through the migrations in
-       `supabase/migrations`. `create_all` would race those -- it creates
+    1. The SQL migrations own the deployed schema (`backend/migrations`,
+       applied with `backend/migrate.py`). `create_all` would race those -- it creates
        whatever the *models* currently say and silently skips tables that
        already exist, so a half-migrated database would be papered over rather
        than reported.
@@ -58,7 +58,7 @@ def _bootstrap_database():
             db.commit()
             db.refresh(sample_capsule)
 
-            # Mirrors supabase/seed.sql so local SQLite dev exercises the same
+            # Mirrors backend/seed.sql so local SQLite dev exercises the same
             # Vimeo embed path as a real capsule, rather than a progressive mp4.
             # Poster and runtime come from Vimeo itself rather than a stock
             # image, so local dev shows a real frame of the film. Best-effort:

@@ -2,7 +2,8 @@
 
 Design constraints, in order of importance:
 
-1.  **Not Supabase Auth.** The platform may not stay on Supabase, so the admin
+1.  **Not a database vendor's auth product.** The platform has already moved
+    hosts once (Supabase -> Neon), so the admin
     gate must not depend on it. A single shared password lives in the backend
     `.env` and is only ever compared server-side.
 2.  **Stdlib only.** No PyJWT, no itsdangerous, no passlib -- an HMAC-signed
