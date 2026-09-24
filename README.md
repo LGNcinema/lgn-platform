@@ -22,6 +22,46 @@ To build and start all services in the background, run:
 docker compose up --build -d
 ```
 
+**Then give the database a schema.** Which command depends on `DB_BOOTSTRAP` in
+`backend/.env`:
+
+| `DB_BOOTSTRAP` | What builds the schema | What you run |
+| --- | --- | --- |
+| `true` (default) | `create_all()` from `app/models.py`, on startup | nothing — it is already done |
+| `false` | the SQL migrations, the same ones that run against Neon | the two commands below |
+
+```bash
+cd backend
+uv run python migrate.py up      # apply migrations
+uv run python migrate.py seed    # sample capsule + film (local only)
+```
+
+Run those **from the host, not inside the container.** `backend/Dockerfile`
+copies only `pyproject.toml` and `app/`, so `migrate.py`, `migrations/` and
+`seed.sql` are not in the image. They reach the database through the port the
+`db` service publishes on `localhost:5432`, which is what `DATABASE_URL` in
+`backend/.env` points at.
+
+With `DB_BOOTSTRAP=false` the API starts fine against an empty database — it
+simply never touches it at startup — so the first request before you migrate
+returns a `UndefinedTable` 500 rather than anything that explains itself.
+
+### Switching between the two modes
+
+The `pgdata` volume survives `docker compose down`, so a database built one way
+stays that way. Going from `true` to `false` needs a clean volume:
+
+```bash
+docker compose down -v          # drops pgdata -- LOCAL data only
+docker compose up -d
+cd backend && uv run python migrate.py up && uv run python migrate.py seed
+```
+
+Skip the reset and `migrate.py up` fails on `20260720165715`, which is not
+idempotent (plain `ALTER TABLE ADD COLUMN`) and cannot run against tables the
+models already built. If you would rather keep the data, `migrate.py baseline`
+records the migrations as applied without running them — it changes no tables.
+
 ### Accessing the Services
 Once the containers are running, you can access the applications at:
 - **Frontend App:** [http://localhost:5173](http://localhost:5173)
@@ -205,23 +245,10 @@ and a serverless process would otherwise re-run that check on every cold start.
 dev server exactly as before; `vercel.json` has no effect there. To exercise the
 Vercel routing locally instead, `vercel dev` runs both services behind one port.
 
-**Two ways to get a local schema, and you have to pick one.** `DB_BOOTSTRAP`
-(default `true`) has startup build the tables from `app/models.py` and seed a
-sample capsule, so a fresh database just works with no extra step. Set it to
-`false` and you drive the schema yourself:
-
-```bash
-docker compose up -d db
-cd backend
-uv run python migrate.py up
-uv run python migrate.py seed
-```
-
-That second mode runs the same SQL that runs against the deployed database,
-which is the point of it — it catches a broken migration on your machine rather
-than on Neon. They cannot both run: `create_all()` builds the tables from the
-models, and migration `20260720165715` is not idempotent, so it fails against a
-database the models have already built.
+**Two ways to get a local schema, and you have to pick one** — `DB_BOOTSTRAP`
+in `backend/.env`. Setting it to `false` runs the same SQL locally that runs
+against Neon, so a broken migration fails on your machine instead of in
+production. See [Quick Start](#quick-start) for both paths and how to switch.
 
 ---
 
