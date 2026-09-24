@@ -137,6 +137,18 @@ const AccordionIcon = ({ expanded }: { expanded: boolean }) => (
 
 const VALID_VIEWS = ['home', 'capsule', 'timeline', 'about', 'invest', 'contact', 'submit-film'] as const;
 const VALID_ABOUT_SUBVIEWS = ['purpose', 'mission-vision', 'board-staff'] as const;
+
+/**
+ * Views that open in a theme other than light. Everything absent from this map
+ * gets `light`.
+ *
+ * "A Witness through Time" was designed dark -- see the paired light/dark
+ * frames in `design/31_nodes_export`. It is the page's own presentation, not a
+ * visitor preference, so it is keyed off the view rather than stored anywhere.
+ */
+const VIEW_DEFAULT_THEME: Partial<Record<typeof VALID_VIEWS[number], 'light' | 'dark'>> = {
+  timeline: 'dark',
+};
 const VALID_CAPSULE_ACTIONS = ['reflect', 'gather', 'practice', 'discuss'] as const;
 
 /** Section nav for the capsule shell. `null` is the film itself. */
@@ -236,20 +248,28 @@ function App() {
     else localStorage.removeItem('lgn_geme_tuning');
   };
 
-  // Theme state: default 'light', optional 'dark' via URL param ?theme=dark or ?dark=true, or localStorage 'lgn_theme'
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+  // Theme. The view decides (VIEW_DEFAULT_THEME above) unless something has
+  // explicitly asked for one: ?theme=dark / ?dark=true, or the dev toggle.
+  //
+  // The override is deliberately NOT persisted. It used to be written to
+  // localStorage on every render, which meant a stored value could never be
+  // told apart from the default -- so any browser that had ever loaded the site
+  // carried a "preference" it had never expressed, and that would now suppress
+  // the timeline's dark default forever. Since the only way to set it is a
+  // dev-only button, per-session is the honest lifetime; `?theme=` survives a
+  // reload on its own by living in the URL.
+  const [themeOverride, setThemeOverride] = useState<'light' | 'dark' | null>(() => {
     const params = new URLSearchParams(window.location.search);
     const themeParam = params.get('theme') || (params.get('dark') === 'true' || params.get('dark') === '1' ? 'dark' : null);
     if (themeParam === 'dark') return 'dark';
     if (themeParam === 'light') return 'light';
-    const saved = localStorage.getItem('lgn_theme');
-    if (saved === 'dark' || saved === 'light') return saved;
-    return 'light';
+    return null;
   });
+
+  const theme: 'light' | 'dark' = themeOverride ?? VIEW_DEFAULT_THEME[currentView] ?? 'light';
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('lgn_theme', theme);
   }, [theme]);
 
   // Toggle Grid Overlay keyboard shortcut (Ctrl+G or Alt+G)
@@ -986,7 +1006,7 @@ function App() {
           <button
             className="grid-toggle-btn"
             style={{ bottom: '76px' }}
-            onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
+            onClick={() => setThemeOverride(theme === 'light' ? 'dark' : 'light')}
             title="Toggle Light / Dark Theme"
           >
             <span>{theme === 'light' ? '☀️' : '🌙'}</span>

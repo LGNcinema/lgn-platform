@@ -55,7 +55,14 @@ const isTabId = (value: string | undefined): value is TabId =>
   TABS.some((tab) => tab.id === value);
 
 /* ------------------------------------------------------------------ theme */
-/** Mirrors App.tsx exactly: `data-theme` on <html> + the `lgn_theme` localStorage key. */
+/**
+ * `data-theme` on <html>, persisted under `lgn_theme`.
+ *
+ * The public site no longer shares this key. It derives its theme from the view
+ * (App.tsx) because the page design decides, not the visitor; the portal keeps a
+ * real preference because it has a real, non-dev toggle and staff sit in it all
+ * day. The two are independent on purpose.
+ */
 function useTheme() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const params = new URLSearchParams(window.location.search);
