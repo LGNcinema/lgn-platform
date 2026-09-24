@@ -272,6 +272,19 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
+  // Views are swapped in place rather than routed, so the browser has no
+  // navigation to hang a scroll reset on and simply keeps the offset from the
+  // page you left. Every footer link is by definition at the bottom of a
+  // scrolled page, so following one used to drop you into the middle of the
+  // next view. Reset on every view change instead.
+  //
+  // Scoped to `currentView` on purpose: the About sub-views and the capsule
+  // sections are tabs within a page, and yanking the page to the top when
+  // someone switches tab is its own annoyance.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentView]);
+
   // Toggle Grid Overlay keyboard shortcut (Ctrl+G or Alt+G)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

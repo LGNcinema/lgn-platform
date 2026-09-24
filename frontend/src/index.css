@@ -1615,10 +1615,15 @@ body {
   position: relative;
   width: 100%;
   max-width: var(--grid-max-width);
-  margin: clamp(96px, 7.8125vw, 150px) auto -60px;
+  margin: clamp(96px, 7.8125vw, 150px) auto 0;
   /* Pulled in from the Figma's 197px lead-in per design review. */
   box-sizing: border-box;
-  padding: 0 var(--grid-margin) 72px;
+  /* Bottom padding, not a negative bottom margin. The -60px that used to sit in
+     the margin above pulled the footer up under this wrapper, and because the
+     wrapper is positioned and paints its own background it covered the footer's
+     top edge and border. 72px of padding minus that 60px is the ~12px gap the
+     page actually had, so that is what is kept here. */
+  padding: 0 var(--grid-margin) 12px;
   background-color: var(--bg-darker);
   color: var(--primary);
   min-height: 100vh;
