@@ -6,6 +6,20 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./lgn_platform.db"
     ENV: str = "development"
 
+    # Whether startup creates tables from the models and seeds a sample capsule.
+    #
+    # On by default: it is what makes a fresh SQLite file or a just-created
+    # docker-compose database usable with no extra step, and it is already
+    # confined to ENV=development and off on Vercel (app/main.py).
+    #
+    # Turn it OFF to drive the local schema from the SQL migrations instead
+    # (`migrate.py up`), which is what actually runs against the deployed
+    # database. The two cannot both run: create_all() builds the tables from
+    # app/models.py, and migration 20260720165715 is not idempotent -- plain
+    # ALTER TABLE ADD COLUMN -- so it fails against a database the models have
+    # already built.
+    DB_BOOTSTRAP: bool = True
+
     # Browser origins allowed to call this API.
     #
     # On Vercel the site and the API are one deployment behind one domain --

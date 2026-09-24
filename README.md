@@ -205,6 +205,24 @@ and a serverless process would otherwise re-run that check on every cold start.
 dev server exactly as before; `vercel.json` has no effect there. To exercise the
 Vercel routing locally instead, `vercel dev` runs both services behind one port.
 
+**Two ways to get a local schema, and you have to pick one.** `DB_BOOTSTRAP`
+(default `true`) has startup build the tables from `app/models.py` and seed a
+sample capsule, so a fresh database just works with no extra step. Set it to
+`false` and you drive the schema yourself:
+
+```bash
+docker compose up -d db
+cd backend
+uv run python migrate.py up
+uv run python migrate.py seed
+```
+
+That second mode runs the same SQL that runs against the deployed database,
+which is the point of it — it catches a broken migration on your machine rather
+than on Neon. They cannot both run: `create_all()` builds the tables from the
+models, and migration `20260720165715` is not idempotent, so it fails against a
+database the models have already built.
+
 ---
 
 ## Geme (Practice → Keep Exploring → Take It Inward)

@@ -36,8 +36,13 @@ def _should_bootstrap_database() -> bool:
 
     Requires ENV=development explicitly, rather than trusting `!= production`,
     so a deployment that forgets to set ENV at all still fails safe.
+
+    DB_BOOTSTRAP turns it off for the other local workflow: driving the schema
+    from the SQL migrations with `migrate.py up`, the same files that run
+    against the deployed database. Leaving both on does not work -- see
+    DB_BOOTSTRAP in app/config.py.
     """
-    return settings.ENV == "development" and not IS_SERVERLESS
+    return settings.ENV == "development" and settings.DB_BOOTSTRAP and not IS_SERVERLESS
 
 
 def _bootstrap_database():
