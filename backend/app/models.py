@@ -172,5 +172,9 @@ class StoryboardSubmission(Base):
     author_age = Column(String, nullable=True)
     is_anonymous = Column(Boolean, default=False)
     is_approved = Column(Boolean, default=False) # Requires review before public collage
+    # The visitor's explicit yes to publication. Separate from is_approved on
+    # purpose: consent is theirs, approval is LGN's, and the public storyboard
+    # needs both. See migrations/20260928120000_storyboard_consent.sql.
+    consent_to_share = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 

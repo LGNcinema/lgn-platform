@@ -289,15 +289,62 @@ class StoryboardSubmissionBase(BaseModel):
     author_age: Optional[str] = None
     is_anonymous: bool = False
     is_approved: bool = False
+    consent_to_share: bool = False
 
-class StoryboardSubmissionCreate(StoryboardSubmissionBase):
-    pass
+class StoryboardSubmissionCreate(BaseModel):
+    """What an anonymous visitor may send.
+
+    Deliberately NOT derived from StoryboardSubmissionBase. It used to be, which
+    let the public, unauthenticated POST accept `is_approved` from the client --
+    anyone could approve their own submission and skip moderation entirely. That
+    was latent while nothing read approved stories back; the public storyboard
+    would have made it live. Moderation fields are server-controlled, so they
+    are simply absent here, and the model's default (False) applies.
+
+    Lengths are bounded because this endpoint is public.
+    """
+    capsule_id: int
+    content: str = Field(..., min_length=1, max_length=5000)
+    author_name: Optional[str] = Field(None, max_length=120)
+    author_location: Optional[str] = Field(None, max_length=120)
+    is_anonymous: bool = False
+    consent_to_share: bool = False
 
 class StoryboardSubmission(StoryboardSubmissionBase):
     id: int
     created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+class StoryboardStory(BaseModel):
+    """One story as the public sees it on a storyboard.
+
+    Carries no moderation state and no age. Name and location are withheld
+    (None) when the author asked to be anonymous.
+    """
+    id: int
+    content: str
+    author_name: Optional[str] = None
+    author_location: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+class StoryboardResponse(BaseModel):
+    """A campfire's storyboard.
+
+    Stories are revealed once the campfire's month has ended. Before that,
+    `revealed` is False, `stories` is empty, and `reveals_at` says when -- so the
+    page can say "revealed at month's end" without the server leaking early.
+    """
+    capsule_id: int
+    month: str
+    revealed: bool
+    reveals_at: Optional[datetime] = None
+    stories: List[StoryboardStory] = []
+
+class StoryboardModeration(BaseModel):
+    """The one thing moderation changes. Consent is the visitor's, so it is
+    not editable here."""
+    is_approved: bool
 
 # Admin portal auth schemas
 class AdminLoginRequest(BaseModel):

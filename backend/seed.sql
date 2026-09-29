@@ -84,3 +84,37 @@ INSERT INTO practices (capsule_id, title, description, steps) VALUES
 (1, 'Practice 1: Return', 'Choose one practice for the month, move through all three, or choose your own.', E'Revisit something you loved when you were younger—something that made you lose track of time: an instrument, game, sport, craft, place, collection, or curiosity.\nSpend at least twenty uninterrupted minutes with it.\nAfterward, ask yourself:\nWhat part of me returned?\nWhat did I value about this before anyone told me whether it was useful?\nIs there something here I want to carry into my life now?'),
 (1, 'Practice 2: Respond', NULL, E'Bring one person to mind. Set a three-minute timer and give them your uninterrupted attention—not to solve them, but to notice them.\nAsk yourself:\nWhat might they be carrying?\nWhat might they need?\nWhat is one genuine action I could take today?\nName one large need in their life and scale it down to one small action you can take this month.\n\nExample: “My father is sick and I want him to feel better” might become: “I’ll call him and tell him one of my favorite memories of us.”'),
 (1, 'Practice 3: Join', NULL, E'Choose a need in your community that matters to you.\nTake one small step toward it:\nGive an hour\nOffer a skill\nAttend something\nHelp a neighbor\nInvite someone to participate with you\nYou might also invite someone who would welcome connection to join you in an activity that once gave you joy.');
+
+-- ---------------------------------------------------------------------------
+-- Storyboard sample stories for Lightpoles (capsule 1). LOCAL DEVELOPMENT ONLY.
+--
+-- Lightpoles is 2026-07, so its month has ended and its storyboard is revealed.
+-- Rows 1-4 are what the public wall should show. Rows 5 and 6 are here to
+-- prove the filter, and must NEVER appear:
+--   5  approved, but the author did not consent to sharing
+--   6  consented, but not yet approved
+-- If either shows up on the page, the read path is broken.
+-- ---------------------------------------------------------------------------
+INSERT INTO storyboard_submissions
+    (id, capsule_id, content, author_name, author_location, is_anonymous, is_approved, consent_to_share, created_at)
+VALUES
+    (1, 1, 'My grandfather kept the porch light on every night after my grandmother died. He said it was so she could find her way home. I didn''t understand it until I watched this.',
+        'Maya', 'Anaheim, CA', false, true, true, '2026-07-04 19:12:00'),
+    (2, 1, 'I have been the one who needed a light for most of this year. Watching two people just sit together and look at the same horizon reminded me that I don''t have to fix anything to be there for someone.',
+        NULL, NULL, true, true, true, '2026-07-09 21:40:00'),
+    (3, 1, 'Called my brother for the first time in two years after this. We talked for an hour about nothing. It was the best hour I''ve had in a long time.',
+        'Daniel', 'Fullerton, CA', false, true, true, '2026-07-15 08:05:00'),
+    (4, 1, 'The quiet in this film stayed with me. I''ve started leaving my phone in another room on Sunday mornings.',
+        'Grace', 'Irvine, CA', false, true, true, '2026-07-22 11:30:00'),
+    (5, 1, 'PRIVATE -- approved but no consent. This must not appear on the public storyboard.',
+        'Sam', NULL, false, true, false, '2026-07-24 16:00:00'),
+    (6, 1, 'PENDING -- consented but not approved. This must not appear on the public storyboard.',
+        'Lee', NULL, false, false, true, '2026-07-28 10:15:00')
+ON CONFLICT (id) DO NOTHING;
+
+-- Rows above carry explicit ids, so move the sequence past them or the next
+-- real submission collides on the primary key.
+SELECT setval(
+    pg_get_serial_sequence('storyboard_submissions', 'id'),
+    GREATEST((SELECT max(id) FROM storyboard_submissions), 1)
+);

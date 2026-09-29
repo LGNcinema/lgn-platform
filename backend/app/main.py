@@ -5,7 +5,8 @@ from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
-from typing import List
+from datetime import datetime
+from typing import List, Optional
 
 import anthropic
 
@@ -505,18 +506,100 @@ def submit_reflection(submission: schemas.UserReflectionCreate, db: Session = De
 
 @app.post("/api/submissions/storyboard", response_model=schemas.StoryboardSubmission, status_code=status.HTTP_201_CREATED)
 def submit_storyboard(submission: schemas.StoryboardSubmissionCreate, db: Session = Depends(get_db)):
+    """Add a story to a campfire's storyboard.
+
+    Only against a published campfire -- a draft is 404, exactly like the
+    capsule GETs, so this cannot be used to probe for hidden capsules.
+
+    The payload schema carries no moderation fields, so every submission lands
+    unapproved and waits for review. Whether it is ever shown publicly also
+    depends on the visitor's own `consent_to_share`.
     """
-    Submit a contribution to the Storyboard (reflection, link, image info).
-    """
-    capsule = db.query(models.Capsule).filter(models.Capsule.id == submission.capsule_id).first()
+    capsule = (
+        db.query(models.Capsule)
+        .filter(models.Capsule.id == submission.capsule_id, _published_filter())
+        .first()
+    )
     if not capsule:
-        raise HTTPException(status_code=404, detail="Capsule not found")
-        
+        raise _capsule_not_found(submission.capsule_id)
+
     db_submission = models.StoryboardSubmission(**submission.model_dump())
     db.add(db_submission)
     db.commit()
     db.refresh(db_submission)
     return db_submission
+
+
+def _storyboard_reveals_at(month: str) -> Optional[datetime]:
+    """The first instant after a campfire's month, as naive UTC.
+
+    `month` is 'YYYY-MM'. A storyboard opens once its month is over, and like
+    publishing this is derived at read time -- there is no job that flips it.
+    Returns None for a month string that does not parse, which keeps that
+    storyboard closed rather than guessing.
+    """
+    try:
+        year, mon = (int(part) for part in month.split("-")[:2])
+    except (ValueError, AttributeError):
+        return None
+    if not 1 <= mon <= 12:
+        return None
+    return datetime(year + 1, 1, 1) if mon == 12 else datetime(year, mon + 1, 1)
+
+
+@app.get("/api/capsules/{capsule_id}/storyboard", response_model=schemas.StoryboardResponse)
+def get_storyboard(capsule_id: int, db: Session = Depends(get_db)):
+    """A campfire's public storyboard.
+
+    Revealed once the campfire's month has ended. A story appears only when
+    its author consented to sharing AND it has been approved. Anonymous
+    authors' names and locations are withheld.
+
+    Before the reveal this still answers 200 -- with `revealed: false` and no
+    stories -- so the page can show when it opens. Unpublished campfires 404.
+    """
+    capsule = (
+        db.query(models.Capsule)
+        .filter(models.Capsule.id == capsule_id, _published_filter())
+        .first()
+    )
+    if not capsule:
+        raise _capsule_not_found(capsule_id)
+
+    reveals_at = _storyboard_reveals_at(capsule.month)
+    revealed = reveals_at is not None and datetime.utcnow() >= reveals_at
+
+    stories: List[schemas.StoryboardStory] = []
+    if revealed:
+        rows = (
+            db.query(models.StoryboardSubmission)
+            .filter(
+                models.StoryboardSubmission.capsule_id == capsule.id,
+                models.StoryboardSubmission.consent_to_share.is_(True),
+                models.StoryboardSubmission.is_approved.is_(True),
+                models.StoryboardSubmission.content.isnot(None),
+            )
+            .order_by(models.StoryboardSubmission.created_at.asc(), models.StoryboardSubmission.id.asc())
+            .all()
+        )
+        stories = [
+            schemas.StoryboardStory(
+                id=row.id,
+                content=row.content,
+                author_name=None if row.is_anonymous else row.author_name,
+                author_location=None if row.is_anonymous else row.author_location,
+                created_at=row.created_at,
+            )
+            for row in rows
+        ]
+
+    return schemas.StoryboardResponse(
+        capsule_id=capsule.id,
+        month=capsule.month,
+        revealed=revealed,
+        reveals_at=reveals_at,
+        stories=stories,
+    )
 
 
 # ===========================================================================
@@ -707,6 +790,38 @@ def admin_create_reflection(
     _: bool = Depends(require_admin),
 ):
     return add_reflection(capsule_id=capsule_id, reflection=reflection, db=db, _=True)
+
+
+@app.get("/api/admin/storyboard", response_model=List[schemas.StoryboardSubmission])
+def admin_list_storyboard(
+    capsule_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    _: bool = Depends(require_admin),
+):
+    """Every storyboard submission, newest first -- the moderation queue."""
+    query = db.query(models.StoryboardSubmission)
+    if capsule_id is not None:
+        query = query.filter(models.StoryboardSubmission.capsule_id == capsule_id)
+    return query.order_by(models.StoryboardSubmission.created_at.desc()).all()
+
+
+@app.patch("/api/admin/storyboard/{item_id}", response_model=schemas.StoryboardSubmission)
+def admin_moderate_storyboard(
+    item_id: int,
+    moderation: schemas.StoryboardModeration,
+    db: Session = Depends(get_db),
+    _: bool = Depends(require_admin),
+):
+    """Approve or un-approve one submission.
+
+    Approval alone does not publish it: the author must also have consented.
+    Consent is not editable here -- it belongs to the author.
+    """
+    item = _get_or_404(db, models.StoryboardSubmission, item_id, "Storyboard submission")
+    item.is_approved = moderation.is_approved
+    db.commit()
+    db.refresh(item)
+    return item
 
 
 @app.patch("/api/admin/reflections/{item_id}", response_model=schemas.Reflection)
