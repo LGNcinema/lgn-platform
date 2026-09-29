@@ -15,12 +15,18 @@ ENV PATH="/root/.local/bin/:${PATH}"
 # Set the working directory
 WORKDIR /app
 
-# Copy dependency definition files
-COPY pyproject.toml /app/
+# Copy dependency definition files -- the lockfile too, so the image installs
+# exactly what the lockfile pins (the same versions the host and Vercel use).
+# Copying only pyproject.toml made every build resolve fresh against its open
+# `>=` ranges: an image built in September 2026 picked up SQLAlchemy 2.1, whose
+# default Postgres driver is psycopg 3 rather than the psycopg2 this project
+# installs, and the backend crashed on startup.
+COPY pyproject.toml uv.lock /app/
 
-# Install python dependencies using uv
+# Install python dependencies using uv. --frozen installs the lockfile as-is and
+# fails rather than silently re-resolving if it is out of date with pyproject.
 # Sync packages but do not install the current project itself since it's just app files
-RUN uv sync --no-install-project
+RUN uv sync --frozen --no-install-project
 
 # Copy the app files into the container
 COPY app /app/app/

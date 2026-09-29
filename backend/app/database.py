@@ -64,7 +64,27 @@ else:
     # request does. recycle keeps connections under typical proxy idle timeouts.
     engine_kwargs.update(pool_pre_ping=True, pool_recycle=1800)
 
-engine = create_engine(settings.DATABASE_URL, connect_args=connect_args, **engine_kwargs)
+def _with_explicit_driver(url: str) -> str:
+    """Name the Postgres driver in the URL instead of leaving SQLAlchemy to pick.
+
+    A bare `postgresql://` means "SQLAlchemy's default driver", and that default
+    changed: SQLAlchemy 2.0 picks psycopg2, 2.1 picks psycopg 3. This project
+    installs psycopg2, so an unpinned install of 2.1 crashes at startup with
+    `No module named 'psycopg'` -- which is exactly what happened to a Docker
+    image built without the lockfile. Every URL this app gets is bare (Neon's
+    injected DATABASE_URL, docker-compose, backend/.env), so pin it here, in one
+    place, rather than relying on each of them. URLs that already name a driver
+    (`postgresql+...://`) and non-Postgres URLs are left untouched.
+    """
+    for bare in ("postgresql://", "postgres://"):
+        if url.startswith(bare):
+            return "postgresql+psycopg2://" + url[len(bare):]
+    return url
+
+
+engine = create_engine(
+    _with_explicit_driver(settings.DATABASE_URL), connect_args=connect_args, **engine_kwargs
+)
 
 # Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
