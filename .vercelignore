@@ -32,3 +32,6 @@ backend/copy_db.py
 # Agent / editor scratch
 .claude/
 .agents/
+
+# Visual diff tooling -- its own deps, never deployed.
+tools/

@@ -1,0 +1,9 @@
+{
+  "name": "lgn-visual",
+  "private": true,
+  "type": "module",
+  "description": "Render the running site at design width and compare against Figma exports.",
+  "devDependencies": {
+    "playwright": "^1.55.0"
+  }
+}

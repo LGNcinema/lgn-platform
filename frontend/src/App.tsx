@@ -1,12 +1,18 @@
 import { useState, useEffect } from 'react';
 
-import { CapsuleView } from './components/CapsuleView';
-import { CapsuleReflect } from './components/CapsuleReflect';
-import { CapsulePractice } from './components/CapsulePractice';
-import { CapsuleDiscuss } from './components/CapsuleDiscuss';
 import { GemeTuningPanel } from './components/GemeTuningPanel';
+import { SiteHeader, type SiteView } from './components/chrome/SiteHeader';
+import { SiteFooter } from './components/chrome/SiteFooter';
+import { CampfireHome } from './components/campfire/CampfireHome';
+import { StoryShell } from './components/campfire/StoryShell';
+import { StoryWatch } from './components/campfire/StoryWatch';
+import { StoryMaking } from './components/campfire/StoryMaking';
+import { WatchMode } from './components/campfire/WatchMode';
+import { StoryReflect } from './components/campfire/StoryReflect';
+import { StoryPractice } from './components/campfire/StoryPractice';
+import { Storyboard } from './components/campfire/Storyboard';
+import { VALID_STORY_SECTIONS, storyNumber, type StorySection } from './components/campfire/campfire';
 import type { CapsuleDetail, CapsuleSummary, GemeTuning } from './types';
-import { buildFilmInfo } from './filmInfo';
 import { API_URL } from './api';
 
 interface TimelineQuote {
@@ -135,7 +141,9 @@ const AccordionIcon = ({ expanded }: { expanded: boolean }) => (
   </svg>
 );
 
-const VALID_VIEWS = ['home', 'capsule', 'timeline', 'about', 'invest', 'contact', 'submit-film'] as const;
+// `capsule` is a single story's page; `campfire` is the hub listing them. The
+// backend still calls stories capsules, and so does this view name.
+const VALID_VIEWS = ['home', 'campfire', 'capsule', 'watch', 'storyboard', 'timeline', 'about', 'invest', 'contact', 'submit-film'] as const;
 const VALID_ABOUT_SUBVIEWS = ['purpose', 'mission-vision', 'board-staff'] as const;
 
 /**
@@ -149,21 +157,12 @@ const VALID_ABOUT_SUBVIEWS = ['purpose', 'mission-vision', 'board-staff'] as con
 const VIEW_DEFAULT_THEME: Partial<Record<typeof VALID_VIEWS[number], 'light' | 'dark'>> = {
   timeline: 'dark',
 };
-const VALID_CAPSULE_ACTIONS = ['reflect', 'gather', 'practice', 'discuss'] as const;
-
-/** Section nav for the capsule shell. `null` is the film itself. */
-const CAPSULE_SECTIONS: { key: 'reflect' | 'practice' | 'discuss' | null; label: string }[] = [
-  { key: null, label: 'Film' },
-  { key: 'reflect', label: 'Reflect' },
-  { key: 'discuss', label: 'Discuss' },
-  { key: 'practice', label: 'Practice' },
-];
 
 function App() {
   // Navigation / Router States
   // Initial view/sub-view/action can be set via ?view=, ?sub=, ?action= URL params for debugging/QA
   // (mirrors the existing ?theme= / ?debug= param pattern below).
-  const [currentView, setCurrentView] = useState<'home' | 'capsule' | 'timeline' | 'about' | 'invest' | 'contact' | 'submit-film'>(() => {
+  const [currentView, setCurrentView] = useState<SiteView>(() => {
     const viewParam = new URLSearchParams(window.location.search).get('view');
     return (VALID_VIEWS as readonly string[]).includes(viewParam || '') ? (viewParam as typeof VALID_VIEWS[number]) : 'home';
   });
@@ -203,12 +202,15 @@ function App() {
   const [filmSuccess, setFilmSuccess] = useState(false);
   const [filmSubmitting, setFilmSubmitting] = useState(false);
 
-  const [aboutMenuOpen, setAboutMenuOpen] = useState(false);
   const [activeTimelineEra, setActiveTimelineEra] = useState<string>('Before The Common Era');
   const [investExpandedRow, setInvestExpandedRow] = useState<string | null>('time');
-  const [capsuleActiveAction, setCapsuleActiveAction] = useState<'reflect' | 'gather' | 'practice' | 'discuss' | null>(() => {
-    const actionParam = new URLSearchParams(window.location.search).get('action');
-    return (VALID_CAPSULE_ACTIONS as readonly string[]).includes(actionParam || '') ? (actionParam as typeof VALID_CAPSULE_ACTIONS[number]) : null;
+  // Which section of a story page is showing. ?section= sets it for QA; the old
+  // ?action= is still read, and its retired values (discuss, gather) fall back
+  // to Watch rather than to a section that no longer exists.
+  const [storySection, setStorySection] = useState<StorySection>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('section') || params.get('action');
+    return (VALID_STORY_SECTIONS as readonly string[]).includes(raw || '') ? (raw as StorySection) : 'watch';
   });
   const [showGridOverlay, setShowGridOverlay] = useState<boolean>(() => {
     const gridParam = new URLSearchParams(window.location.search).get('grid');
@@ -315,10 +317,7 @@ function App() {
       const listRes = await fetch(`${API_URL}/api/capsules`);
       if (listRes.ok) {
         const listData = await listRes.json();
-        setAllCapsules([
-          ...listData, 
-          { id: 999, month: "2027-01-01", title: "Lorem Ip...", is_active: false }
-        ]);
+        setAllCapsules(listData);
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred while loading application data.');
@@ -333,6 +332,13 @@ function App() {
 
   const handleCapsuleSelect = (id: number) => {
     fetchData(id);
+  };
+
+  /** Open one story's page, loading it first if it isn't the one on screen. */
+  const openStory = (id: number, section: StorySection = 'watch') => {
+    if (activeCapsule?.id !== id) handleCapsuleSelect(id);
+    setStorySection(section);
+    setCurrentView('capsule');
   };
 
   // Submissions handlers
@@ -403,7 +409,6 @@ function App() {
   const navigateToAbout = (subView: 'purpose' | 'mission-vision' | 'board-staff') => {
     setCurrentView('about');
     setAboutSubView(subView);
-    setAboutMenuOpen(false);
   };
 
   const renderActiveView = () => {
@@ -450,78 +455,46 @@ function App() {
           </div>
         );
 
-      case 'capsule':
+      case 'campfire':
+        return <CampfireHome stories={allCapsules} onOpenStory={(id) => openStory(id)} />;
+
+      case 'capsule': {
+        const number = storyNumber(activeCapsule.id, allCapsules);
         return (
-          <div className="capsule-view-wrapper">
-            <div className="capsule-month-tabs-v2">
-              {allCapsules.map((cap) => {
-                const dateParts = cap.month.split('-');
-                const mm = dateParts[1] || '';
-                const yy = dateParts[0] ? dateParts[0].substring(2) : '';
-                return (
-                  <button
-                    key={cap.id}
-                    className={`capsule-month-tab-v2 ${activeCapsule.id === cap.id ? 'active' : ''}`}
-                    onClick={() => {
-                      handleCapsuleSelect(cap.id);
-                      setCapsuleActiveAction(null);
-                    }}
-                  >
-                    <span className="tab-date">{mm}.{yy}</span>
-                    <span className="tab-title">{cap.title}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="capsule-content-area" style={{ padding: 0 }}>
-              {/* The shell -- title, credit line, section nav -- stays mounted;
-                  choosing a section only swaps the grey panel inside it. */}
-              <div className="capsule-shell">
-                <h1 className="capsule-shell-heading">{activeCapsule.title}</h1>
-                {activeCapsule.film && (
-                  <p className="capsule-shell-film-info">{buildFilmInfo(activeCapsule.film)}</p>
-                )}
+          <StoryShell
+            capsule={activeCapsule}
+            storyNumber={number}
+            section={storySection}
+            onSelectSection={setStorySection}
+            onBackToCampfire={() => setCurrentView('campfire')}
+            onAddToStoryboard={() => setCurrentView('storyboard')}
+          >
+            {storySection === 'watch' && (
+              <StoryWatch capsule={activeCapsule} onEnterWatch={() => setCurrentView('watch')} />
+            )}
+            {storySection === 'reflect' && <StoryReflect capsule={activeCapsule} />}
+            {storySection === 'practice' && (
+              <StoryPractice
+                capsule={activeCapsule}
+                gemeTuning={gemeTuning}
+                gemeTuningVersion={gemeTuningVersion}
+              />
+            )}
+            {storySection === 'making' && <StoryMaking capsule={activeCapsule} />}
+          </StoryShell>
+        );
+      }
 
-                <nav className="capsule-shell-nav" aria-label="Capsule sections">
-                  {CAPSULE_SECTIONS.map(({ key, label }) => {
-                    const active = key === null
-                      ? capsuleActiveAction === null
-                      : capsuleActiveAction === key || (key === 'discuss' && capsuleActiveAction === 'gather');
-                    return (
-                      <button
-                        key={label}
-                        className={`capsule-shell-nav-btn${active ? ' active' : ''}`}
-                        aria-current={active ? 'page' : undefined}
-                        onClick={() => setCapsuleActiveAction(key)}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </nav>
+      case 'watch':
+        return <WatchMode capsule={activeCapsule} onExit={() => setCurrentView('capsule')} />;
 
-                {!capsuleActiveAction && (
-                  <CapsuleView
-                    capsule={activeCapsule}
-                    onNavigate={(view) => setCapsuleActiveAction(view as 'reflect' | 'practice' | 'discuss' | 'gather')}
-                  />
-                )}
-                {capsuleActiveAction === 'reflect' && (
-                  <CapsuleReflect capsule={activeCapsule} />
-                )}
-                {capsuleActiveAction === 'practice' && (
-                  <CapsulePractice
-                    capsule={activeCapsule}
-                    gemeTuning={gemeTuning}
-                    gemeTuningVersion={gemeTuningVersion}
-                  />
-                )}
-                {(capsuleActiveAction === 'discuss' || capsuleActiveAction === 'gather') && (
-                  <CapsuleDiscuss capsule={activeCapsule} />
-                )}
-              </div>
-            </div>
-          </div>
+      case 'storyboard':
+        return (
+          <Storyboard
+            capsule={activeCapsule}
+            storyNumber={storyNumber(activeCapsule.id, allCapsules)}
+            onBackToCampfire={() => setCurrentView('campfire')}
+          />
         );
 
       case 'timeline': {
@@ -939,77 +912,22 @@ function App() {
 
   return (
     <>
-      <header className="floating-header-container">
-        <div className="header-pill-left">
-          <button onClick={() => setCurrentView('home')} className={`nav-brand-btn ${currentView === 'home' ? 'active' : ''}`}>
-            <img src={theme === 'dark' ? '/images/lgn-icon-white.svg' : '/images/lgn-icon-black.svg'} alt="LGN Icon" />
-          </button>
-
-          <div className="nav-dropdown-wrapper" onMouseEnter={() => setAboutMenuOpen(true)} onMouseLeave={() => setAboutMenuOpen(false)}>
-            <button className={`nav-link-pill ${currentView === 'about' ? 'active' : ''}`} onClick={() => setCurrentView('about')}>About</button>
-            {aboutMenuOpen && (
-              <div className="dropdown-menu">
-                <button className="dropdown-item" onClick={() => navigateToAbout('mission-vision')}>Mission + Vision</button>
-                <button className="dropdown-item" onClick={() => navigateToAbout('purpose')}>Purpose</button>
-                <button className="dropdown-item" onClick={() => navigateToAbout('board-staff')}>Board + Staff</button>
-              </div>
-            )}
-          </div>
-
-          <button className={`nav-link-pill ${currentView === 'invest' ? 'active' : ''}`} onClick={() => setCurrentView('invest')}>Invest</button>
-          <button className={`nav-link-pill ${currentView === 'capsule' ? 'active' : ''}`} onClick={() => setCurrentView('capsule')}>Lightpoles</button>
-        </div>
-
-        <div className="header-pill-right">
-          <button className={`nav-link-pill ${currentView === 'contact' ? 'active' : ''}`} onClick={() => setCurrentView('contact')}>Contact</button>
-        </div>
-      </header>
+      {/* Watch is immersive: no site chrome at all. */}
+      {currentView !== 'watch' && (
+        <SiteHeader
+          currentView={currentView}
+          theme={theme}
+          onNavigate={setCurrentView}
+          onNavigateAbout={navigateToAbout}
+        />
+      )}
 
       <div className="page-body" style={{ position: 'relative', flexGrow: 1 }}>
-      <main className={['home', 'capsule', 'invest', 'timeline', 'about'].includes(currentView) ? '' : 'container'}>
+      <main className={['home', 'campfire', 'capsule', 'watch', 'storyboard', 'invest', 'timeline', 'about'].includes(currentView) ? '' : 'container'}>
         {renderActiveView()}
       </main>
 
-      <footer className="lgn-footer">
-        <div className="footer-grid">
-          {/* Column 1: Logo & Copyright */}
-          <div className="footer-col col-logo">
-            <img className="footer-logo" src={theme === 'dark' ? '/images/lgn-logo-registered-white.svg' : '/images/lgn-logo-registered.svg'} alt="Life is Greater than Numbers" />
-            <div className="footer-bottom-text">&copy;{new Date().getFullYear()} Life is Greater than Numbers, Inc.</div>
-          </div>
-
-          {/* Column 2: Navigation */}
-          <div className="footer-col col-nav">
-            <nav className="footer-nav">
-              <button onClick={() => setCurrentView('capsule')}>Lightpoles</button>
-              <button onClick={() => setCurrentView('about')}>About</button>
-              <button onClick={() => setCurrentView('invest')}>Invest</button>
-              <button onClick={() => setCurrentView('submit-film')}>Submit a film</button>
-              <button onClick={() => setCurrentView('contact')}>Contact</button>
-            </nav>
-            <div className="footer-bottom-text">501(c)(3) EIN: 33-2376438</div>
-          </div>
-
-          {/* Column 3: Mailing & Social */}
-          <div className="footer-col col-mailing">
-            <h3>Mailing</h3>
-            <p>Life is Greater than Numbers, Inc.<br />1950 W Corporate Way, STE 31556<br />Anaheim, CA 92801</p>
-            <div className="footer-bottom-text social-links">
-              <a href="#">Vimeo</a>
-            </div>
-          </div>
-
-          {/* Column 4: Join */}
-          <div className="footer-col col-join">
-            <h3>Join</h3>
-            <form className="join-form">
-              <input type="email" placeholder="Email Address" required />
-              <button type="submit">Submit</button>
-            </form>
-            <div className="footer-bottom-text" style={{ cursor: 'pointer' }} onClick={() => setCurrentView('timeline')}>A witness through time</div>
-          </div>
-        </div>
-      </footer>
+      {currentView !== 'watch' && <SiteFooter theme={theme} onNavigate={setCurrentView} />}
 
       {showGridOverlay && <GridOverlay cols={currentView === 'home' ? 12 : 6} rows={currentView === 'home' ? 6 : 3} />}
       </div>

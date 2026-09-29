@@ -1,0 +1,111 @@
+/* StoryShell -- owned by the shell agent.
+   SCAFFOLD: rough proportions so the section components have a real right
+   column to render into. Replace with measured values from the frames. */
+
+.story-shell {
+  width: 100%;
+  max-width: var(--grid-max-width);
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: clamp(120px, 10.4167vw, 200px) var(--grid-margin) var(--grid-margin);
+}
+
+.story-shell-crumb {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: clamp(16px, 1.0417vw, 20px);
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-bottom: clamp(40px, 3.125vw, 60px);
+}
+
+.story-shell-card {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  column-gap: var(--grid-gutter);
+  background: var(--bg-card);
+  border-radius: var(--border-radius);
+  padding: 22px;
+  min-height: clamp(560px, 40vw, 768px);
+  box-sizing: border-box;
+}
+
+.story-shell-left {
+  grid-column: 1 / span 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.story-shell-right {
+  grid-column: 3 / span 4;
+  min-width: 0;
+}
+
+.story-shell-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.story-shell-title {
+  font-size: clamp(48px, 3.3333vw, 64px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin: 24px 0;
+  color: var(--primary);
+}
+
+.story-shell-film-info {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  max-width: 460px;
+  margin: 0;
+}
+
+.story-shell-more,
+.story-shell-storyboard {
+  align-self: flex-start;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--text-muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.story-shell-more {
+  font-size: 12px;
+  margin-top: 16px;
+}
+
+.story-shell-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 80px;
+}
+
+.story-shell-nav-btn {
+  align-self: flex-start;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 20px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.story-shell-nav-btn.active {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.story-shell-storyboard {
+  margin-top: auto;
+  font-size: 16px;
+}
