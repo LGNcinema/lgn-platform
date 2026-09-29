@@ -1,1 +1,186 @@
-/* CampfireHome -- owned by the agent building this component. */
+/* CampfireHome -- the story hub. Figma: [CAMPFIRE]-HOME (1920 x 1460),
+   cards from "Capsule Menu".
+
+   Vertical positions are measured from the frame's SVG and solved for Inter's
+   metrics (ascent 0.969em, cap height 0.727em), so cap tops land where
+   Helvetica's do in the frame:
+     heading cap top y=196, cards y=274..1043 (600 x 769), footer y=1083.
+   Every length is clamp(min, px/1920*100 vw, px) per the house style. */
+
+.campfire-home {
+  width: 100%;
+  max-width: var(--grid-max-width);
+  margin: 0 auto;
+  box-sizing: border-box;
+  /* 192 / 1920 -- puts the heading's cap top at the frame's y=196. The max()
+     keeps the heading clear of the floating header at any width, including
+     when it wraps to two rows on phones (--header-bottom is measured by
+     SiteHeader). Same guard as the story shell. */
+  padding: max(calc(var(--header-bottom) + 32px), clamp(120px, 10vw, 192px))
+    var(--grid-margin) var(--grid-margin);
+  background-color: var(--bg-darker);
+  color: var(--primary);
+}
+
+.campfire-home-heading {
+  margin: 0 0 clamp(32px, 3.0365vw, 58px);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--primary);
+}
+
+.campfire-home-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* The frame's cards are 600 wide with ~20px between them (40 / 660 / 1280) --
+     NOT the page's 32px gutter; three 600s do not fit the 6-column grid. */
+  gap: clamp(12px, 1.0417vw, 20px);
+}
+
+/* ------------------------------------------------------------------ card */
+
+.campfire-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  /* 769 / 1920. The still is pushed to the bottom (margin-top: auto below), so
+     a taller card only grows the space above it. */
+  min-height: clamp(460px, 40.0521vw, 769px);
+  /* 16 / 22 / 21 / 22 at 1920. The text and still sit 22px in from the sides
+     and the still 21px up from the bottom; the top is only 16px because the
+     frame's label box starts there (its cap top lands at y=19). */
+  padding:
+    clamp(12px, 0.8333vw, 16px)
+    clamp(16px, 1.1458vw, 22px)
+    clamp(15px, 1.0938vw, 21px);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+}
+
+/* Frame #EDEDED; --bg-card-hover (#ececec) is the nearest token and also gives
+   a sensible dark-mode grey. */
+.campfire-card--coming {
+  background: var(--bg-card-hover);
+}
+
+.campfire-card-body {
+  /* Takes the card's spare height, which pins the still to the bottom edge.
+     The padding is the floor on the text-to-still gap once content fills the
+     card (narrow viewports, long credit lines); at 1920 the spare height is
+     far larger, so it changes nothing there. */
+  flex: 1 0 auto;
+  padding-bottom: 24px;
+}
+
+.campfire-card-meta {
+  display: grid;
+  /* The month starts 312px into a 600px card: two columns over the 556px inner
+     width with a 24px gap put it at 22 + 266 + 24 = 312. */
+  grid-template-columns: 1fr 1fr;
+  column-gap: 24px;
+  font-size: 12px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--text-dark);
+}
+
+.campfire-card-title {
+  /* 198 / 1920 -- title cap top 235px below the card's top edge. */
+  margin: clamp(64px, 10.3125vw, 198px) 0 0;
+  font-size: clamp(32px, 2.5vw, 48px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--primary);
+}
+
+.campfire-card--coming .campfire-card-title {
+  color: var(--text-dark);
+}
+
+/* Reset the button to read as the heading's text. */
+.campfire-card-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Stretch the button's hit area over the whole card so the card is one click
+   target, while the button itself stays just the title. */
+.campfire-card-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Above the still: its hover opacity creates a stacking context that would
+     otherwise paint over this overlay and swallow clicks on the image. */
+  z-index: 1;
+  border-radius: var(--border-radius);
+}
+
+.campfire-card-link:focus-visible {
+  outline: none;
+}
+
+.campfire-card-link:focus-visible::after {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.campfire-card-credit {
+  /* 29 / 1920 -- credit cap top 308px below the card's top edge. */
+  margin: clamp(16px, 1.5104vw, 29px) 0 0;
+  font-size: 12px;
+  line-height: 1.2;
+  color: var(--text-dark);
+}
+
+.campfire-card-still {
+  display: block;
+  width: 100%;
+  /* 555 x 312 in the frame, i.e. 16:9. */
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--border-radius);
+  /* Frame #D9D9D9 -- the same grey as --border. Shows while the still loads,
+     and on cards without one. */
+  background: var(--border);
+}
+
+.campfire-card--story .campfire-card-still {
+  transition: opacity 0.2s ease;
+}
+
+.campfire-card--story:hover .campfire-card-still {
+  opacity: 0.9;
+}
+
+/* ------------------------------------------------------------ responsive */
+
+/* Three 1fr columns get too narrow for a 32px title and a 12px credit line
+   below ~900px, so go straight to one column. Not two: the placeholders pad
+   the last row to THREE, so a two-column grid would leave a hole beside the
+   odd card out. */
+@media (max-width: 900px) {
+  .campfire-home-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Height from content once the card is a full-width strip. */
+  .campfire-card {
+    min-height: 0;
+  }
+
+  .campfire-card-title {
+    margin-top: 48px;
+  }
+}

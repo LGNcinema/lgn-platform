@@ -450,7 +450,7 @@ function App() {
             </div>
             
             <div className="home-hero-btn-row">
-              <button className="home-hero-btn" onClick={() => setCurrentView('capsule')}>Lightpoles</button>
+              <button className="home-hero-btn" onClick={() => setCurrentView('campfire')}>Campfire</button>
             </div>
           </div>
         );

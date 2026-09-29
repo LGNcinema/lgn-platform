@@ -70,7 +70,11 @@
      rather than from a percentage of the hero's height. */
   --header-top: clamp(16px, 2.0833vw, 40px);
   /* 40 / 1920 -- matches Figma's Header y=40 at full width */
-  --header-pill-height: 49px;
+  /* The pill as built: 58px (it was 49 before the Campfire redesign). */
+  --header-pill-height: 58px;
+  /* Fallback only. SiteHeader measures its real bottom edge at runtime and
+     overrides this on <html> -- the header wraps on narrow screens, which this
+     formula cannot know. See SiteHeader.tsx. */
   --header-bottom: calc(var(--header-top) + var(--header-pill-height));
 
   /* Homepage hero (logo / tagline / button) scaled down per design review.
@@ -197,175 +201,13 @@ body {
   box-sizing: border-box;
 }
 
-/* Floating Header Layout */
-.floating-header-container {
-  position: absolute;
-  top: var(--header-top);
-  left: var(--grid-margin);
-  right: var(--grid-margin);
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  z-index: 100;
-  pointer-events: none;
-  /* Let clicks pass through empty space */
-}
-
-.header-pill-left {
-  background-color: var(--header-pill-bg);
-  /* Figma "Header" instance: 376x49, 10px inset, 22px between menu items. */
-  height: var(--header-pill-height);
-  padding: 0 10px;
-  border-radius: 5px;
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  pointer-events: auto;
-}
-
-.header-pill-right {
-  background-color: var(--header-pill-right-bg);
-  height: 44px;
-  /* The label carries the 17/10 inset instead (Figma "Button" 118x44, label at
-     x=17 y=10), so the hover state covers the whole pill rather than just the
-     text -- matching every other nav item. */
-  padding: 0;
-  border-radius: 5px;
-  display: flex;
-  align-items: center;
-  pointer-events: auto;
-}
-
-.header-pill-right .nav-link-pill {
-  padding: 10px 17px;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  border-radius: 5px;
-}
-
-.nav-brand-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-light);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  padding: 0;
-  border-radius: 4px;
-  transition: var(--transition);
-}
-
-.nav-brand-btn img {
-  /* Figma "LGN-Icon" inside the header pill: 22x23 */
-  width: 22px;
-  height: 23px;
-  display: block;
-}
-
-.nav-brand-btn:hover {
-  background-color: var(--header-btn-hover);
-}
-
-.nav-brand-btn.active {
-  background-color: transparent;
-  color: var(--primary);
-}
-
-.nav-link-pill {
-  background: transparent;
-  border: none;
-  color: var(--primary);
-  font-family: var(--font-sans);
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition);
-  text-decoration: none;
-  /* Figma "Menu Item" is 74x29 around a 24px line box -- the page's 1.6 body
-     leading was silently making every nav item ~34px tall. */
-  line-height: 24px;
-  padding: 2.5px 15px;
-  border-radius: 4px;
-}
-
-.nav-link-pill:hover {
-  background-color: var(--header-btn-hover);
-  color: var(--primary);
-}
-
-.nav-link-pill.active {
-  background-color: var(--header-btn-active);
-  color: var(--header-btn-active-text);
-}
-
-.nav-dropdown-wrapper {
-  position: relative;
-  display: inline-block;
-}
+/* Header styles (floating header, nav pills, About dropdown) live with the
+   component: components/chrome/SiteHeader.css */
 
 /* About Dropdown Menu */
 .about-dropdown-wrapper {
   position: relative;
   display: inline-block;
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 4px;
-  background-color: var(--bg-dark);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: var(--shadow-md);
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 160px;
-  z-index: 10;
-  animation: dropdown-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes dropdown-fade-in {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
-.dropdown-item {
-  background: transparent;
-  border: none;
-  color: var(--text-main);
-  font-family: var(--font-sans);
-  font-size: 14px;
-  font-weight: 500;
-  text-align: left;
-  padding: 10px 16px;
-  width: 100%;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: var(--transition);
-}
-
-.dropdown-item:hover {
-  background-color: var(--border);
-  /* #454545 */
-  color: var(--primary);
-}
-
-.dropdown-item.active {
-  background-color: var(--bg-darker);
-  /* #000000 */
-  color: var(--primary);
 }
 
 .capsule-badge {
@@ -1419,9 +1261,14 @@ body {
   max-width: 400px;
 }
 
+/* The error screen's "Try Again" and the contact / film forms' post-submit
+   buttons. The text colour was a hardcoded #000 from when the site was dark and
+   --primary was white; once the site went light, --primary became black and the
+   label vanished -- black on black. --bg-card is the inverse of --primary in
+   both themes, so the label reads either way. */
 .retry-btn {
   background: var(--primary);
-  color: #000;
+  color: var(--bg-card);
   border: none;
   padding: 10px 20px;
   border-radius: 6px;
@@ -1430,8 +1277,9 @@ body {
   transition: var(--transition);
 }
 
+/* Was #ffaa00, an orange left over from the old dark theme. */
 .retry-btn:hover {
-  background-color: #ffaa00;
+  background-color: var(--secondary);
 }
 
 /* Animations */
@@ -1451,164 +1299,7 @@ body {
   }
 }
 
-/* Footer styling */
-.lgn-footer {
-  color: var(--footer-text);
-  border-top: 1px solid var(--border);
-  /* 39 / 1920 -- Figma footer instance has ~39px of breathing room above/below its content */
-  padding: clamp(24px, 2.0313vw, 39px) var(--grid-margin);
-  background-color: var(--bg-footer);
-  margin-top: auto;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.footer-grid {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: var(--grid-gutter);
-  max-width: var(--grid-max-width);
-  margin: 0 auto;
-  /* 299 / 1920 -- Figma's footer content band (377px tall minus the top/bottom padding above) */
-  min-height: clamp(180px, 15.5729vw, 299px);
-}
-
-.footer-col.col-logo {
-  grid-column: 1 / span 3;
-}
-
-.footer-col.col-nav {
-  grid-column: 4 / span 3;
-}
-
-.footer-col.col-mailing {
-  grid-column: 7 / span 3;
-}
-
-.footer-col.col-join {
-  grid-column: 10 / span 3;
-}
-
-.footer-col {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Scaled down 10% from 380px per design review. The asset itself was the
-   source of the "cropped / weird bounding box" artefacts -- it used to be a
-   4096px PNG wrapped in an SVG pattern whose transform overhung the tile on
-   every edge; it is now the real vector (design/logo_proper_svgs). */
-.footer-logo {
-  width: 100%;
-  max-width: 342px;
-  margin-bottom: 24px;
-}
-
-.footer-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: flex-start;
-  margin-bottom: 24px;
-}
-
-.footer-nav button {
-  background: none;
-  border: none;
-  color: var(--footer-text);
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.2;
-  cursor: pointer;
-  padding: 0;
-  text-align: left;
-}
-
-.footer-nav button:hover {
-  color: var(--footer-text-hover);
-}
-
-.footer-col h3 {
-  font-size: 18px;
-  color: var(--footer-text);
-  margin-bottom: 16px;
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-}
-
-/* Mailing address: leading pulled in close to the type size (16/19.2). The
-   design note asks for roughly "32pt type on 32pt leading" -- 1.2 is the
-   eyeballed version of that; it is the one number to nudge if it wants to be
-   tighter still. */
-.footer-col p {
-  font-size: 16px;
-  color: var(--footer-text);
-  line-height: 1.2;
-  margin-bottom: 24px;
-}
-
-.join-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 24px;
-  width: 100%;
-}
-
-.join-form input {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  color: var(--footer-text);
-  padding: 12px 16px;
-  border-radius: 4px;
-  width: 100%;
-  box-sizing: border-box;
-  font-family: var(--font-sans);
-  font-size: 14px;
-}
-
-.join-form input::placeholder {
-  color: var(--footer-placeholder);
-}
-
-.join-form button {
-  background: var(--hero-btn-bg);
-  color: var(--hero-btn-text);
-  border: none;
-  padding: 12px 28px;
-  border-radius: 4px;
-  font-family: var(--font-sans);
-  font-weight: 500;
-  font-size: 14px;
-  cursor: pointer;
-  align-self: flex-start;
-  transition: background-color 0.2s;
-}
-
-.join-form button:hover {
-  background: var(--hero-btn-hover);
-}
-
-.footer-bottom-text {
-  font-size: 12px;
-  color: var(--footer-text);
-  margin-top: auto;
-}
-
-.social-links {
-  display: flex;
-  gap: 16px;
-}
-
-.social-links a {
-  color: var(--footer-text);
-  text-decoration: none;
-}
-
-.social-links a:hover {
-  color: var(--footer-text-hover);
-}
+/* Footer styles live with the component: components/chrome/SiteFooter.css */
 
 /* New Timeline Grid/Table Layout */
 .timeline-view-wrapper {

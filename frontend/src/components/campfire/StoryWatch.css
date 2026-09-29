@@ -1,1 +1,90 @@
-/* StoryWatch -- owned by the agent building this component. */
+/* StoryWatch -- the film still in the Watch section's right column.
+   Figma: [CAMPFIRE]-LIGHTPOLES. */
+
+.story-watch {
+  position: relative;
+  display: block;
+  width: 100%;
+  /* The shell's right column is 1196 wide (PRACTICE's card row); the still
+     is 1187 in LIGHTPOLES. A percentage, so it keeps that ratio below 1920. */
+  max-width: calc(100% * 1187 / 1196);
+  padding: 0;
+  border: 0;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  /* Shows while the still loads, and is the whole panel when there is none. */
+  background: var(--bg-card-hover);
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.story-watch-still {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: filter 0.2s ease-in-out;
+}
+
+.story-watch:hover .story-watch-still,
+.story-watch:focus-visible .story-watch-still {
+  filter: brightness(0.92);
+}
+
+/* 91px at 1920, centred on the still. */
+.story-watch-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: clamp(56px, 4.7396vw, 91px);
+  height: clamp(56px, 4.7396vw, 91px);
+  transform: translate(-50%, -50%);
+  transition: transform 0.2s ease-in-out;
+}
+
+.story-watch:hover .story-watch-play,
+.story-watch:focus-visible .story-watch-play {
+  transform: translate(-50%, -50%) scale(1.06);
+}
+
+/* A 25%-white circle disappears on a light grey panel; with no still, give
+   the mark a dark disc so it still reads as "play". */
+.story-watch-no-still .story-watch-play circle {
+  fill: #000;
+  fill-opacity: 0.35;
+}
+
+/* Double ring (white over dark) so focus survives any still. Drawn on an
+   overlay because an inset shadow on the button would sit under the image. */
+.story-watch::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.story-watch:focus-visible {
+  outline: none;
+}
+
+.story-watch:focus-visible::after {
+  box-shadow:
+    inset 0 0 0 3px #fff,
+    inset 0 0 0 6px rgba(0, 0, 0, 0.65);
+}
+
+.story-watch-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+
+.story-watch-empty-text {
+  font-size: 16px;
+  color: var(--text-dark);
+}

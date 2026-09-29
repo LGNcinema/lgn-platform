@@ -1,1 +1,400 @@
-/* Storyboard -- owned by the agent building this component. */
+/* Storyboard -- Figma [CAMPFIRE]-STORYBOARD.
+   Measured at 1920 CSS px from the frame's PDF/SVG export; each clamp's vw is
+   (px at 1920 / 1920) * 100. All text is tracked -3%, the frame's setting. */
+
+.storyboard {
+  width: 100%;
+  max-width: var(--grid-max-width);
+  margin: 0 auto;
+  /* Breadcrumb baseline at y=210 and panel top at y=282 in the frame. */
+  padding: clamp(120px, 9.9219vw, 190.5px) var(--grid-margin) var(--grid-margin);
+}
+
+.storyboard-crumb {
+  display: block;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: clamp(16px, 1.0417vw, 20px);
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: var(--text-dark);
+  cursor: pointer;
+  margin-bottom: clamp(40px, 3.5vw, 67.5px);
+}
+
+.storyboard-crumb:hover {
+  color: var(--primary);
+}
+
+/* The stage positions the scrim and modal over the panel only -- the frame
+   dims the panel, not the breadcrumb or the header. */
+.storyboard-stage {
+  position: relative;
+}
+
+.storyboard-panel {
+  background: var(--bg-card);
+  border-radius: var(--border-radius);
+  padding: clamp(24px, 2.7344vw, 52.5px) clamp(16px, 2.5vw, 48px) clamp(24px, 2.5vw, 48px);
+  color: var(--text-main);
+}
+
+/* Three columns of 563.3px with 27px gutters inside 48px padding: the frame's
+   lower row exactly. The form takes columns 1-2 of the first row, so the first
+   story sits beside it. */
+.storyboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: clamp(16px, 1.4063vw, 27px);
+  row-gap: clamp(32px, 3.125vw, 60px);
+}
+
+.storyboard-form {
+  grid-column: 1 / span 2;
+  min-width: 0;
+}
+
+.storyboard-heading {
+  font-size: clamp(32px, 2.5vw, 48px);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: var(--primary);
+  margin: 0 0 clamp(14px, 1.1823vw, 22.7px);
+}
+
+.storyboard-heading label {
+  cursor: text;
+}
+
+.storyboard-textarea {
+  display: block;
+  width: 100%;
+  height: clamp(180px, 13.9583vw, 268px);
+  resize: vertical;
+  background: transparent;
+  border: 1px solid var(--bg-darker);
+  border-radius: var(--border-radius);
+  padding: clamp(14px, 1.1979vw, 23px) clamp(14px, 1.25vw, 24px);
+  font: inherit;
+  font-size: clamp(18px, 1.25vw, 24px);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: var(--primary);
+}
+
+.storyboard-textarea::placeholder {
+  color: var(--border);
+  opacity: 1;
+}
+
+.storyboard-textarea:focus-visible {
+  outline: 2px solid var(--text-muted);
+  outline-offset: 2px;
+}
+
+.storyboard-form-actions {
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 1.0417vw, 20px);
+  margin-top: clamp(12px, 1.0417vw, 20px);
+}
+
+.storyboard-save {
+  flex: none;
+  height: clamp(38px, 2.2917vw, 44px);
+  min-width: clamp(76px, 4.6354vw, 89px);
+  padding: 0 clamp(18px, 1.1458vw, 22px);
+  background: var(--secondary);
+  color: #000; /* the button stays light on the dark panel, per the frame */
+  border: 0;
+  border-radius: var(--border-radius);
+  font: inherit;
+  font-size: clamp(16px, 1.0417vw, 20px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  cursor: pointer;
+}
+
+.storyboard-save:hover {
+  background: #fff;
+}
+
+.storyboard-save:focus-visible,
+.storyboard-crumb:focus-visible,
+.storyboard-modal-submit:focus-visible {
+  outline: 2px solid var(--text-muted);
+  outline-offset: 2px;
+}
+
+.storyboard-status {
+  font-size: clamp(14px, 0.8333vw, 16px);
+  line-height: 1.3;
+  letter-spacing: -0.03em;
+  color: var(--text-muted);
+}
+
+.storyboard-status:empty {
+  display: none;
+}
+
+/* ---------------------------------------------------------------- the wall */
+
+.storyboard-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(24px, 2.0833vw, 40px);
+  min-width: 0;
+  min-height: clamp(280px, 20.9481vw, 402.2px);
+  background: var(--bg-darker);
+  border-radius: var(--border-radius);
+  padding: clamp(20px, 1.7188vw, 33px) clamp(20px, 1.9792vw, 38px) clamp(18px, 1.5625vw, 30px);
+}
+
+.storyboard-card-author {
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 0.8333vw, 16px);
+  min-width: 0;
+}
+
+.storyboard-avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: clamp(44px, 3.4375vw, 66px);
+  height: clamp(44px, 3.4375vw, 66px);
+  border-radius: 50%;
+  background: var(--border);
+  font-size: clamp(18px, 1.25vw, 24px);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+.storyboard-card-byline {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.storyboard-card-name {
+  font-size: clamp(18px, 1.25vw, 24px);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  /* #454545 is the frame's name color -- the dark palette's --border. */
+  color: var(--border);
+  overflow-wrap: anywhere;
+}
+
+.storyboard-card-location {
+  font-size: clamp(13px, 0.7292vw, 14px);
+  line-height: 1.3;
+  letter-spacing: -0.03em;
+  color: var(--text-muted);
+}
+
+.storyboard-card-text {
+  font-size: clamp(18px, 1.25vw, 24px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--text-muted);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* Loading, error, empty and not-yet-revealed all take the first card's slot:
+   quiet text, no card chrome to stand in for stories that aren't there. */
+.storyboard-note {
+  align-self: end;
+  font-size: clamp(16px, 1.0417vw, 20px);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: var(--text-muted);
+}
+
+.storyboard-note p + p {
+  margin-top: 0.6em;
+}
+
+.storyboard-note-quiet {
+  color: var(--border);
+}
+
+/* --------------------------------------------------------------- the modal */
+
+/* White at 90% over the panel, as drawn; it follows the page theme's card
+   color so a dark page gets a dark scrim. */
+.storyboard-scrim {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--border-radius);
+  background: color-mix(in srgb, var(--bg-card) 90%, transparent);
+}
+
+.storyboard-modal {
+  position: absolute;
+  /* 767px from the page's left edge = 727 into the 1840px panel; centred
+     would be 723.5, so the frame is followed rather than rounded. */
+  left: calc(50% + 3.5px);
+  top: clamp(160px, 12.7604vw, 245px);
+  transform: translateX(-50%);
+  width: min(393px, calc(100% - 32px));
+  background: var(--bg-darker);
+  color: var(--primary);
+  border-radius: var(--border-radius);
+  padding: 16.5px 17px 14px;
+  text-align: left;
+}
+
+.storyboard-modal-label {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  color: var(--text-dark);
+}
+
+.storyboard-modal-body {
+  margin-top: 17px;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--primary);
+}
+
+.storyboard-consent {
+  display: flex;
+  /* Top-aligned: Inter sets the label wider than the frame's Helvetica, so it
+     can wrap, and the box belongs beside the first line. */
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 13.5px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: var(--text-dark);
+}
+
+.storyboard-consent label {
+  cursor: pointer;
+}
+
+/* A drawn 11px square with a grey hairline, as in the frame, instead of the
+   UA checkbox. It is still the native input, so it keeps keyboard and
+   screen-reader behaviour. */
+.storyboard-consent-box {
+  appearance: none;
+  flex: none;
+  width: 11px;
+  height: 11px;
+  margin: 1px 0 0; /* box bottom on the first line's baseline, as drawn */
+  border: 1px solid var(--text-dark);
+  border-radius: 0;
+  background: transparent;
+  display: grid;
+  place-content: center;
+  cursor: pointer;
+}
+
+.storyboard-consent-box:checked::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  background: var(--primary);
+}
+
+.storyboard-consent-box:focus-visible {
+  outline: 2px solid var(--text-muted);
+  outline-offset: 2px;
+}
+
+.storyboard-consent-note {
+  margin-top: 6px;
+  padding-left: 20px; /* under the label text, past the box */
+  font-size: 12px;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: var(--text-dark);
+}
+
+.storyboard-modal-error {
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.3;
+  letter-spacing: -0.03em;
+  color: #b3261e; /* no error token exists */
+}
+
+.storyboard-modal-submit {
+  display: block;
+  margin-top: 17px;
+  height: 35px;
+  min-width: 158.8px;
+  padding: 0 10.4px;
+  background: var(--border);
+  color: var(--primary);
+  border: 0;
+  border-radius: var(--border-radius);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  text-align: left;
+  cursor: pointer;
+}
+
+.storyboard-modal-submit:hover {
+  background: var(--header-btn-hover);
+}
+
+.storyboard-modal-submit:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+/* ------------------------------------------------------------- responsive */
+
+@media (max-width: 1100px) {
+  .storyboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .storyboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .storyboard-form {
+    grid-column: 1;
+  }
+
+  /* On a phone the panel can be far taller than the screen, so the modal is
+     pinned to the viewport instead of the panel's top. */
+  .storyboard-scrim {
+    position: fixed;
+    border-radius: 0;
+    z-index: 1000;
+  }
+
+  .storyboard-modal {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1001;
+  }
+}

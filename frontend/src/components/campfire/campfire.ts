@@ -58,6 +58,33 @@ export function monthsAfter(month: string, count: number): string[] {
   return out;
 }
 
+/** 'YYYY-MM' for a date, in the visitor's local time. */
+function monthOf(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/**
+ * Months to label the hub's "Coming Soon" placeholders with.
+ *
+ * Counts forward from the latest published story -- but never from before the
+ * current month. Without that floor, a campfire whose newest story is a few
+ * months old advertises months that are already over: Lightpoles (2026-07)
+ * seen in late September offered "Coming Soon: August 2026". The current month
+ * itself is allowed, since a story scheduled for later this month is exactly
+ * what "coming soon" means.
+ *
+ * These are still guesses about the schedule -- the public API hides
+ * unpublished stories -- so they can drift from what is actually planned.
+ */
+export function comingSoonMonths(latestMonth: string, count: number, now: Date = new Date()): string[] {
+  if (count <= 0) return [];
+  const [afterLatest] = monthsAfter(latestMonth, 1);
+  const current = monthOf(now);
+  // 'YYYY-MM' compares correctly as a string.
+  const start = afterLatest > current ? afterLatest : current;
+  return [start, ...monthsAfter(start, count - 1)];
+}
+
 // ------------------------------------------------------------------ storyboard
 
 export interface StoryboardStory {

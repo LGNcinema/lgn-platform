@@ -1,0 +1,5 @@
+/* FilmCredit -- only the capitalising. Size, colour and position belong to
+   the page using it (it gets their class via `className`). */
+.film-credit-name {
+  text-transform: uppercase;
+}

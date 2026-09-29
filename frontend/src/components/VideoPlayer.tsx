@@ -21,6 +21,15 @@ type Phase = 'idle' | 'active' | 'error';
 interface Props {
   film: Film;
   className?: string;
+  /**
+   * Mount the real player straight away instead of waiting for a click on the
+   * facade. Only for places where the viewer has ALREADY asked to play (the
+   * Campfire's immersive Watch mode): that earlier click is this document's
+   * user activation, which is what the browser's autoplay policy honours for
+   * the embed. Everywhere else the facade stays, so nothing is fetched from
+   * the provider until someone chooses to watch.
+   */
+  autoStart?: boolean;
 }
 
 /**
@@ -31,22 +40,25 @@ interface Props {
  * only mount the real player (with autoplay) once the viewer clicks. One click
  * both mounts and starts playback.
  */
-export const VideoPlayer: React.FC<Props> = ({ film, className }) => {
+export const VideoPlayer: React.FC<Props> = ({ film, className, autoStart = false }) => {
   const source = useMemo(() => resolveVideoSource(film), [film]);
   const posters = useMemo(() => posterCandidates(film, source), [film, source]);
 
-  const [phase, setPhase] = useState<Phase>('idle');
+  const [phase, setPhase] = useState<Phase>(autoStart ? 'active' : 'idle');
   const [embedLoaded, setEmbedLoaded] = useState(false);
   const [posterIndex, setPosterIndex] = useState(0);
   const warmedRef = useRef(false);
 
-  // Reset transient state whenever the film itself changes.
+  // Reset transient state whenever the film itself changes. This also runs on
+  // mount, so it has to reset to the STARTING phase rather than always to idle
+  // -- resetting to idle is what used to force autoStart callers to wait a frame
+  // and click the facade themselves.
   useEffect(() => {
-    setPhase('idle');
+    setPhase(autoStart ? 'active' : 'idle');
     setEmbedLoaded(false);
     setPosterIndex(0);
     warmedRef.current = false;
-  }, [film.id]);
+  }, [film.id, autoStart]);
 
   const warm = useCallback(() => {
     if (warmedRef.current || !source) return;

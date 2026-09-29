@@ -523,8 +523,7 @@
 
 /* Mutually exclusive, so the chosen one is filled rather than merely outlined --
    `aria-pressed` carries the same fact for anyone not seeing the fill. */
-.admin-portal .apnl-publish-choice.is-chosen,
-.admin-portal .apnl-preview-navbtn.is-chosen {
+.admin-portal .apnl-publish-choice.is-chosen {
   color: var(--bg-card);
   background: var(--primary);
   border-color: var(--primary);
@@ -541,12 +540,6 @@
   /* The preview renders public page layout; the 940px reading measure the
      editor forms use would misrepresent it. */
   max-width: none;
-}
-
-.admin-portal .apnl-preview-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
 }
 
 /* A dashed frame under a labelled bar: this is a preview, not the site. */
@@ -608,11 +601,13 @@
 
 /*
  * The only public class this file touches, and only inside the preview stage:
- * `.capsule-view-wrapper` reserves 90-160px at the top for the site header,
- * which the preview frame does not have, so the frame would otherwise open on a
- * band of empty grey. Scoped here rather than changed in `index.css`.
+ * `.story-shell` reserves ~120-191px at the top to clear the floating site
+ * header, which the preview frame does not have, so the frame would otherwise
+ * open on a band of empty grey. Scoped here rather than changed in the shell's
+ * own stylesheet. (It targeted `.capsule-view-wrapper` until the Campfire
+ * redesign replaced that markup.)
  */
-.admin-portal .apnl-preview-stage .capsule-view-wrapper {
+.admin-portal .apnl-preview-stage .story-shell {
   padding-top: 28px;
   padding-bottom: 48px;
 }

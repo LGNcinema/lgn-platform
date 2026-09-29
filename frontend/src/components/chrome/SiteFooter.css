@@ -1,1 +1,230 @@
-/* SiteFooter -- owned by the agent building this component. */
+/* Global footer. Figma: `Footer` (1920x377) and the bottom of every
+   [CAMPFIRE] frame.
+
+   Moved here from index.css so the chrome's styles live with the chrome. The
+   colour tokens it reads (--bg-footer, --footer-text, --hero-btn-*) stay in
+   index.css's theme blocks.
+
+   Vertical rhythm at 1920: the logo's top and the cap tops of the three
+   column headings all sit on y=39; the bottom row's baselines sit ~47px above
+   the footer's bottom edge. The 36px top padding is 39px minus the ~3.5px
+   Inter puts between a 16px/1.2 line box and its cap top -- the logo takes
+   the difference back as a margin so the two still line up. */
+
+.lgn-footer {
+  color: var(--footer-text);
+  /* No top rule: the frame's footer is a flat #E1E1E1 band against the page. */
+  padding: clamp(24px, 1.875vw, 36px) var(--grid-margin) clamp(28px, 2.2396vw, 43px);
+  background-color: var(--bg-footer);
+  margin-top: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.footer-grid {
+  display: grid;
+  /* Four equal columns, 445px at 1920 (x = 40 / 505 / 970 / 1435 -- the Join
+     field is exactly one column wide). This is not the page's 6-col grid: the
+     footer's columns quarter the content width with a 20px gutter. */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: clamp(12px, 1.0417vw, 20px);
+  row-gap: 40px;
+  max-width: var(--grid-max-width);
+  margin: 0 auto;
+  /* 298 / 1920 -- the footer's 377px minus the top and bottom padding above. */
+  min-height: clamp(180px, 15.5208vw, 298px);
+}
+
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  /* Grid items default to min-width:auto; the email field would otherwise
+     hold its column open past 1fr on narrower screens. */
+  min-width: 0;
+}
+
+/* The logo's vector asset (design/logo_proper_svgs) -- 341x38 in the frame. */
+.footer-logo {
+  display: block;
+  width: 100%;
+  max-width: 341px;
+  height: auto;
+  margin-top: clamp(0px, 0.1563vw, 3px);
+  margin-bottom: 24px;
+}
+
+/* Nav items and column headings share one style in the frame: 16px bold in
+   the footer grey. Header/body contrast comes from weight, not colour. */
+.footer-nav {
+  display: flex;
+  flex-direction: column;
+  /* 26px from one item to the next: 19.2px line + 6.8px. */
+  gap: 6.8px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.footer-nav button,
+.footer-col h3 {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--footer-text);
+}
+
+.footer-nav button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.footer-nav button:hover {
+  color: var(--footer-text-hover);
+}
+
+.footer-col h3 {
+  /* Heading -> first address line: cap tops 36px apart in the frame. */
+  margin-bottom: 18px;
+}
+
+/* Mailing address: 16px on 17.6px leading -- the frame sets the three lines
+   close to solid, per the design note's "32pt type on 32pt leading". */
+.footer-col p {
+  font-size: 16px;
+  color: var(--footer-text);
+  line-height: 1.1;
+  margin-bottom: 24px;
+}
+
+.join-form {
+  display: flex;
+  flex-direction: column;
+  /* Field bottom -> Submit top: 24px. */
+  gap: 24px;
+  /* Heading -> field: the field's top is 40px below the heading's cap top,
+     8px more than the address gets. */
+  margin-top: 8px;
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+/* Frame: a 445x67 page-coloured field with no stroke, placeholder inset 18px. */
+.join-form input {
+  background: var(--bg-darker);
+  border: none;
+  color: var(--text-main);
+  height: 67px;
+  padding: 0 18px;
+  border-radius: var(--border-radius);
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+  font-size: 16px;
+}
+
+.join-form input::placeholder {
+  /* The frame sets the placeholder in the same #888 as the rest of the footer. */
+  color: var(--footer-text);
+  opacity: 1;
+}
+
+/* Frame: 93x44, 20px label inset 15px -- the same grey button as the header's
+   "Submit a film". */
+.join-form button {
+  background: var(--hero-btn-bg);
+  color: var(--hero-btn-text);
+  border: none;
+  height: 44px;
+  /* 2px top padding: optical nudge down, as in the header's labels. */
+  padding: 2px 15px 0;
+  border-radius: var(--border-radius);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background-color 0.2s;
+}
+
+.join-form button:hover {
+  background: var(--hero-btn-hover);
+}
+
+.join-form input:focus-visible,
+.join-form button:focus-visible,
+.footer-nav button:focus-visible,
+.footer-link:focus-visible,
+.social-links a:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* The bottom row: pushed to the foot of each column so all four share a line
+   however tall the column above them is. */
+.footer-bottom-text {
+  font-size: 16px;
+  line-height: 1.2;
+  color: var(--footer-text);
+  margin-top: auto;
+}
+
+/* "A witness through time" -- a real button, dressed as the bottom-row text. */
+.footer-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-sans);
+  text-align: left;
+  align-self: flex-start;
+  cursor: pointer;
+}
+
+.footer-link:hover {
+  color: var(--footer-text-hover);
+}
+
+.social-links {
+  display: flex;
+  gap: 16px;
+  /* The frame sets the social link a size up from the rest of the bottom row
+     (18px vs 16px). Followed as drawn; see the open question in the report. */
+  font-size: 18px;
+  /* The 16px row's line height, so the bigger text shares its baseline
+     instead of sitting ~2px higher in a taller, bottom-aligned line box. */
+  line-height: 19.2px;
+}
+
+.social-links a {
+  color: var(--footer-text);
+  text-decoration: none;
+}
+
+.social-links a:hover {
+  color: var(--footer-text-hover);
+}
+
+/* Two columns, then one. The bottom-row text stays with its column rather than
+   forming a row of its own -- each column reads top to bottom. It keeps
+   margin-top:auto (so a row's two columns still share a baseline) and gains a
+   floor of space above it, which the full-width min-height used to provide. */
+@media (max-width: 1024px) {
+  .footer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-height: 0;
+  }
+
+  .footer-bottom-text {
+    padding-top: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+    row-gap: 32px;
+  }
+}

@@ -1,1 +1,45 @@
-/* StoryMaking -- owned by the agent building this component. */
+/* StoryMaking -- "More on making this film", in the story shell's right
+   column. No frame of its own: the type matches the Reflect right column in
+   [CAMPFIRE]-REFLECT (heading 24px medium, body 20px / 30px, both --primary). */
+
+.story-making {
+  display: flex;
+  flex-direction: column;
+  gap: 60px;
+  /* The Reflect frame's text never runs wider than its 908px text box; long
+     prose past that is hard to read. */
+  max-width: 908px;
+}
+
+.story-making-heading {
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1;
+  margin: 0 0 30px;
+  color: var(--primary);
+}
+
+.story-making-body {
+  font-size: 20px;
+  line-height: 30px;
+  margin: 0;
+  color: var(--primary);
+  /* Keep the editor's line breaks and blank lines. */
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+/* Screenplays are set in a typewriter face by convention, and their
+   indentation carries meaning, so it is kept exactly (pre-wrap above). */
+.story-making-screenplay {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  line-height: 27px;
+}
+
+.story-making-empty {
+  font-size: 20px;
+  line-height: 30px;
+  margin: 0;
+  color: var(--text-dark);
+}

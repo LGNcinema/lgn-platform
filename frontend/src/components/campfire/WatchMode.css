@@ -1,1 +1,212 @@
-/* WatchMode -- owned by the agent building this component. */
+/* WatchMode -- immersive viewing. Figma: [CAMPFIRE]-WATCH.
+   The page is just the frame: page margin on all four sides, the dimmed
+   still, and a small card. No header or footer (App omits them here). */
+
+.watch-mode {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  padding: var(--grid-margin);
+  background: var(--bg-darker);
+  font-family: var(--font-sans);
+}
+
+/* The frame fills the viewport minus the margins rather than keeping the
+   Figma frame's 16:9 box (1840x1035), which at 1920x1080 would overflow and
+   force a scroll. min-height, not height: a long prompt on a short screen
+   grows the frame instead of spilling the card out of it. */
+.watch-mode-frame {
+  position: relative;
+  min-height: calc(100vh - 2 * var(--grid-margin));
+  min-height: calc(100dvh - 2 * var(--grid-margin));
+  box-sizing: border-box;
+  padding: 16px;
+  display: grid;
+  /* minmax(0, 1fr), not auto: an auto column grows to the card's 393px and
+     max-width: 100% then has nothing to shrink against on a phone. */
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  /* The cinema screen stays black in both themes. */
+  background: #000;
+  isolation: isolate;
+}
+
+.watch-mode-still {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Frame: black at 75% over the still. */
+.watch-mode-frame:not(.watch-mode-stage)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(0, 0, 0, 0.75);
+}
+
+/* -- Card ----------------------------------------------------------- */
+/* 393 wide; padding 17/17/14 and the two gaps (44, 54) reproduce the frame's
+   202px card exactly with one line of prompt. Measured at 1920; the card is
+   small enough that it stays fixed-size and only narrows to fit. */
+
+.watch-mode-card {
+  width: 393px;
+  max-width: 100%;
+  /* The frame sits the card ~10px below true centre (466 vs 456.5 in a
+     1035px-tall frame); half of this margin is that nudge. */
+  margin-top: clamp(0px, 0.9896vw, 19px);
+  box-sizing: border-box;
+  padding: 17px 17px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: var(--bg-darker);
+  border-radius: var(--border-radius);
+  color: #000;
+}
+
+/* In dark theme --bg-darker is black, which would vanish into the dimmed
+   still; the card reads as a raised panel instead. */
+[data-theme='dark'] .watch-mode-card {
+  background: var(--bg-card);
+  color: var(--text-main);
+}
+
+.watch-mode-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 14px;
+  text-transform: uppercase;
+  color: var(--text-dark);
+}
+
+.watch-mode-prompt {
+  margin: 44px 0 0;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: -0.01em;
+  color: inherit;
+  text-wrap: pretty;
+}
+
+/* Not in the frame. Secondary and quiet, so the prompt stays the one line
+   the eye lands on. */
+.watch-mode-supporting {
+  margin: 12px 0 0;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+
+.watch-mode-watch {
+  margin-top: 54px;
+  height: 35px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--border-radius);
+  background: var(--border);
+  color: #000;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+}
+
+/* Hover fill from the Button component's hover variant (#EDEDED; no token). */
+.watch-mode-watch:hover {
+  background: #ededed;
+}
+
+.watch-mode-watch:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+}
+
+[data-theme='dark'] .watch-mode-watch {
+  color: var(--text-main);
+}
+
+[data-theme='dark'] .watch-mode-watch:hover {
+  background: var(--bg-card-hover);
+}
+
+[data-theme='dark'] .watch-mode-watch:focus-visible {
+  outline-color: var(--text-main);
+}
+
+/* -- Exit (not in the frame) ---------------------------------------- */
+/* Sits in the top page margin, in the card label's style. The full margin
+   height is the hit target, so a 12px label is still easy to tap. */
+
+.watch-mode-back {
+  position: absolute;
+  top: 0;
+  left: var(--grid-margin);
+  height: var(--grid-margin);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 14px;
+  text-transform: uppercase;
+  color: var(--text-dark);
+  cursor: pointer;
+  transition: color 0.15s ease-in-out;
+}
+
+.watch-mode-back:hover {
+  color: var(--text-main);
+}
+
+.watch-mode-back:focus-visible {
+  outline: 2px solid var(--text-main);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* -- Watching ------------------------------------------------------- */
+/* The player letterboxes inside the same frame: as wide as the frame allows,
+   unless that would make it taller than the frame. --watch-ratio is set
+   inline from the film's aspect ratio. */
+
+.watch-mode-stage {
+  padding: 0;
+  container-type: size;
+  /* container-type: size needs a definite height, not just a min-height. */
+  height: calc(100vh - 2 * var(--grid-margin));
+  height: calc(100dvh - 2 * var(--grid-margin));
+}
+
+.watch-mode-stage:focus {
+  outline: none;
+}
+
+.watch-mode-stage .watch-mode-player {
+  width: min(100cqw, 100cqh * var(--watch-ratio));
+  border-radius: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .watch-mode-watch,
+  .watch-mode-back {
+    transition: none;
+  }
+}

@@ -30,7 +30,7 @@ export function SiteFooter({ theme, onNavigate }: Props) {
 
         {/* Column 2: Navigation */}
         <div className="footer-col col-nav">
-          <nav className="footer-nav">
+          <nav className="footer-nav" aria-label="Footer">
             <button onClick={() => onNavigate('campfire')}>Campfire</button>
             <button onClick={() => onNavigate('about')}>About</button>
             <button onClick={() => onNavigate('invest')}>Invest</button>
@@ -52,11 +52,14 @@ export function SiteFooter({ theme, onNavigate }: Props) {
         {/* Column 4: Join */}
         <div className="footer-col col-join">
           <h3>Join</h3>
-          <form className="join-form">
-            <input type="email" placeholder="Email Address" required />
+          {/* Inert by design: there is no newsletter backend yet. preventDefault
+              stops a native GET submit from reloading the page onto "?" and
+              dropping the current view. The field keeps its browser validation. */}
+          <form className="join-form" onSubmit={(e) => e.preventDefault()}>
+            <input type="email" placeholder="Email Address" aria-label="Email address" autoComplete="email" required />
             <button type="submit">Submit</button>
           </form>
-          <div className="footer-bottom-text" style={{ cursor: 'pointer' }} onClick={() => onNavigate('timeline')}>A witness through time</div>
+          <button type="button" className="footer-bottom-text footer-link" onClick={() => onNavigate('timeline')}>A witness through time</button>
         </div>
       </div>
     </footer>

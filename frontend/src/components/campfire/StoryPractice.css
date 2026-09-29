@@ -1,1 +1,233 @@
-/* StoryPractice -- owned by the agent building this component. */
+/* StoryPractice -- right column of a story's Practice section.
+   Figma: [CAMPFIRE]-PRACTICE. Measured at 1920; every size is
+   clamp(min, px/1920*100 vw, px) so it scales down with the viewport.
+   Inner cards use --bg-darker: in the frame they are the page grey (#f5f5f5)
+   set into the white story card. */
+
+.story-practice {
+  display: flex;
+  flex-direction: column;
+}
+
+.story-practice-heading {
+  font-size: clamp(20px, 1.25vw, 24px);
+  font-weight: 400;
+  /* 1.05 puts the cap top 3.9px into the box, as in the frame: the shell
+     starts the column's content at y=342 and the heading's cap top is 345.9. */
+  line-height: 1.05;
+  color: var(--primary);
+  margin: 0;
+}
+
+.story-practice-subtitle {
+  font-size: clamp(14px, 0.8333vw, 16px);
+  line-height: 1.2;
+  color: var(--text-dark);
+  margin: clamp(14px, 1.125vw, 21.6px) 0 0;
+}
+
+/* Small uppercase caption, shared by the level cards and the Geme card. */
+.story-practice-label {
+  display: block;
+  font-size: 12px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--text-dark);
+}
+
+/* ---- Engagement levels ---------------------------------------------- */
+
+.story-practice-levels {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(16px, 1.4063vw, 27px);
+  margin-top: clamp(24px, 1.875vw, 36px);
+}
+
+.story-practice-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: clamp(160px, 10.5208vw, 202px);
+  padding: 11px 16px 14px;
+  background: var(--bg-darker);
+  border: 0;
+  border-radius: var(--border-radius);
+  font: inherit;
+  text-align: left;
+  color: var(--primary);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.story-practice-card:hover {
+  background: var(--bg-card-hover);
+}
+
+.story-practice-card:focus-visible,
+.story-practice-geme-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.story-practice-prompt {
+  font-size: clamp(16px, 1.0417vw, 20px);
+  line-height: 1;
+  margin-top: clamp(20px, 1.5885vw, 30.5px);
+}
+
+.story-practice-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
+}
+
+/* The one addition to the frame: a +/- saying the card opens. It shares the
+   label's row (not a footer line) so a long prompt still fits the frame's
+   fixed card height, and it's set in the caption grey so it doesn't compete. */
+.story-practice-toggle {
+  font-size: 16px;
+  line-height: 14.4px;
+  color: var(--text-dark);
+}
+
+.story-practice-card:hover .story-practice-toggle,
+.story-practice-card.open .story-practice-toggle {
+  color: var(--primary);
+}
+
+/* The open practice in full. One panel for the row, same grey as the cards. */
+.story-practice-detail {
+  margin-top: clamp(16px, 1.4063vw, 27px);
+  padding: clamp(16px, 1.25vw, 24px) 16px;
+  background: var(--bg-darker);
+  border-radius: var(--border-radius);
+  max-width: 100%;
+}
+
+.story-practice-detail[hidden] {
+  display: none;
+}
+
+.story-practice-detail-title {
+  font-size: clamp(16px, 1.0417vw, 20px);
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--primary);
+  margin: 0 0 12px;
+}
+
+.story-practice-detail-desc,
+.story-practice-detail-step {
+  font-size: clamp(14px, 0.8333vw, 16px);
+  line-height: 1.4;
+  max-width: 72ch;
+}
+
+.story-practice-detail-desc {
+  color: var(--text-dark);
+  margin-bottom: 12px;
+}
+
+.story-practice-detail-step {
+  color: var(--primary);
+}
+
+.story-practice-detail-step + .story-practice-detail-step {
+  margin-top: 8px;
+}
+
+/* ---- None of these fit? / Geme ------------------------------------- */
+
+.story-practice-geme {
+  display: flex;
+  flex-direction: column;
+  /* The frame leaves a wide pause between the levels and this fallback. */
+  margin-top: clamp(64px, 5.8125vw, 111.6px);
+}
+
+.story-practice-geme-card {
+  position: relative;
+  width: 100%;
+  max-width: clamp(320px, 30.2083vw, 580px);
+  margin-top: clamp(20px, 1.7292vw, 33.2px);
+  padding: 16.5px 17px 14px;
+  background: var(--bg-darker);
+  border-radius: var(--border-radius);
+}
+
+/* Sits in the card's top-right corner; the text column stops short of it. */
+.story-practice-geme-mascot {
+  position: absolute;
+  top: 13px;
+  right: 11px;
+  width: clamp(40px, 2.5521vw, 49px);
+  height: auto;
+}
+
+.story-practice-geme-title {
+  font-size: clamp(18px, 1.0417vw, 20px);
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--primary);
+  margin: clamp(10px, 0.6771vw, 13px) 0 0;
+  padding-right: 60px;
+}
+
+.story-practice-geme-text {
+  font-size: clamp(14px, 0.8333vw, 16px);
+  line-height: 1;
+  color: var(--text-dark);
+  max-width: 490px;
+  margin-top: 13.5px;
+}
+
+.story-practice-geme-saved {
+  font-size: clamp(14px, 0.8333vw, 16px);
+  line-height: 1.3;
+  color: var(--primary);
+  margin-top: 16px;
+}
+
+.story-practice-geme-saved .story-practice-label {
+  margin-bottom: 4px;
+}
+
+.story-practice-geme-btn {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  height: 35px;
+  margin-top: 24px;
+  padding: 0 16px;
+  background: var(--header-pill-right-bg);
+  border: 0;
+  border-radius: var(--border-radius);
+  font: inherit;
+  font-size: 14px;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+.story-practice-geme-btn:hover {
+  background: var(--header-btn-hover);
+}
+
+@media (max-width: 900px) {
+  /* Three cards stop fitting their prompts well below ~900px; stack them. */
+  .story-practice-levels {
+    grid-template-columns: 1fr;
+  }
+
+  .story-practice-card {
+    min-height: 0;
+  }
+
+  /* The column is full-width here, so the vw-based cap would leave the card
+     needlessly narrow. */
+  .story-practice-geme-card {
+    max-width: 580px;
+  }
+}

@@ -1,1 +1,272 @@
-/* SiteHeader -- owned by the agent building this component. */
+/* Global header. Figma: `Header` (360x58 pill group) and the header of every
+   [CAMPFIRE] frame, where it sits at y=40 with "Submit a film" (135x38) locked
+   to the right margin.
+
+   Moved here from index.css so the chrome's styles live with the chrome. The
+   theme tokens it reads (--header-pill-bg, --header-btn-hover, ...) stay in
+   index.css's theme blocks, because the dark theme redefines them there. */
+
+.floating-header-container {
+  /* Figma pill height. Deliberately local rather than --header-pill-height:
+     that token also feeds --header-bottom, which other pages use to clear the
+     header, so changing it (49px -> 58px) is a cross-page decision. */
+  --site-header-pill-height: 58px;
+  /* Every nav label -- the three menu items and "Submit a film" -- is 20px
+     Medium in the frame (cap height 14.3px). */
+  --site-header-font-size: 20px;
+  /* Menu items and the Submit button are both 38px tall. */
+  --site-header-item-height: 38px;
+  /* Optical offset for the labels; see .nav-link-pill. */
+  --site-header-nudge: 3px;
+
+  position: absolute;
+  top: var(--header-top);
+  left: var(--grid-margin);
+  right: var(--grid-margin);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  z-index: 100;
+  /* Let clicks pass through the empty space between the two pills. */
+  pointer-events: none;
+}
+
+.header-pill-left {
+  background-color: var(--header-pill-bg);
+  height: var(--site-header-pill-height);
+  /* Figma: the icon sits 12px in from the left edge and the last item's pill
+     ends 12px short of the right edge. */
+  padding: 0 12px;
+  border-radius: var(--border-radius);
+  display: flex;
+  align-items: center;
+  /* 18px between menu-item pills. The icon sits closer (11px) -- see the
+     negative margin on .nav-brand-btn. */
+  gap: 18px;
+  pointer-events: auto;
+}
+
+.header-pill-right {
+  background-color: var(--header-pill-right-bg);
+  height: var(--site-header-item-height);
+  /* The label carries the inset instead of the wrapper, so the hover state
+     covers the whole button rather than just the text -- matching every other
+     nav item. */
+  padding: 0;
+  border-radius: var(--border-radius);
+  display: flex;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.header-pill-right .nav-link-pill {
+  /* Figma: 135x38, label inset 10px either side. */
+  padding: var(--site-header-nudge) 10px 0;
+  height: 100%;
+  border-radius: var(--border-radius);
+}
+
+/* The right button sits on the page, not on the grey pill, so the left pill's
+   "active = page colour" treatment would make it vanish. It keeps the
+   brighter --header-btn-active (white in light, black in dark) instead. */
+.header-pill-right .nav-link-pill.active {
+  background-color: var(--header-btn-active);
+  color: var(--header-btn-active-text);
+}
+
+.nav-brand-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  /* 12px icon inset + 23px icon + 11px = the About pill's x in the frame. */
+  margin-right: -7px;
+  border-radius: 4px;
+  transition: var(--transition);
+}
+
+.nav-brand-btn img {
+  /* Figma "LGN-Icon" inside the header pill: 23x23. */
+  width: 23px;
+  height: 23px;
+  display: block;
+}
+
+.nav-brand-btn:hover {
+  background-color: var(--header-btn-hover);
+}
+
+.nav-brand-btn.active {
+  background-color: transparent;
+  color: var(--primary);
+}
+
+.nav-link-pill {
+  background: transparent;
+  border: none;
+  color: var(--primary);
+  font-family: var(--font-sans);
+  font-size: var(--site-header-font-size);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  text-decoration: none;
+  white-space: nowrap;
+  /* Fixed height with centred text rather than padding around a line box, so
+     the pill is 38px whatever the font's metrics -- and the body's 1.6
+     leading can't silently make it taller. */
+  height: var(--site-header-item-height);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  /* Figma: the active "Campfire" pill is 107px around an ~81px label. The 3px
+     top padding nudges the label 1.5px down: centring Inter's line box puts
+     its caps that far above where the frame's Helvetica sits. */
+  padding: var(--site-header-nudge) 13px 0;
+  border-radius: var(--border-radius);
+}
+
+.nav-link-pill:hover {
+  background-color: var(--header-btn-hover);
+  color: var(--primary);
+}
+
+/* The active item is a pill in the PAGE colour (Figma #F5F5F5 on the #D9D9D9
+   header), so it reads as a window through to the page. --bg-darker is that
+   colour in both themes (#f5f5f5 light, #000 dark). */
+.nav-link-pill.active {
+  background-color: var(--bg-darker);
+  color: var(--header-btn-active-text);
+}
+
+.nav-brand-btn:focus-visible,
+.nav-link-pill:focus-visible,
+.dropdown-item:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.nav-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+/* About dropdown. Not in the Campfire frames; kept from the previous design,
+   repositioned to open below the (now taller) pill. */
+.dropdown-menu {
+  position: absolute;
+  /* Clear the pill's bottom edge: the item is centred in the 58px pill, so the
+     pill ends (58 - 38) / 2 = 10px below the item. Plus a 4px breath. */
+  top: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 160px;
+  z-index: 10;
+  animation: dropdown-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Invisible bridge over the 14px gap above the menu. The menu opens on hover,
+   and without this the pointer would leave the wrapper on its way down and
+   close the menu before it could be reached. */
+.dropdown-menu::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 16px;
+}
+
+@keyframes dropdown-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.dropdown-item {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  padding: 10px 16px;
+  width: 100%;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: var(--transition);
+}
+
+.dropdown-item:hover {
+  background-color: var(--border);
+  color: var(--primary);
+}
+
+.dropdown-item.active {
+  background-color: var(--bg-darker);
+  color: var(--primary);
+}
+
+/* Narrow screens: the frame's 360px pill plus the 135px button no longer fit
+   side by side. Shrink the type and insets, and let "Submit a film" wrap onto
+   its own line (flex-wrap above) rather than overlap the pill.
+
+   640, not 600: the full-size header stops fitting on one row at ~611px and
+   wraps on its own. At 600 there was a dead zone (601-611px) where the
+   full-size "Submit a film" had dropped to a second row before this compact
+   layout took over -- a 124px header drawn over the page content. The
+   compact layout still fits one row at 640, so switching earlier costs
+   nothing. Keep this above the full-size wrap point if the header changes. */
+@media (max-width: 640px) {
+  .floating-header-container {
+    --site-header-pill-height: 46px;
+    --site-header-font-size: 16px;
+    --site-header-item-height: 32px;
+    --site-header-nudge: 2px;
+  }
+
+  .header-pill-left {
+    padding: 0 8px;
+    gap: 6px;
+  }
+
+  .nav-brand-btn {
+    margin-right: 0;
+  }
+
+  .nav-link-pill {
+    padding: var(--site-header-nudge) 10px 0;
+  }
+
+  .dropdown-menu {
+    top: calc(100% + 11px);
+  }
+}
+
+/* Once wrapped, "Submit a film" keeps its right-hand place rather than
+   dropping under the logo. */
+@media (max-width: 640px) {
+  .header-pill-right {
+    margin-left: auto;
+  }
+}
