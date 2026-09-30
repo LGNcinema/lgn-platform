@@ -44,9 +44,11 @@
   counter-reset: story-reflect-prompt;
   display: flex;
   flex-direction: column;
-  /* The frame's prompts are one line each with no gap; real prompts run two
-     or three lines, and a small gap keeps one from reading into the next. */
-  gap: clamp(6px, 0.4167vw, 8px);
+  /* No gap, as in the frame: its prompts are one line each, stacked on the
+     line pitch alone. (An 8px gap was here while the Lightpoles prompts were
+     two-to-three-line paragraphs; the Figma copy is one-liners.) If prompts
+     grow long again, a small gap stops one from reading into the next. */
+  gap: 0;
   /* Real prompts are paragraphs, not one-liners -- hold them to the
      textarea's width for a readable measure. */
   max-width: clamp(320px, 47.3438vw, 909px);

@@ -68,10 +68,14 @@ INSERT INTO films (
     screenplay_text = EXCLUDED.screenplay_text;
 
 -- Seed Reflections
+-- Copy follows the Campfire REFLECT frame (design/exports/2026-09-28). The page
+-- takes its heading from the first reflection's `introduction` and numbers one
+-- prompt per reflection's `content`. The frame lists a third question, but it
+-- is a verbatim repeat of the second -- a copy-paste slip -- so only the two
+-- distinct questions are seeded.
 INSERT INTO reflections (capsule_id, title, introduction, content) VALUES
-(1, 'Reflection 1: The Path We Didn’t Choose', 'Take these at your own pace. Keep your answers private, record them for yourself, or share them with the community later—the choice is yours.', 'Jon takes a small step toward a purpose he did not choose for himself. When has a person, responsibility, or unexpected need drawn you down a path you would not have chosen? What did you resist? What did you discover?'),
-(1, 'Reflection 2: What Makes You Come Alive', NULL, 'Remember a time when you felt especially alive, useful, or needed. What were you doing? Who else was affected? What might that moment reveal about what matters to you?'),
-(1, 'Reflection 3: What It’s For', NULL, 'Looking at the lightpole in daylight, Jon says, “Takes dark to know what it’s for.” Has a difficult season ever revealed the value of something you had overlooked—a person, a practice, a belief, or a part of yourself? What did the darkness help you see?');
+(1, 'Reflection 1', 'Something about reflections—', 'What moment in the film stayed with you the longest?'),
+(1, 'Reflection 2', NULL, 'Is there a grief or loss you’ve been walking with?');
 
 -- Seed Discussion Circles
 INSERT INTO discussion_circles (capsule_id, title, opening_round, discuss_prompts, closing_question) VALUES
