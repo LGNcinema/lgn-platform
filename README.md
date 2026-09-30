@@ -217,18 +217,38 @@ Migrations are plain SQL in `backend/migrations/`, applied with
 cd backend
 uv run python migrate.py status     # what is applied, what is pending
 uv run python migrate.py up         # apply everything pending
-uv run python migrate.py seed       # apply seed.sql (upserts; safe to repeat)
+uv run python migrate.py seed       # apply seed.sql -- LOCAL DEV ONLY
 ```
+
+With no flag those run against your local database. Add `--neon <branch>` to run
+against a Neon branch instead:
+
+```bash
+uv run python migrate.py status --neon main                    # production
+uv run python migrate.py up --neon main
+uv run python migrate.py up --neon preview/campfire-redesign   # a preview branch
+```
+
+`--neon` asks the Neon CLI for the branch's **direct** connection string itself,
+so there's no credential to copy and nothing left set in your shell afterwards.
+It needs the CLI logged in once (`npx neon@latest auth`). Always run `status`
+first and check the host it prints: production is `ep-icy-star-av2iggs6`.
 
 It tracks applied files in a `schema_migrations` table, runs each in its own
 transaction, and stops at the first failure rather than pressing on into
-migrations that assumed it landed. It prefers `DATABASE_URL_UNPOOLED` so DDL
-goes over the direct connection rather than through PgBouncer.
+migrations that assumed it landed. Migrations go over the direct connection
+rather than through PgBouncer.
 
-**`seed.sql` is local-development data. Never run `seed` against the hosted
-database.** It upserts a sample capsule and film over whatever is there, keyed on
-`month` — against production that overwrites real content. It is a separate,
-explicit command for exactly that reason, and nothing applies it automatically.
+**`seed.sql` is local-development data, and `migrate.py` refuses to `seed` any
+Neon database.** It upserts a sample capsule and film over whatever shares its
+`month` — against production that overwrites real content — and it inserts
+practices with no conflict handling, so it isn't safe to repeat even locally.
+Preview branches are copies of production, so they're refused too.
+
+**A preview branch is a snapshot of production at the moment it's created.** It
+inherits whatever production has — including migrations production hasn't had
+yet. After pushing a branch that adds one, apply it to that branch's database
+(`--neon preview/<git-branch>`), or the preview's new endpoints will 500.
 
 Deploying code that reads a column before its migration has run produces
 `UndefinedColumn` 500s on every affected endpoint, so **migrate first, then
