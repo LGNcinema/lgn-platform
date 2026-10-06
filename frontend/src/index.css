@@ -90,9 +90,10 @@
      formula cannot know. See SiteHeader.tsx. */
   --header-bottom: calc(var(--header-top) + var(--header-pill-height));
 
-  /* Invest: the +/- icon strokes. The section rules are the frame's own 1px
-     black lines (see .invest-accordion-row). */
-  --invest-rule-weight: 1.5px;
+  /* Invest: the +/- icon strokes -- the frame's glyphs measure ~2.25px. The
+     section rules are the frame's own 1px black lines (see
+     .invest-accordion-row). */
+  --invest-rule-weight: 2.25px;
 
   /* Every piece of footer copy sits at this one grey -- headers, nav, address,
      the email field and the fine print alike. The Submit button is deliberately
@@ -1000,7 +1001,7 @@ body {
      column to 1839, then a 40px well for the +/- icon. */
   grid-template-columns: minmax(120px, 25.33%) 1fr 40px;
   /* Figma: rules at y=196 / 415.5 / 523.5 -- a closed row is 108px. */
-  padding: 10.5px 0 48.5px 0;
+  padding: 9px 0 50px 0;
   cursor: pointer;
   align-items: start;
   user-select: none;
@@ -1036,9 +1037,11 @@ body {
 }
 
 .invest-row-icon svg {
-  /* Figma "+"/"—" glyph box: 24x24, top-aligned with the row title. */
+  /* A 24x24 box top-aligned with the row title; nudged right so the 17px
+     marks land where the frame's do (plus centred at x=1857 at 1920). */
   width: 24px;
   height: 24px;
+  margin-left: 5px;
   display: block;
   fill: none;
   stroke: currentColor;
@@ -1051,7 +1054,7 @@ body {
   list-style: none;
   padding-left: 25.5px;
   /* The open row runs to y=415.5 in the frame, well past its last bullet. */
-  margin: 0 0 58px;
+  margin: 0 0 56px;
 }
 
 .invest-bullet-list li {

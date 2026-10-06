@@ -131,13 +131,21 @@ const GridOverlay = ({ cols, rows }: { cols: number; rows: number }) => (
 );
 
 
-// Invest accordion +/- glyph. Drawn rather than typed so its stroke weight can
-// be pinned to the same --invest-rule-weight as the section rules, and so its
-// 24px box top-aligns with the row title (Figma has icon y == title y).
+// Invest accordion +/- glyph. Drawn rather than typed so its weight and size
+// can match the frame's glyphs exactly: both marks are 17px across with a
+// ~2.25px stroke (--invest-rule-weight). The frame's minus is a text dash,
+// which sits higher and a little left of the plus's centre, so it is drawn
+// there too rather than through the plus's middle.
 const AccordionIcon = ({ expanded }: { expanded: boolean }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <line x1="2" y1="12" x2="22" y2="12" />
-    {!expanded && <line x1="12" y1="2" x2="12" y2="22" />}
+    {expanded ? (
+      <line x1="1" y1="8.75" x2="18.5" y2="8.75" />
+    ) : (
+      <>
+        <line x1="3.5" y1="14.5" x2="20.5" y2="14.5" />
+        <line x1="12" y1="6" x2="12" y2="23" />
+      </>
+    )}
   </svg>
 );
 
