@@ -103,6 +103,12 @@
   overflow-wrap: break-word;
 }
 
+@media (max-width: 768px) {
+  .story-shell-title {
+    font-size: 44px;
+  }
+}
+
 /* Credit: 12px on a 14px pitch, cap top of line 1 at y=433. */
 .story-shell-credit {
   font-size: 12px;
