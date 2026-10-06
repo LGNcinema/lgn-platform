@@ -994,23 +994,14 @@ body {
 }
 
 .invest-accordion-row {
-  /* Black rules, 1.25px by design review (Figma specifies 1px; 1.5px and 2px
-     read too heavy). Chrome can't draw a plain 1.25px line: it snaps border
-     widths to whole pixels, and rounds a 1.25px background line to 1px too.
-     So the weight is painted explicitly -- a solid 1px line over a 1px line
-     at 25% -- which carries 1.25px of ink at any screen density. It sits
-     inside the 10px top padding, so content positions are the same as with
-     a 1px border + 9px padding. */
-  background: linear-gradient(
-      var(--primary) 0 1px,
-      color-mix(in srgb, var(--primary) 25%, transparent) 1px 2px
-    ) top / 100% 2px no-repeat;
+  /* Figma Invest LIGHT: 1px black rules. */
+  border-top: 1px solid var(--primary);
   display: grid;
   /* Figma: title column 662->970 of a 1216px content area (25.33%), body
      column to 1839, then a 40px well for the +/- icon. */
   grid-template-columns: minmax(120px, 25.33%) 1fr 40px;
   /* Figma: rules at y=196 / 415.5 / 523.5 -- a closed row is 108px. */
-  padding: 10px 0 50px 0;
+  padding: 9px 0 50px 0;
   cursor: pointer;
   align-items: start;
   user-select: none;
