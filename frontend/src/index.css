@@ -1007,17 +1007,6 @@ body {
   user-select: none;
 }
 
-/* On 1.5x-2x displays (Windows at 150%/175%), Chrome rounds border widths
-   DOWN to whole device pixels, so a 1px rule paints a single device pixel --
-   a third lighter than Figma, which draws it ~1.5 device pixels wide. 1.34px
-   lands on two device pixels there instead, the nearest match. 1x and 2x
-   screens keep the plain 1px, which is already whole device pixels. */
-@media (min-resolution: 1.5dppx) and (max-resolution: 1.99dppx) {
-  .invest-accordion-row {
-    border-top-width: 1.34px;
-  }
-}
-
 .invest-row-title {
   font-family: var(--font-sans);
   font-size: 48px;
