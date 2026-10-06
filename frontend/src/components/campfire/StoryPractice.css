@@ -10,7 +10,7 @@
 }
 
 .story-practice-heading {
-  font-size: clamp(20px, 1.25vw, 24px);
+  font-size: 24px;
   font-weight: 400;
   /* 1.05 puts the cap top 3.9px into the box, as in the frame: the shell
      starts the column's content at y=342 and the heading's cap top is 345.9. */
@@ -20,7 +20,7 @@
 }
 
 .story-practice-subtitle {
-  font-size: clamp(14px, 0.8333vw, 16px);
+  font-size: 16px;
   line-height: 1.2;
   color: var(--text-dark);
   margin: clamp(14px, 1.125vw, 21.6px) 0 0;
@@ -71,7 +71,7 @@
 }
 
 .story-practice-prompt {
-  font-size: clamp(16px, 1.0417vw, 20px);
+  font-size: 20px;
   line-height: 1;
   margin-top: clamp(20px, 1.5885vw, 30.5px);
 }
@@ -88,7 +88,7 @@
    label's row (not a footer line) so a long prompt still fits the frame's
    fixed card height, and it's set in the caption grey so it doesn't compete. */
 .story-practice-toggle {
-  font-size: max(12px, calc(16 * var(--dp)));
+  font-size: 16px;
   line-height: 0.9;
   color: var(--text-dark);
 }
@@ -112,7 +112,7 @@
 }
 
 .story-practice-detail-title {
-  font-size: clamp(16px, 1.0417vw, 20px);
+  font-size: 20px;
   font-weight: 400;
   line-height: 1.2;
   color: var(--primary);
@@ -121,7 +121,7 @@
 
 .story-practice-detail-desc,
 .story-practice-detail-step {
-  font-size: clamp(14px, 0.8333vw, 16px);
+  font-size: 16px;
   line-height: 1.4;
   max-width: 72ch;
 }
@@ -168,7 +168,7 @@
 }
 
 .story-practice-geme-title {
-  font-size: clamp(18px, 1.0417vw, 20px);
+  font-size: 20px;
   font-weight: 400;
   line-height: 1.2;
   color: var(--primary);
@@ -177,7 +177,7 @@
 }
 
 .story-practice-geme-text {
-  font-size: clamp(14px, 0.8333vw, 16px);
+  font-size: 16px;
   line-height: 1;
   color: var(--text-dark);
   max-width: calc(490 * var(--dp));
@@ -185,7 +185,7 @@
 }
 
 .story-practice-geme-saved {
-  font-size: clamp(14px, 0.8333vw, 16px);
+  font-size: 16px;
   line-height: 1.3;
   color: var(--primary);
   margin-top: calc(16 * var(--dp));

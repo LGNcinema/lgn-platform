@@ -12,7 +12,7 @@
 }
 
 .story-making-heading {
-  font-size: max(12px, calc(24 * var(--dp)));
+  font-size: 24px;
   font-weight: 500;
   line-height: 1;
   margin: 0 0 calc(30 * var(--dp));
@@ -20,7 +20,7 @@
 }
 
 .story-making-body {
-  font-size: max(12px, calc(20 * var(--dp)));
+  font-size: 20px;
   line-height: 1.5;
   margin: 0;
   color: var(--primary);
@@ -33,12 +33,12 @@
    indentation carries meaning, so it is kept exactly (pre-wrap above). */
 .story-making-screenplay {
   font-family: var(--font-mono);
-  font-size: max(12px, calc(18 * var(--dp)));
+  font-size: 18px;
   line-height: 1.5;
 }
 
 .story-making-empty {
-  font-size: max(12px, calc(20 * var(--dp)));
+  font-size: 20px;
   line-height: 1.5;
   margin: 0;
   color: var(--text-dark);

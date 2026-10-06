@@ -67,7 +67,7 @@
 .footer-nav button,
 .footer-col h3 {
   font-family: var(--font-sans);
-  font-size: max(12px, calc(16 * var(--dp)));
+  font-size: 16px;
   font-weight: 700;
   line-height: 1.2;
   color: var(--footer-text);
@@ -93,7 +93,7 @@
 /* Mailing address: 16px on 17.6px leading -- the frame sets the three lines
    close to solid, per the design note's "32pt type on 32pt leading". */
 .footer-col p {
-  font-size: max(12px, calc(16 * var(--dp)));
+  font-size: 16px;
   color: var(--footer-text);
   line-height: 1.1;
   margin-bottom: calc(24 * var(--dp));
@@ -166,7 +166,7 @@
 /* The bottom row: pushed to the foot of each column so all four share a line
    however tall the column above them is. */
 .footer-bottom-text {
-  font-size: max(12px, calc(16 * var(--dp)));
+  font-size: 16px;
   line-height: 1.2;
   color: var(--footer-text);
   margin-top: auto;
@@ -192,7 +192,7 @@
   gap: calc(16 * var(--dp));
   /* The frame sets the social link a size up from the rest of the bottom row
      (18px vs 16px). Followed as drawn; see the open question in the report. */
-  font-size: max(12px, calc(18 * var(--dp)));
+  font-size: 18px;
   /* The 16px row's line height, so the bigger text shares its baseline
      instead of sitting ~2px higher in a taller, bottom-aligned line box. */
   line-height: 1.0667;

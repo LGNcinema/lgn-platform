@@ -68,14 +68,14 @@
   /* One Figma pixel. The redesign frames are 1920 wide; a size written as
      calc(N * var(--dp)) is exactly N px at 1920 and shrinks in proportion
      below it, so a laptop sees the frame's proportions rather than desktop-
-     sized type and spacing. It stops shrinking at 1440 (0.75) -- smaller
-     screens keep those sizes until their own breakpoints take over -- and
-     never grows past 1920. Text using it is also floored at 12px:
-     max(12px, calc(N * var(--dp))).
-     Buttons (and form controls) deliberately do NOT use it: they stay at
-     their fixed Figma px at every width, and narrow layouts rearrange them
-     rather than shrink them -- the header pills, the footer's Join form,
-     and every boxed Campfire button. */
+     sized spacing. It stops shrinking at 1440 (0.75) -- smaller screens keep
+     those sizes until their own breakpoints take over -- and never grows
+     past 1920.
+     It is for layout (gaps, padding, panel widths) and graphics only. Text
+     and buttons deliberately do NOT use it: they stay at their fixed Figma
+     px at every width, for legibility and so browser zoom keeps working
+     as people expect; narrow layouts rearrange them rather than shrink
+     them. */
   --dp: clamp(0.75px, calc(100vw / 1920), 1px);
 
   /* Header geometry. The floating header does NOT scale with the hero's
@@ -316,7 +316,7 @@ body {
 
 .home-hero-subtitle {
   font-family: var(--font-sans);
-  font-size: calc(clamp(20px, 2.5vw, 32px) * var(--home-hero-scale));
+  font-size: calc(32px * var(--home-hero-scale));
   font-weight: 500;
   color: var(--primary);
   margin: 0;
@@ -328,12 +328,12 @@ body {
   background-color: var(--hero-btn-bg);
   color: var(--hero-btn-text);
   border: none;
-  width: calc(clamp(160px, 13.3333vw, 256px) * var(--home-hero-scale));
-  /* 256 / 1920 */
-  height: calc(clamp(44px, 4.2708vw, 82px) * var(--home-hero-scale));
-  /* 82 / 1920 */
+  /* Figma 256x82, at the hero's design-review scale. A fixed size like every
+     other button -- only the logo above it scales with the viewport. */
+  width: calc(256px * var(--home-hero-scale));
+  height: calc(82px * var(--home-hero-scale));
   font-family: var(--font-sans);
-  font-size: calc(clamp(16px, 1.25vw, 24px) * var(--home-hero-scale));
+  font-size: calc(24px * var(--home-hero-scale));
   font-weight: 500;
   border-radius: 5px;
   cursor: pointer;

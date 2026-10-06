@@ -91,7 +91,7 @@
 
 .watch-mode-prompt {
   margin: calc(44 * var(--dp)) 0 0;
-  font-size: max(12px, calc(20 * var(--dp)));
+  font-size: 20px;
   font-weight: 500;
   line-height: 1.2;
   letter-spacing: -0.01em;
@@ -103,7 +103,7 @@
    the eye lands on. */
 .watch-mode-supporting {
   margin: calc(12 * var(--dp)) 0 0;
-  font-size: max(12px, calc(14 * var(--dp)));
+  font-size: 14px;
   font-weight: 400;
   line-height: 1.4286;
   color: var(--text-muted);

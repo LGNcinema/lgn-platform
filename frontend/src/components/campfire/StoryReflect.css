@@ -16,7 +16,7 @@
   /* Keeps a long introduction at the textarea's measure rather than letting it
      run the full column. */
   max-width: clamp(320px, 47.3438vw, 909px);
-  font-size: clamp(20px, 1.25vw, 24px);
+  font-size: 24px;
   font-weight: 400;
   line-height: 1.125;
   color: var(--primary);
@@ -32,7 +32,7 @@
 
 .story-reflect-empty {
   margin-top: clamp(36px, 2.6042vw, 50px);
-  font-size: clamp(16px, 1.0417vw, 20px);
+  font-size: 20px;
   line-height: 1.5;
   color: var(--text-muted);
 }
@@ -61,7 +61,7 @@
   counter-increment: story-reflect-prompt;
   display: grid;
   grid-template-columns: 1.125em 1fr;
-  font-size: clamp(17px, 1.0417vw, 20px);
+  font-size: 20px;
   font-weight: 500;
   line-height: 1.5;
   color: var(--primary);

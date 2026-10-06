@@ -16,7 +16,7 @@
   border: 0;
   padding: 0;
   font: inherit;
-  font-size: clamp(16px, 1.0417vw, 20px);
+  font-size: 20px;
   line-height: 1.2;
   letter-spacing: -0.03em;
   color: var(--text-dark);
@@ -57,7 +57,7 @@
 }
 
 .storyboard-heading {
-  font-size: clamp(32px, 2.5vw, 48px);
+  font-size: 48px;
   font-weight: 500;
   line-height: 1.2;
   letter-spacing: -0.03em;
@@ -79,7 +79,7 @@
   border-radius: var(--border-radius);
   padding: clamp(14px, 1.1979vw, 23px) clamp(14px, 1.25vw, 24px);
   font: inherit;
-  font-size: clamp(18px, 1.25vw, 24px);
+  font-size: 24px;
   font-weight: 500;
   line-height: 1.2;
   letter-spacing: -0.03em;
@@ -132,7 +132,7 @@
 }
 
 .storyboard-status {
-  font-size: clamp(14px, 0.8333vw, 16px);
+  font-size: 16px;
   line-height: 1.3;
   letter-spacing: -0.03em;
   color: var(--text-muted);
@@ -171,7 +171,7 @@
   height: clamp(44px, 3.4375vw, 66px);
   border-radius: 50%;
   background: var(--border);
-  font-size: clamp(18px, 1.25vw, 24px);
+  font-size: 24px;
   font-weight: 500;
   line-height: 1;
   color: var(--text-muted);
@@ -184,7 +184,7 @@
 }
 
 .storyboard-card-name {
-  font-size: clamp(18px, 1.25vw, 24px);
+  font-size: 24px;
   font-weight: 500;
   line-height: 1.2;
   letter-spacing: -0.03em;
@@ -194,14 +194,14 @@
 }
 
 .storyboard-card-location {
-  font-size: clamp(13px, 0.7292vw, 14px);
+  font-size: 14px;
   line-height: 1.3;
   letter-spacing: -0.03em;
   color: var(--text-muted);
 }
 
 .storyboard-card-text {
-  font-size: clamp(18px, 1.25vw, 24px);
+  font-size: 24px;
   font-weight: 500;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -214,7 +214,7 @@
    quiet text, no card chrome to stand in for stories that aren't there. */
 .storyboard-note {
   align-self: end;
-  font-size: clamp(16px, 1.0417vw, 20px);
+  font-size: 20px;
   font-weight: 500;
   line-height: 1.2;
   letter-spacing: -0.03em;
@@ -266,7 +266,7 @@
 
 .storyboard-modal-body {
   margin-top: calc(17 * var(--dp));
-  font-size: max(12px, calc(20 * var(--dp)));
+  font-size: 20px;
   font-weight: 500;
   line-height: 1;
   letter-spacing: -0.03em;

@@ -24,7 +24,7 @@
 
 .campfire-home-heading {
   margin: 0 0 clamp(32px, 3.0365vw, 58px);
-  font-size: max(12px, calc(20 * var(--dp)));
+  font-size: 20px;
   font-weight: 700;
   line-height: 1.2;
   color: var(--primary);
@@ -92,7 +92,7 @@
 .campfire-card-title {
   /* 198 / 1920 -- title cap top 235px below the card's top edge. */
   margin: clamp(64px, 10.3125vw, 198px) 0 0;
-  font-size: clamp(32px, 2.5vw, 48px);
+  font-size: 48px;
   font-weight: 500;
   line-height: 1;
   letter-spacing: -0.02em;
