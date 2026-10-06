@@ -90,10 +90,6 @@
      formula cannot know. See SiteHeader.tsx. */
   --header-bottom: calc(var(--header-top) + var(--header-pill-height));
 
-  /* About page content scaled down 30% per design review. Drives type and
-     vertical rhythm together so the page keeps its proportions. */
-  --about-scale: 0.7;
-
   /* Invest: one weight shared by the section rules and the +/- icon strokes,
      so they read as the same line. */
   --invest-rule-weight: 1.5px;
@@ -811,8 +807,9 @@ body {
   border: none;
   color: var(--text-muted);
   font-family: var(--font-sans);
-  font-size: 24px;
-  font-weight: 500;
+  /* Figma About frames: 20px, regular when inactive, bold when active. */
+  font-size: 20px;
+  font-weight: 400;
   text-align: left;
   cursor: pointer;
   padding: 0;
@@ -829,7 +826,7 @@ body {
 
 .about-nav-btn.active {
   color: var(--primary);
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .about-content {
@@ -838,28 +835,31 @@ body {
   max-width: 1216px;
 }
 
-/* Mission & Vision */
+/* Mission & Vision. Sizes from the About-* ALT LIGHT frames: 20px bold grey
+   labels above 48px statements set solid (48px line pitch). Gaps are the
+   frame's, adjusted so Inter's ink lands where Helvetica's does. */
 .about-mv-section {
-  margin-bottom: calc(80px * var(--about-scale));
+  margin-bottom: 80px;
 }
 
 .about-mv-label {
   font-family: var(--font-sans);
-  font-size: calc(24px * var(--about-scale));
+  font-size: 20px;
+  line-height: 1;
   color: var(--text-muted);
-  font-weight: 500;
-  margin-bottom: calc(16px * var(--about-scale));
+  font-weight: 700;
+  margin-bottom: 30px;
 }
 
 /* Gap between the Mission block and the Vision block. */
 .about-mv-block + .about-mv-block {
-  margin-top: calc(80px * var(--about-scale));
+  margin-top: 89.5px;
 }
 
 .about-mv-text {
   font-family: var(--font-sans);
-  font-size: calc(48px * var(--about-scale));
-  line-height: 1.15;
+  font-size: 48px;
+  line-height: 1;
   color: var(--primary);
   font-weight: 500;
   letter-spacing: -0.03em;
@@ -869,65 +869,80 @@ body {
 /* Purpose */
 .about-purpose-text {
   font-family: var(--font-sans);
-  font-size: calc(48px * var(--about-scale));
-  line-height: 1.15;
+  font-size: 48px;
+  line-height: 1;
   color: var(--primary);
   font-weight: 500;
   letter-spacing: -0.03em;
-  margin-bottom: calc(48px * var(--about-scale));
+  margin: 0 0 48px;
 }
 
-/* Board & Staff */
+/* Board & Staff. From the About-Board + Staff ALT LIGHT frame: 48px names,
+   20px roles, 20px grey bios on an 18px line pitch (the frame's own, tight,
+   leading). Gaps are set so Inter's ink lands where the frame's does; the
+   frame spaces its entries unevenly (61-85px), so the list uses its usual
+   ~61px throughout. */
 .team-section {
-  margin-bottom: calc(80px * var(--about-scale));
+  margin-bottom: 73px;
 }
 
 .team-label {
   font-family: var(--font-sans);
-  font-size: calc(24px * var(--about-scale));
+  font-size: 20px;
+  line-height: 1;
   color: var(--text-muted);
-  font-weight: 500;
-  margin-bottom: calc(16px * var(--about-scale));
+  font-weight: 700;
+  margin: 0 0 30px;
 }
 
 .team-list-layout {
   display: flex;
   flex-direction: column;
-  gap: calc(80px * var(--about-scale));
+  gap: 57.5px;
 }
 
 .team-list-item {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
 }
 
 .team-list-item .person-name {
   font-family: var(--font-sans);
-  font-size: calc(48px * var(--about-scale));
-  font-weight: 600;
+  font-size: 48px;
+  font-weight: 500;
   color: var(--primary);
   margin: 0;
-  line-height: 1.15;
+  line-height: 1;
   letter-spacing: -0.03em;
 }
 
 .team-list-item .person-title {
   font-family: var(--font-sans);
-  font-size: calc(24px * var(--about-scale));
+  font-size: 20px;
+  line-height: 1;
   color: var(--primary);
-  margin: 0;
+  margin: 18.5px 0 0;
   opacity: 1;
 }
 
 .team-list-item .person-bio {
   font-family: var(--font-sans);
-  font-size: calc(24px * var(--about-scale));
+  font-size: 20px;
   color: var(--text-muted);
-  margin-top: calc(12px * var(--about-scale));
-  line-height: 1.3;
-  max-width: 800px;
+  margin: 17.5px 0 0;
+  line-height: 0.9;
+  max-width: 900px;
   opacity: 1;
+}
+
+/* Phones: the 48px statements and names step down to a smaller fixed size. */
+@media (max-width: 768px) {
+  .about-mv-text,
+  .about-purpose-text,
+  .team-list-item .person-name {
+    font-size: 32px;
+  }
 }
 
 /* ==========================================================================
@@ -962,19 +977,19 @@ body {
   max-width: 1216px;
 }
 
+/* Figma Invest LIGHT: the left column's heading, 20px bold, set solid. */
 .invest-title {
   font-family: var(--font-sans);
-  font-size: 24px;
-  color: var(--text-dark);
+  font-size: 20px;
+  color: var(--primary);
   font-weight: 700;
-  margin-top: 0;
-  margin-bottom: 48px;
-  line-height: 1.2;
+  margin: 0;
+  line-height: 1;
 }
 
+/* The frame has rules above each row and none below the last. */
 .invest-accordion {
   width: 100%;
-  border-bottom: var(--invest-rule-weight) solid var(--border);
 }
 
 .invest-accordion-row {
@@ -983,8 +998,8 @@ body {
   /* Figma: title column 662->970 of a 1216px content area (25.33%), body
      column to 1839, then a 40px well for the +/- icon. */
   grid-template-columns: minmax(120px, 25.33%) 1fr 40px;
-  /* Figma: rule at y=286.5, title at y=295 */
-  padding: 8px 0 48px 0;
+  /* Figma: rules at y=196 / 415.5 / 523.5 -- a closed row is 108px. */
+  padding: 10.5px 0 48.5px 0;
   cursor: pointer;
   align-items: start;
   user-select: none;
@@ -995,17 +1010,18 @@ body {
   font-size: 48px;
   font-weight: 500;
   color: var(--primary);
-  line-height: 1.15;
+  line-height: 1;
   letter-spacing: -0.03em;
   align-self: start;
 }
 
 .invest-row-content {
   font-family: var(--font-sans);
-  font-size: 24px;
+  /* Figma: 20px bullets on a 35px pitch. */
+  font-size: 20px;
   color: var(--primary);
-  line-height: 1.3;
-  padding-top: 14px;
+  line-height: 35px;
+  margin-top: -1.5px;
   /* Align with baseline of 48px title */
   align-self: start;
 }
@@ -1032,12 +1048,13 @@ body {
 
 .invest-bullet-list {
   list-style-type: disc;
-  padding-left: 24px;
-  margin: 0;
+  padding-left: 30px;
+  /* The open row runs to y=415.5 in the frame, well past its last bullet. */
+  margin: 0 0 58px;
 }
 
 .invest-bullet-list li {
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 .invest-bullet-list li:last-child {
@@ -1052,36 +1069,37 @@ body {
   background-color: var(--hero-btn-bg);
   color: var(--hero-btn-text);
   border: none;
-  width: clamp(180px, 13.3854vw, 257px);
-  /* 257 / 1920 */
-  height: clamp(50px, 4.0104vw, 77px);
-  /* 77 / 1920 */
+  /* Figma: 116x38 with a 20px label, at y=739. */
+  width: 116px;
+  height: 38px;
   font-family: var(--font-sans);
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 500;
   border-radius: 5px;
   cursor: pointer;
-  margin-top: 80px;
+  margin-top: 107.5px;
   transition: background-color 0.2s;
 }
 
-@media (max-width: 768px) {
-  .invest-give-btn {
-    font-size: 16px;
-  }
-}
 
 .invest-give-btn:hover {
   background-color: var(--hero-btn-hover);
 }
 
 .invest-footer-info {
-  margin-top: 24px;
+  /* Figma: 16px on an 18px pitch, 23px under the button, ~620px measure. */
+  margin-top: 23px;
   font-family: var(--font-sans);
   font-size: 16px;
   color: #888888;
-  line-height: 1.4;
-  max-width: 600px;
+  line-height: 18px;
+  max-width: 620px;
+}
+
+@media (max-width: 768px) {
+  .invest-row-title {
+    font-size: 32px;
+  }
 }
 
 .invest-footer-info p {

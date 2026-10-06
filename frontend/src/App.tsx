@@ -693,9 +693,11 @@ function App() {
       case 'invest':
         return (
           <div className="invest-container animate-fade">
-            <div className="invest-sidebar-placeholder"></div>
+            {/* Figma Invest LIGHT: the heading sits in the left column, on two lines. */}
+            <div className="invest-sidebar-placeholder">
+              <h1 className="invest-title">How you can invest<br />in this vision</h1>
+            </div>
             <div className="invest-content">
-              <h1 className="invest-title">How you can invest in this vision:</h1>
 
               <div className="invest-accordion">
                 <div className="invest-accordion-row" onClick={() => setInvestExpandedRow(investExpandedRow === 'time' ? null : 'time')}>
