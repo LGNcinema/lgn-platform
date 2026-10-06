@@ -91,7 +91,8 @@
   --header-bottom: calc(var(--header-top) + var(--header-pill-height));
 
   /* Invest: the +/- icon strokes -- the frame's glyphs measure ~2.25px. The
-     section rules have their own weight (see .invest-accordion-row). */
+     section rules are the frame's own 1px black lines (see
+     .invest-accordion-row). */
   --invest-rule-weight: 2.25px;
 
   /* Every piece of footer copy sits at this one grey -- headers, nav, address,
@@ -993,19 +994,15 @@ body {
 }
 
 .invest-accordion-row {
-  /* Black rules, 1.5px by design review: Figma specifies 1px, but its centre
-     stroke renders softer and heavier than a crisp 1px browser line, and 2px
-     was too heavy. Painted as a background rather than a border because
-     Chrome snaps border widths to whole pixels -- a 1.5px border draws
-     exactly like 1px -- while a background line keeps its 1.5px. It sits
-     inside the 10px top padding, so content positions are unaffected. */
-  background: linear-gradient(var(--primary), var(--primary)) top / 100% 1.5px no-repeat;
+  /* Black rules. Figma specifies 1px (centre stroke); doubled to 2px by
+     design review, as the 1px line read lighter on screen than in Figma. */
+  border-top: 2px solid var(--primary);
   display: grid;
   /* Figma: title column 662->970 of a 1216px content area (25.33%), body
      column to 1839, then a 40px well for the +/- icon. */
   grid-template-columns: minmax(120px, 25.33%) 1fr 40px;
   /* Figma: rules at y=196 / 415.5 / 523.5 -- a closed row is 108px. */
-  padding: 10px 0 50px 0;
+  padding: 8px 0 50px 0;
   cursor: pointer;
   align-items: start;
   user-select: none;
