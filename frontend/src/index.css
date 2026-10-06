@@ -994,15 +994,14 @@ body {
 }
 
 .invest-accordion-row {
-  /* Black rules. Figma specifies 1px (centre stroke); doubled to 2px by
-     design review, as the 1px line read lighter on screen than in Figma. */
-  border-top: 2px solid var(--primary);
+  /* Figma Invest LIGHT: 1px black rules. */
+  border-top: 1px solid var(--primary);
   display: grid;
   /* Figma: title column 662->970 of a 1216px content area (25.33%), body
      column to 1839, then a 40px well for the +/- icon. */
   grid-template-columns: minmax(120px, 25.33%) 1fr 40px;
   /* Figma: rules at y=196 / 415.5 / 523.5 -- a closed row is 108px. */
-  padding: 8px 0 50px 0;
+  padding: 9px 0 50px 0;
   cursor: pointer;
   align-items: start;
   user-select: none;
