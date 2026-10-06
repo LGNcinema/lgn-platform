@@ -10,14 +10,14 @@
   /* Figma pill height. Deliberately local rather than --header-pill-height:
      that token also feeds --header-bottom, which other pages use to clear the
      header, so changing it (49px -> 58px) is a cross-page decision. */
-  --site-header-pill-height: calc(58 * var(--dp));
+  --site-header-pill-height: 58px;
   /* Every nav label -- the three menu items and "Submit a film" -- is 20px
      Medium in the frame (cap height 14.3px). */
-  --site-header-font-size: max(12px, calc(20 * var(--dp)));
+  --site-header-font-size: 20px;
   /* Menu items and the Submit button are both 38px tall. */
-  --site-header-item-height: calc(38 * var(--dp));
+  --site-header-item-height: 38px;
   /* Optical offset for the labels; see .nav-link-pill. */
-  --site-header-nudge: calc(3 * var(--dp));
+  --site-header-nudge: 3px;
 
   position: absolute;
   top: var(--header-top);
@@ -27,7 +27,7 @@
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-start;
-  gap: calc(12 * var(--dp));
+  gap: 12px;
   z-index: 100;
   /* Let clicks pass through the empty space between the two pills. */
   pointer-events: none;
@@ -38,13 +38,13 @@
   height: var(--site-header-pill-height);
   /* Figma: the icon sits 12px in from the left edge and the last item's pill
      ends 12px short of the right edge. */
-  padding: 0 calc(12 * var(--dp));
+  padding: 0 12px;
   border-radius: var(--border-radius);
   display: flex;
   align-items: center;
   /* 18px between menu-item pills. The icon sits closer (11px) -- see the
      negative margin on .nav-brand-btn. */
-  gap: calc(18 * var(--dp));
+  gap: 18px;
   pointer-events: auto;
 }
 
@@ -63,7 +63,7 @@
 
 .header-pill-right .nav-link-pill {
   /* Figma: 135x38, label inset 10px either side. */
-  padding: var(--site-header-nudge) calc(10 * var(--dp)) 0;
+  padding: var(--site-header-nudge) 10px 0;
   height: 100%;
   border-radius: var(--border-radius);
 }
@@ -85,15 +85,15 @@
   align-items: center;
   padding: 0;
   /* 12px icon inset + 23px icon + 11px = the About pill's x in the frame. */
-  margin-right: calc(-7 * var(--dp));
+  margin-right: -7px;
   border-radius: 4px;
   transition: var(--transition);
 }
 
 .nav-brand-btn img {
   /* Figma "LGN-Icon" inside the header pill: 23x23. */
-  width: calc(23 * var(--dp));
-  height: calc(23 * var(--dp));
+  width: 23px;
+  height: 23px;
   display: block;
 }
 
@@ -127,7 +127,7 @@
   /* Figma: the active "Campfire" pill is 107px around an ~81px label. The 3px
      top padding nudges the label 1.5px down: centring Inter's line box puts
      its caps that far above where the frame's Helvetica sits. */
-  padding: var(--site-header-nudge) calc(13 * var(--dp)) 0;
+  padding: var(--site-header-nudge) 13px 0;
   border-radius: var(--border-radius);
 }
 
@@ -162,18 +162,18 @@
   position: absolute;
   /* Clear the pill's bottom edge: the item is centred in the 58px pill, so the
      pill ends (58 - 38) / 2 = 10px below the item. Plus a 4px breath. */
-  top: calc(100% + calc(14 * var(--dp)));
+  top: calc(100% + 14px);
   left: 50%;
   transform: translateX(-50%);
   background-color: var(--bg-dark);
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: var(--shadow-md);
-  padding: calc(8 * var(--dp));
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: calc(4 * var(--dp));
-  min-width: calc(160 * var(--dp));
+  gap: 4px;
+  min-width: 160px;
   z-index: 10;
   animation: dropdown-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -187,7 +187,7 @@
   left: 0;
   right: 0;
   bottom: 100%;
-  height: calc(16 * var(--dp));
+  height: 16px;
 }
 
 @keyframes dropdown-fade-in {
@@ -207,10 +207,10 @@
   border: none;
   color: var(--text-main);
   font-family: var(--font-sans);
-  font-size: max(12px, calc(14 * var(--dp)));
+  font-size: 14px;
   font-weight: 500;
   text-align: left;
-  padding: calc(10 * var(--dp)) calc(16 * var(--dp));
+  padding: 10px 16px;
   width: 100%;
   cursor: pointer;
   border-radius: 4px;

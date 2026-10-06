@@ -105,15 +105,15 @@
 
 .storyboard-save {
   flex: none;
-  height: clamp(38px, 2.2917vw, 44px);
-  min-width: clamp(76px, 4.6354vw, 89px);
-  padding: 0 clamp(18px, 1.1458vw, 22px);
+  height: 44px;
+  min-width: 89px;
+  padding: 0 22px;
   background: var(--secondary);
   color: #000; /* the button stays light on the dark panel, per the frame */
   border: 0;
   border-radius: var(--border-radius);
   font: inherit;
-  font-size: clamp(16px, 1.0417vw, 20px);
+  font-size: 20px;
   font-weight: 500;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -297,8 +297,8 @@
 .storyboard-consent-box {
   appearance: none;
   flex: none;
-  width: calc(11 * var(--dp));
-  height: calc(11 * var(--dp));
+  width: 11px;
+  height: 11px;
   margin: 1px 0 0; /* box bottom on the first line's baseline, as drawn */
   border: 1px solid var(--text-dark);
   border-radius: 0;
@@ -310,8 +310,8 @@
 
 .storyboard-consent-box:checked::after {
   content: '';
-  width: calc(5 * var(--dp));
-  height: calc(5 * var(--dp));
+  width: 5px;
+  height: 5px;
   background: var(--primary);
 }
 
@@ -340,15 +340,15 @@
 .storyboard-modal-submit {
   display: block;
   margin-top: calc(17 * var(--dp));
-  height: calc(35 * var(--dp));
-  min-width: calc(158.8 * var(--dp));
-  padding: 0 calc(10.4 * var(--dp));
+  height: 35px;
+  min-width: 158.8px;
+  padding: 0 10.4px;
   background: var(--border);
   color: var(--primary);
   border: 0;
   border-radius: var(--border-radius);
   font: inherit;
-  font-size: max(12px, calc(14 * var(--dp)));
+  font-size: 14px;
   font-weight: 500;
   line-height: 1;
   letter-spacing: -0.03em;

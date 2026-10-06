@@ -199,14 +199,14 @@
   display: inline-flex;
   align-items: center;
   align-self: flex-start;
-  height: calc(35 * var(--dp));
+  height: 35px;
   margin-top: calc(24 * var(--dp));
-  padding: 0 calc(16 * var(--dp));
+  padding: 0 16px;
   background: var(--header-pill-right-bg);
   border: 0;
   border-radius: var(--border-radius);
   font: inherit;
-  font-size: max(12px, calc(14 * var(--dp)));
+  font-size: 14px;
   color: var(--primary);
   cursor: pointer;
 }

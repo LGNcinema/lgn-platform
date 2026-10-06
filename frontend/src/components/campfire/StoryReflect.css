@@ -116,8 +116,8 @@
 
 .story-reflect-keep {
   box-sizing: border-box;
-  height: clamp(38px, 2.2917vw, 44px);
-  padding: 0 clamp(14px, 0.8854vw, 17px);
+  height: 44px;
+  padding: 0 17px;
   border: 0;
   border-radius: var(--border-radius);
   /* Frame fill is #EDEDED; --bg-card-hover (#ececec) is the matching token and
@@ -125,7 +125,7 @@
   background: var(--bg-card-hover);
   color: var(--text-main);
   font-family: var(--font-sans);
-  font-size: clamp(16px, 1.0417vw, 20px);
+  font-size: 20px;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.15s ease;

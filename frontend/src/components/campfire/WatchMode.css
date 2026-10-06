@@ -112,14 +112,14 @@
 
 .watch-mode-watch {
   margin-top: calc(54 * var(--dp));
-  height: calc(35 * var(--dp));
-  padding: 0 calc(16 * var(--dp));
+  height: 35px;
+  padding: 0 16px;
   border: 0;
   border-radius: var(--border-radius);
   background: var(--border);
   color: #000;
   font-family: inherit;
-  font-size: max(12px, calc(14 * var(--dp)));
+  font-size: 14px;
   font-weight: 400;
   line-height: 1;
   cursor: pointer;
