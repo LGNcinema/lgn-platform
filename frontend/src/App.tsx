@@ -749,7 +749,8 @@ function App() {
                 </div>
               </div>
 
-              <button className="invest-give-btn" id="btn-give-treasure">Give Here</button>
+              {/* Stripe-hosted donation page, in a new tab so the visitor keeps their place here. */}
+              <a className="invest-give-btn" id="btn-give-treasure" href="https://donate.stripe.com/cNi9AT2g6fxc6j1bs4cjS00" target="_blank" rel="noopener noreferrer">Give Here</a>
 
               <div className="invest-footer-info">
                 <p>As a registered 501(c)(3), donations to Life is Greater than Numbers, Inc. are tax-deductible to the fullest extent allowed by law. Charitable disclosure & state registration info will be added here as we complete our national registration process. This page is not intended as a solicitation in jurisdictions where Life is Greater than Numbers, Inc. is not yet registered or exempt from registration.</p>

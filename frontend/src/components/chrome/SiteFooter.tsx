@@ -15,8 +15,8 @@ interface Props {
  * Two places the Figma frame differs and this deliberately does NOT follow it:
  * - The frame reads "5501(c)(3)". The designation is 501(c)(3); the extra 5 is
  *   a typo in the frame, and this is a legal/tax identifier.
- * - The frame's social link says "Youtube". Films are hosted on Vimeo and the
- *   live link is Vimeo, so it stays until someone confirms the change.
+ *
+ * The social link is YouTube, spelled properly (the frame has "Youtube").
  */
 export function SiteFooter({ theme, onNavigate }: Props) {
   return (
@@ -45,7 +45,7 @@ export function SiteFooter({ theme, onNavigate }: Props) {
           <h3>Mailing</h3>
           <p>Life is Greater than Numbers, Inc.<br />1950 W Corporate Way, STE 31556<br />Anaheim, CA 92801</p>
           <div className="footer-bottom-text social-links">
-            <a href="#">Vimeo</a>
+            <a href="https://www.youtube.com/@lgncinema" target="_blank" rel="noopener noreferrer">YouTube</a>
           </div>
         </div>
 

@@ -1083,7 +1083,13 @@ body {
   margin: 0;
 }
 
+/* A link (to Stripe) styled as the frame's button. */
 .invest-give-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  text-decoration: none;
   background-color: var(--hero-btn-bg);
   color: var(--hero-btn-text);
   border: none;
@@ -1105,8 +1111,9 @@ body {
 }
 
 .invest-footer-info {
-  /* Figma: 16px on an 18px pitch, 23px under the button, ~620px measure. */
-  margin-top: 23px;
+  /* Figma: 16px on an 18px pitch, under the button (y=804.5 at 1920), ~620px
+     measure. */
+  margin-top: 25px;
   font-family: var(--font-sans);
   font-size: 16px;
   color: #888888;
