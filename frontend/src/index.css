@@ -90,8 +90,8 @@
      formula cannot know. See SiteHeader.tsx. */
   --header-bottom: calc(var(--header-top) + var(--header-pill-height));
 
-  /* Invest: one weight shared by the section rules and the +/- icon strokes,
-     so they read as the same line. */
+  /* Invest: the +/- icon strokes. The section rules are the frame's own 1px
+     black lines (see .invest-accordion-row). */
   --invest-rule-weight: 1.5px;
 
   /* Every piece of footer copy sits at this one grey -- headers, nav, address,
@@ -993,7 +993,8 @@ body {
 }
 
 .invest-accordion-row {
-  border-top: var(--invest-rule-weight) solid var(--border);
+  /* Figma Invest LIGHT: 1px black rules. */
+  border-top: 1px solid var(--primary);
   display: grid;
   /* Figma: title column 662->970 of a 1216px content area (25.33%), body
      column to 1839, then a 40px well for the +/- icon. */
@@ -1047,14 +1048,28 @@ body {
 }
 
 .invest-bullet-list {
-  list-style-type: disc;
-  padding-left: 30px;
+  list-style: none;
+  padding-left: 25.5px;
   /* The open row runs to y=415.5 in the frame, well past its last bullet. */
   margin: 0 0 58px;
 }
 
 .invest-bullet-list li {
+  position: relative;
   margin-bottom: 0;
+}
+
+/* Figma's bullet: a small ~4px dot, 17px left of the text and centred on
+   the first line's lowercase letters -- much lighter than the browser disc. */
+.invest-bullet-list li::before {
+  content: '';
+  position: absolute;
+  left: -17px;
+  top: 14.5px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .invest-bullet-list li:last-child {
