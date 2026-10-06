@@ -90,10 +90,6 @@
      formula cannot know. See SiteHeader.tsx. */
   --header-bottom: calc(var(--header-top) + var(--header-pill-height));
 
-  /* Homepage hero (logo / tagline / button) scaled down per design review.
-     One number drives all three -- 1 = the original Figma size. */
-  --home-hero-scale: 0.825;
-
   /* About page content scaled down 30% per design review. Drives type and
      vertical rhythm together so the page keeps its proportions. */
   --about-scale: 0.7;
@@ -273,10 +269,11 @@ body {
   position: absolute;
   left: 0;
   width: 100%;
-  top: 40.3704%;
-  /* 436 / 1080 */
-  height: 9.8148%;
-  /* 106 / 1080 */
+  /* Figma home LIGHT: the logo is 632x70 at y=472 of the 1080 hero. */
+  top: 43.7037%;
+  /* 472 / 1080 */
+  height: 6.4815%;
+  /* 70 / 1080 */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -286,10 +283,10 @@ body {
   position: absolute;
   left: 0;
   width: 100%;
-  top: 53.6111%;
-  /* 579 / 1080 */
-  height: 4.4444%;
-  /* 48 / 1080 */
+  top: 53.8426%;
+  /* 581.5 / 1080 -- puts Inter's ink where the frame's is */
+  height: 2.1296%;
+  /* 23 / 1080 -- one line of the 20px subtitle */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -299,10 +296,10 @@ body {
   position: absolute;
   left: 0;
   width: 100%;
-  top: 63.7037%;
-  /* 688 / 1080 */
-  height: 7.5926%;
-  /* 82 / 1080 */
+  top: 59.2593%;
+  /* 640 / 1080 */
+  height: 4.2593%;
+  /* 46 / 1080 */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -310,14 +307,15 @@ body {
 
 .home-hero-logo {
   width: auto;
-  height: calc(100% * var(--home-hero-scale));
+  /* A graphic, so it scales with the hero; the text and button below don't. */
+  height: 100%;
   max-width: 90%;
 }
 
 .home-hero-subtitle {
   font-family: var(--font-sans);
-  font-size: calc(32px * var(--home-hero-scale));
-  font-weight: 500;
+  font-size: 20px;
+  font-weight: 700;
   color: var(--primary);
   margin: 0;
   letter-spacing: -0.03em;
@@ -328,12 +326,12 @@ body {
   background-color: var(--hero-btn-bg);
   color: var(--hero-btn-text);
   border: none;
-  /* Figma 256x82, at the hero's design-review scale. A fixed size like every
-     other button -- only the logo above it scales with the viewport. */
-  width: calc(256px * var(--home-hero-scale));
-  height: calc(82px * var(--home-hero-scale));
+  /* Figma 128x46 with a 20px label. A fixed size like every other button --
+     only the logo above it scales with the viewport. */
+  width: 128px;
+  height: 46px;
   font-family: var(--font-sans);
-  font-size: calc(24px * var(--home-hero-scale));
+  font-size: 20px;
   font-weight: 500;
   border-radius: 5px;
   cursor: pointer;
