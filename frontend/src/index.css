@@ -13,15 +13,15 @@
   --bg-darker: #f5f5f5;      /* Main canvas background (Figma Rectangle 43 #f5f5f5) */
   --bg-dark: #ffffff;        /* Sub-panels & containers (dropdowns, popovers) */
   --bg-card: #ffffff;        /* Primary card background */
-  --bg-card-hover: #ececec;
+  --bg-card-hover: #ededed;  /* Figma #EDEDED (Campfire cards, Keep a copy) */
   --bg-footer: #e1e1e1;      /* Light Grey Footer Background (Figma spec #e1e1e1) */
 
   --primary: #000000;        /* Main headings & primary text */
   --primary-rgb: 0, 0, 0;
   --secondary: #242424;
 
-  --text-main: #111111;      /* Core text */
-  --text-muted: #666666;     /* Secondary/date text */
+  --text-main: #000000;      /* Core text -- the frames' text is pure black */
+  --text-muted: #888888;     /* Secondary text -- the frames' only grey */
   --text-dark: #888888;      /* Tertiary text */
   --text-light: #000000;
 
@@ -31,7 +31,7 @@
   --header-pill-bg: #d9d9d9;
   --header-pill-right-bg: #d9d9d9;
   --header-btn-hover: #c4c4c4;
-  --header-btn-active: #ffffff;
+  --header-btn-active: #f5f5f5;  /* Figma: the active tab is the page colour */
   --header-btn-active-text: #000000;
 
   --hero-btn-bg: #d9d9d9;
@@ -118,7 +118,7 @@
   --secondary: #d9d9d9;
 
   --text-main: #d9d9d9;
-  --text-muted: #878787;
+  --text-muted: #888888;
   --text-dark: #666666;
   --text-light: #ffffff;
 

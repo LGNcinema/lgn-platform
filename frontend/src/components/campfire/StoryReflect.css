@@ -103,9 +103,9 @@
 
 .story-reflect-textarea::placeholder {
   /* Frame: #454545, darker than --text-muted and with no token of its own.
-     Derived from --text-main (78% of #111 on white = #454545) rather than a
+     Derived from --text-main (73% of black on white = #454545) rather than a
      literal, so it stays legible when the dark theme flips the text color. */
-  color: color-mix(in srgb, var(--text-main) 78%, transparent);
+  color: color-mix(in srgb, var(--text-main) 73%, transparent);
   opacity: 1;
 }
 
@@ -132,10 +132,11 @@
   padding: 0 17px;
   border: 0;
   border-radius: var(--border-radius);
-  /* Frame fill is #EDEDED; --bg-card-hover (#ececec) is the matching token and
-     also gives the right fill in dark mode. */
+  /* Frame fill is #EDEDED -- --bg-card-hover, which also gives the right
+     fill in dark mode. */
   background: var(--bg-card-hover);
-  color: var(--text-main);
+  /* Frame: the label is #242424, not black -- --secondary in the light theme. */
+  color: var(--secondary);
   font-family: var(--font-sans);
   font-size: 20px;
   font-weight: 500;

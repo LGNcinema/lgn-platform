@@ -62,8 +62,8 @@
   background: var(--bg-card);
 }
 
-/* Frame #EDEDED; --bg-card-hover (#ececec) is the nearest token and also gives
-   a sensible dark-mode grey. */
+/* Frame #EDEDED -- --bg-card-hover, which also gives a sensible dark-mode
+   grey. */
 .campfire-card--coming {
   background: var(--bg-card-hover);
 }
