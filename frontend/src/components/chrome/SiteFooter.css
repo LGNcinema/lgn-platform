@@ -28,7 +28,7 @@
      footer's columns quarter the content width with a 20px gutter. */
   grid-template-columns: repeat(4, minmax(0, 1fr));
   column-gap: clamp(12px, 1.0417vw, 20px);
-  row-gap: 40px;
+  row-gap: calc(40 * var(--dp));
   max-width: var(--grid-max-width);
   margin: 0 auto;
   /* 298 / 1920 -- the footer's 377px minus the top and bottom padding above. */
@@ -47,10 +47,10 @@
 .footer-logo {
   display: block;
   width: 100%;
-  max-width: 341px;
+  max-width: calc(341 * var(--dp));
   height: auto;
   margin-top: clamp(0px, 0.1563vw, 3px);
-  margin-bottom: 24px;
+  margin-bottom: calc(24 * var(--dp));
 }
 
 /* Nav items and column headings share one style in the frame: 16px bold in
@@ -59,15 +59,15 @@
   display: flex;
   flex-direction: column;
   /* 26px from one item to the next: 19.2px line + 6.8px. */
-  gap: 6.8px;
+  gap: calc(6.8 * var(--dp));
   align-items: flex-start;
-  margin-bottom: 24px;
+  margin-bottom: calc(24 * var(--dp));
 }
 
 .footer-nav button,
 .footer-col h3 {
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: max(12px, calc(16 * var(--dp)));
   font-weight: 700;
   line-height: 1.2;
   color: var(--footer-text);
@@ -87,27 +87,27 @@
 
 .footer-col h3 {
   /* Heading -> first address line: cap tops 36px apart in the frame. */
-  margin-bottom: 18px;
+  margin-bottom: calc(18 * var(--dp));
 }
 
 /* Mailing address: 16px on 17.6px leading -- the frame sets the three lines
    close to solid, per the design note's "32pt type on 32pt leading". */
 .footer-col p {
-  font-size: 16px;
+  font-size: max(12px, calc(16 * var(--dp)));
   color: var(--footer-text);
   line-height: 1.1;
-  margin-bottom: 24px;
+  margin-bottom: calc(24 * var(--dp));
 }
 
 .join-form {
   display: flex;
   flex-direction: column;
   /* Field bottom -> Submit top: 24px. */
-  gap: 24px;
+  gap: calc(24 * var(--dp));
   /* Heading -> field: the field's top is 40px below the heading's cap top,
      8px more than the address gets. */
-  margin-top: 8px;
-  margin-bottom: 24px;
+  margin-top: calc(8 * var(--dp));
+  margin-bottom: calc(24 * var(--dp));
   width: 100%;
 }
 
@@ -116,13 +116,13 @@
   background: var(--bg-darker);
   border: none;
   color: var(--text-main);
-  height: 67px;
-  padding: 0 18px;
+  height: calc(67 * var(--dp));
+  padding: 0 calc(18 * var(--dp));
   border-radius: var(--border-radius);
   width: 100%;
   box-sizing: border-box;
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: max(12px, calc(16 * var(--dp)));
 }
 
 .join-form input::placeholder {
@@ -137,13 +137,13 @@
   background: var(--hero-btn-bg);
   color: var(--hero-btn-text);
   border: none;
-  height: 44px;
+  height: calc(44 * var(--dp));
   /* 2px top padding: optical nudge down, as in the header's labels. */
-  padding: 2px 15px 0;
+  padding: calc(2 * var(--dp)) calc(15 * var(--dp)) 0;
   border-radius: var(--border-radius);
   font-family: var(--font-sans);
   font-weight: 500;
-  font-size: 20px;
+  font-size: max(12px, calc(20 * var(--dp)));
   line-height: 1;
   cursor: pointer;
   align-self: flex-start;
@@ -166,7 +166,7 @@
 /* The bottom row: pushed to the foot of each column so all four share a line
    however tall the column above them is. */
 .footer-bottom-text {
-  font-size: 16px;
+  font-size: max(12px, calc(16 * var(--dp)));
   line-height: 1.2;
   color: var(--footer-text);
   margin-top: auto;
@@ -189,13 +189,13 @@
 
 .social-links {
   display: flex;
-  gap: 16px;
+  gap: calc(16 * var(--dp));
   /* The frame sets the social link a size up from the rest of the bottom row
      (18px vs 16px). Followed as drawn; see the open question in the report. */
-  font-size: 18px;
+  font-size: max(12px, calc(18 * var(--dp)));
   /* The 16px row's line height, so the bigger text shares its baseline
      instead of sitting ~2px higher in a taller, bottom-aligned line box. */
-  line-height: 19.2px;
+  line-height: 1.0667;
 }
 
 .social-links a {

@@ -24,7 +24,7 @@
 
 .campfire-home-heading {
   margin: 0 0 clamp(32px, 3.0365vw, 58px);
-  font-size: 20px;
+  font-size: max(12px, calc(20 * var(--dp)));
   font-weight: 700;
   line-height: 1.2;
   color: var(--primary);
@@ -74,7 +74,7 @@
      card (narrow viewports, long credit lines); at 1920 the spare height is
      far larger, so it changes nothing there. */
   flex: 1 0 auto;
-  padding-bottom: 24px;
+  padding-bottom: calc(24 * var(--dp));
 }
 
 .campfire-card-meta {
@@ -82,7 +82,7 @@
   /* The month starts 312px into a 600px card: two columns over the 556px inner
      width with a 24px gap put it at 22 + 266 + 24 = 312. */
   grid-template-columns: 1fr 1fr;
-  column-gap: 24px;
+  column-gap: calc(24 * var(--dp));
   font-size: 12px;
   line-height: 1.2;
   text-transform: uppercase;

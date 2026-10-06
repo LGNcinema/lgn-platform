@@ -35,6 +35,9 @@ async function withPage(fn, viewport = { width: 1920, height: 1080 }, dpr = 2) {
 
 async function shoot(query, out) {
   ensureDir(out);
+  // VIS_WIDTH renders at another CSS width (default: the frames' 1920) -- for
+  // checking how the 1920 design scales on laptops and scaled displays.
+  const width = Number(process.env.VIS_WIDTH) || 1920;
   await withPage(async (page) => {
     await page.goto(new URL(query, BASE).href, { waitUntil: 'networkidle' });
     // The dev-only floating buttons (Theme, Grid Overlay, Geme Tuning) render on
@@ -44,7 +47,7 @@ async function shoot(query, out) {
     // Let entrance transitions and image decodes settle.
     await page.waitForTimeout(600);
     await page.screenshot({ path: out, fullPage: true });
-  });
+  }, { width, height: 1080 });
   const { w, h } = pngSize(out);
   console.log(`shot ${query} -> ${out}  (${w}x${h}, i.e. ${w / 2}x${h / 2} CSS px)`);
 }

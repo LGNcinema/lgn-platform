@@ -26,8 +26,8 @@
   border: 0;
   padding: 0;
   font: inherit;
-  font-size: 20px;
-  line-height: 24px;
+  font-size: max(12px, calc(20 * var(--dp)));
+  line-height: 1.2;
   color: var(--text-dark);
   cursor: pointer;
   /* Card top at y=274: 215 + 59. */
@@ -51,7 +51,7 @@
   grid-template-columns: minmax(0, 600fr) minmax(0, 1196fr);
   background: var(--bg-card);
   border-radius: var(--border-radius);
-  padding: 17px 24px 31px 20px;
+  padding: calc(17 * var(--dp)) calc(24 * var(--dp)) calc(31 * var(--dp)) calc(20 * var(--dp));
   /* 769 tall in every frame. A minimum, so long section content (a
      screenplay, a long reflection) grows the card instead of clipping. */
   min-height: clamp(560px, 40.0521vw, 769px);
@@ -73,7 +73,7 @@
 /* "STORY NO. 1" and the month label: 12px caps, cap tops at y=293. */
 .story-shell-label {
   font-size: 12px;
-  line-height: 14px;
+  line-height: 1.1667;
   text-transform: uppercase;
   color: var(--text-dark);
 }
@@ -81,14 +81,14 @@
 /* Section content starts at y=342 (the film still's top edge). Children
    start flush with the top of their box; this gap is the shell's. */
 .story-shell-month {
-  margin-bottom: 37px;
+  margin-bottom: calc(37 * var(--dp));
 }
 
 /* ---------------------------------------------------------------- left column */
 
 /* Nav line box at y=592: the intro (from y=291) plus the nav's margin. */
 .story-shell-intro {
-  min-height: 261px;
+  min-height: calc(261 * var(--dp));
 }
 
 .story-shell-title {
@@ -98,7 +98,7 @@
   letter-spacing: -0.02em;
   /* The -0.045em pulls Inter's wide left side-bearing at display size back so
      the title's stem lines up with "STORY NO." as it does in the frame. */
-  margin: 30px 0 0 -0.045em;
+  margin: calc(30 * var(--dp)) 0 0 -0.045em;
   color: var(--primary);
   overflow-wrap: break-word;
 }
@@ -106,10 +106,10 @@
 /* Credit: 12px on a 14px pitch, cap top of line 1 at y=433. */
 .story-shell-credit {
   font-size: 12px;
-  line-height: 14px;
+  line-height: 1.1667;
   color: var(--text-dark);
-  max-width: 440px;
-  margin: 32px 0 0;
+  max-width: calc(440 * var(--dp));
+  margin: calc(32 * var(--dp)) 0 0;
 }
 
 .story-shell-more,
@@ -140,8 +140,8 @@
 
 .story-shell-more {
   font-size: 12px;
-  line-height: 14px;
-  margin-top: 14px;
+  line-height: 1.1667;
+  margin-top: calc(14 * var(--dp));
 }
 
 .story-shell-nav {
@@ -149,8 +149,8 @@
   flex-direction: column;
   align-items: flex-start;
   /* 43.5px pitch between Watch / Reflect / Practice. */
-  gap: 19.5px;
-  margin-top: 40px;
+  gap: calc(19.5 * var(--dp));
+  margin-top: calc(40 * var(--dp));
 }
 
 .story-shell-nav-btn {
@@ -158,8 +158,8 @@
   border: 0;
   padding: 0;
   font: inherit;
-  font-size: 20px;
-  line-height: 24px;
+  font-size: max(12px, calc(20 * var(--dp)));
+  line-height: 1.2;
   color: var(--text-dark);
   cursor: pointer;
 }
@@ -176,9 +176,9 @@
 /* Pinned to the bottom of the card: baseline 35px above the card's edge. */
 .story-shell-storyboard {
   margin-top: auto;
-  padding-top: 40px;
-  font-size: 16px;
-  line-height: 20px;
+  padding-top: calc(40 * var(--dp));
+  font-size: max(12px, calc(16 * var(--dp)));
+  line-height: 1.25;
 }
 
 .story-shell-crumb:focus-visible,

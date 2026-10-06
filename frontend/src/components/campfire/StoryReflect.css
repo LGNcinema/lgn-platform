@@ -78,7 +78,7 @@
   max-width: clamp(320px, 47.3438vw, 909px);
   height: clamp(128px, 8.5417vw, 164px);
   margin-top: clamp(36px, 2.7604vw, 53px);
-  padding: 15px 14px;
+  padding: calc(15 * var(--dp)) calc(14 * var(--dp));
   border: 1px solid var(--primary);
   border-radius: var(--border-radius);
   background: var(--bg-card);
@@ -110,7 +110,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: calc(16 * var(--dp));
   margin-top: clamp(18px, 1.25vw, 24px);
 }
 

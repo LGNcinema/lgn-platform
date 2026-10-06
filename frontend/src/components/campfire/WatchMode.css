@@ -21,7 +21,7 @@
   min-height: calc(100vh - 2 * var(--grid-margin));
   min-height: calc(100dvh - 2 * var(--grid-margin));
   box-sizing: border-box;
-  padding: 16px;
+  padding: calc(16 * var(--dp));
   display: grid;
   /* minmax(0, 1fr), not auto: an auto column grows to the card's 393px and
      max-width: 100% then has nothing to shrink against on a phone. */
@@ -58,13 +58,13 @@
    small enough that it stays fixed-size and only narrows to fit. */
 
 .watch-mode-card {
-  width: 393px;
+  width: calc(393 * var(--dp));
   max-width: 100%;
   /* The frame sits the card ~10px below true centre (466 vs 456.5 in a
      1035px-tall frame); half of this margin is that nudge. */
   margin-top: clamp(0px, 0.9896vw, 19px);
   box-sizing: border-box;
-  padding: 17px 17px 14px;
+  padding: calc(17 * var(--dp)) calc(17 * var(--dp)) calc(14 * var(--dp));
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -84,16 +84,16 @@
   margin: 0;
   font-size: 12px;
   font-weight: 400;
-  line-height: 14px;
+  line-height: 1.1667;
   text-transform: uppercase;
   color: var(--text-dark);
 }
 
 .watch-mode-prompt {
-  margin: 44px 0 0;
-  font-size: 20px;
+  margin: calc(44 * var(--dp)) 0 0;
+  font-size: max(12px, calc(20 * var(--dp)));
   font-weight: 500;
-  line-height: 24px;
+  line-height: 1.2;
   letter-spacing: -0.01em;
   color: inherit;
   text-wrap: pretty;
@@ -102,24 +102,24 @@
 /* Not in the frame. Secondary and quiet, so the prompt stays the one line
    the eye lands on. */
 .watch-mode-supporting {
-  margin: 12px 0 0;
-  font-size: 14px;
+  margin: calc(12 * var(--dp)) 0 0;
+  font-size: max(12px, calc(14 * var(--dp)));
   font-weight: 400;
-  line-height: 20px;
+  line-height: 1.4286;
   color: var(--text-muted);
   text-wrap: pretty;
 }
 
 .watch-mode-watch {
-  margin-top: 54px;
-  height: 35px;
-  padding: 0 16px;
+  margin-top: calc(54 * var(--dp));
+  height: calc(35 * var(--dp));
+  padding: 0 calc(16 * var(--dp));
   border: 0;
   border-radius: var(--border-radius);
   background: var(--border);
   color: #000;
   font-family: inherit;
-  font-size: 14px;
+  font-size: max(12px, calc(14 * var(--dp)));
   font-weight: 400;
   line-height: 1;
   cursor: pointer;
@@ -159,13 +159,13 @@
   height: var(--grid-margin);
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: calc(4 * var(--dp));
   padding: 0;
   border: 0;
   background: none;
   font-family: inherit;
   font-size: 12px;
-  line-height: 14px;
+  line-height: 1.1667;
   text-transform: uppercase;
   color: var(--text-dark);
   cursor: pointer;

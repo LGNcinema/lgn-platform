@@ -65,13 +65,23 @@
      so it stays aligned with the nav pill and the footer at every width. */
   --content-width: calc(100% - (2 * var(--grid-margin)));
 
+  /* One Figma pixel. The redesign frames are 1920 wide; a size written as
+     calc(N * var(--dp)) is exactly N px at 1920 and shrinks in proportion
+     below it, so a laptop sees the frame's proportions rather than desktop-
+     sized type and buttons. It stops shrinking at 1440 (0.75) -- smaller
+     screens keep those sizes until their own breakpoints take over -- and
+     never grows past 1920. Text using it is also floored at 12px:
+     max(12px, calc(N * var(--dp))). */
+  --dp: clamp(0.75px, calc(100vw / 1920), 1px);
+
   /* Header geometry. The floating header does NOT scale with the hero's
      aspect ratio, so anything that must sit below it is measured from these
      rather than from a percentage of the hero's height. */
   --header-top: clamp(16px, 2.0833vw, 40px);
   /* 40 / 1920 -- matches Figma's Header y=40 at full width */
-  /* The pill as built: 58px (it was 49 before the Campfire redesign). */
-  --header-pill-height: 58px;
+  /* The pill as built: 58 design px (it was 49 before the Campfire redesign).
+     Mirrors --site-header-pill-height in SiteHeader.css. */
+  --header-pill-height: calc(58 * var(--dp));
   /* Fallback only. SiteHeader measures its real bottom edge at runtime and
      overrides this on <html> -- the header wraps on narrow screens, which this
      formula cannot know. See SiteHeader.tsx. */
