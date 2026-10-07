@@ -611,3 +611,128 @@
   padding-top: 28px;
   padding-bottom: 48px;
 }
+
+/* --------------------------------------------------------- Storyboard review */
+
+.admin-portal .apnl-sb-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-portal .apnl-sb-filter {
+  padding: 7px 14px;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--admin-radius-pill);
+  cursor: pointer;
+}
+
+.admin-portal .apnl-sb-filter:hover {
+  color: var(--text-main);
+}
+
+.admin-portal .apnl-sb-filter.is-active {
+  color: var(--admin-on-accent);
+  background: var(--admin-accent);
+  border-color: var(--admin-accent);
+}
+
+.admin-portal .apnl-sb-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.admin-portal .apnl-sb-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius, 5px);
+}
+
+.admin-portal .apnl-sb-who {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Big enough to judge the photo at a glance (it's what gets approved too). */
+.admin-portal .apnl-sb-photo {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--border);
+  display: grid;
+  place-items: center;
+  font-size: 1.4rem;
+  color: var(--text-muted);
+}
+
+.admin-portal .apnl-sb-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.admin-portal .apnl-sb-name {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.admin-portal .apnl-sb-city {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.admin-portal .apnl-sb-when {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.admin-portal .apnl-sb-text {
+  margin: 0;
+  white-space: pre-line;
+  line-height: 1.5;
+  color: var(--text-main);
+}
+
+.admin-portal .apnl-sb-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Pending count on the Storyboard tab and the header's review button. */
+.admin-portal .admin-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: var(--admin-radius-pill);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--admin-on-accent);
+  background: #c2410c; /* attention orange: something is waiting */
+}
+
+.admin-portal .apnl-sb-flag {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}

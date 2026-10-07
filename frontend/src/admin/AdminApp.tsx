@@ -20,12 +20,13 @@ import {
   PracticePanel,
   PreviewPanel,
   ReflectPanel,
+  StoryboardPanel,
 } from './panels';
 import { publicationState } from './publishing';
 import { StatusPill } from './StatusPill';
 import './admin.css';
 
-type TabId = 'film' | 'reflect' | 'discuss' | 'practice' | 'details' | 'preview';
+type TabId = 'film' | 'reflect' | 'discuss' | 'practice' | 'storyboard' | 'details' | 'preview';
 
 /**
  * `checking`     -- restoring a stored token
@@ -47,6 +48,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'reflect', label: 'Reflect' },
   { id: 'discuss', label: 'Discuss' },
   { id: 'practice', label: 'Practice' },
+  { id: 'storyboard', label: 'Storyboard' },
   { id: 'details', label: 'Details' },
   { id: 'preview', label: 'Preview' },
 ];
@@ -108,6 +110,8 @@ export function AdminApp() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const [pendingNav, setPendingNav] = useState<PendingNav | null>(null);
+  /** Storyboard submissions waiting for review, by capsule id. */
+  const [pendingCounts, setPendingCounts] = useState<Record<number, number>>({});
 
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const stayRef = useRef<HTMLButtonElement | null>(null);
@@ -180,6 +184,29 @@ export function AdminApp() {
       cancelled = true;
     };
   }, [authState]);
+
+  /* ---- storyboard review counts ---- */
+  /** One small GROUP BY. Re-read on sign-in, on switching capsules, after a
+   *  review decision, and when the admin comes back to the tab -- so a badge
+   *  is never stale for long without polling. */
+  const refreshCounts = useCallback(async () => {
+    try {
+      const counts = await adminFetch<Record<string, number>>('/api/admin/storyboard/pending-counts');
+      setPendingCounts(Object.fromEntries(Object.entries(counts).map(([id, n]) => [Number(id), n])));
+    } catch {
+      // Badges are a convenience; the Storyboard tab itself still loads.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (authState !== 'in') return;
+    void refreshCounts();
+    const onFocus = () => void refreshCounts();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [authState, capsuleId, refreshCounts]);
+
+  const totalPending = Object.values(pendingCounts).reduce((sum, n) => sum + n, 0);
 
   /* ---- unsaved-work guard ---- */
   /**
@@ -326,6 +353,8 @@ export function AdminApp() {
         return <DetailsPanel key={capsule.id} {...props} />;
       case 'preview':
         return <PreviewPanel key={capsule.id} {...props} />;
+      case 'storyboard':
+        return <StoryboardPanel key={capsule.id} {...props} onReviewed={() => void refreshCounts()} />;
       case 'film':
       default:
         return <FilmPanel key={capsule.id} {...props} />;
@@ -418,6 +447,24 @@ export function AdminApp() {
               <span className="admin-brand-sub">Life is Greater than Numbers</span>
             </div>
             <div className="admin-header-actions">
+              {totalPending > 0 && (
+                <button
+                  type="button"
+                  className="admin-btn-ghost"
+                  title="Open the story with the most storyboard submissions waiting for review"
+                  onClick={() => {
+                    const [busiest] = Object.entries(pendingCounts).sort((a, b) => b[1] - a[1]);
+                    const id = Number(busiest[0]);
+                    if (id === capsuleId && activeTab === 'storyboard') return;
+                    runGuarded('Opening the review queue will discard them.', () => {
+                      navigate(`/admin/capsules/${id}/storyboard`);
+                    });
+                  }}
+                >
+                  Review queue
+                  <span className="admin-count" aria-label={`${totalPending} waiting`}>{totalPending}</span>
+                </button>
+              )}
               <button
                 type="button"
                 className="admin-btn-ghost"
@@ -529,6 +576,11 @@ export function AdminApp() {
                       onKeyDown={(event) => handleTabKeyDown(event, index)}
                     >
                       {tab.label}
+                      {tab.id === 'storyboard' && capsuleId !== null && pendingCounts[capsuleId] ? (
+                        <span className="admin-count" aria-label={`${pendingCounts[capsuleId]} waiting for review`}>
+                          {pendingCounts[capsuleId]}
+                        </span>
+                      ) : null}
                     </button>
                   ))}
                 </div>

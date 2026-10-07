@@ -92,8 +92,8 @@ INSERT INTO practices (capsule_id, title, description, steps) VALUES
 -- ---------------------------------------------------------------------------
 -- Storyboard sample stories for Lightpoles (capsule 1). LOCAL DEVELOPMENT ONLY.
 --
--- Lightpoles is 2026-07, so its month has ended and its storyboard is revealed.
--- Rows 1-4 are what the public wall should show. Rows 5 and 6 are here to
+-- Rows 1-4 are what the public wall shows (to a visitor who has shared a story
+-- of their own -- see Storyboard.tsx). Rows 5 and 6 are here to
 -- prove the filter, and must NEVER appear:
 --   5  approved, but the author did not consent to sharing
 --   6  consented, but not yet approved

@@ -1,10 +1,14 @@
+import base64
+import binascii
 import json
 import os
+import secrets
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
-from sqlalchemy.orm import Session
+from fastapi.responses import JSONResponse, Response, StreamingResponse
+from sqlalchemy import func
+from sqlalchemy.orm import Session, defer
 from datetime import datetime
 from typing import List, Optional
 
@@ -504,16 +508,51 @@ def submit_reflection(submission: schemas.UserReflectionCreate, db: Session = De
     db.refresh(db_reflection)
     return db_reflection
 
-@app.post("/api/submissions/storyboard", response_model=schemas.StoryboardSubmission, status_code=status.HTTP_201_CREATED)
+def _decode_photo(data: Optional[str]) -> Optional[bytes]:
+    """A submitted photo, as bytes -- or None when there isn't one.
+
+    The browser sends a small JPEG as a data URL. Accept only real JPEG/PNG/WebP
+    bytes (checked by signature, not by the label the client claims), so this
+    public endpoint can't be used to park arbitrary files in the database.
+    """
+    if not data:
+        return None
+    payload = data.split(",", 1)[1] if data.startswith("data:") else data
+    try:
+        raw = base64.b64decode(payload, validate=True)
+    except (binascii.Error, ValueError):
+        raise HTTPException(status_code=422, detail="The photo could not be read.")
+    is_jpeg = raw[:3] == b"\xff\xd8\xff"
+    is_png = raw[:8] == b"\x89PNG\r\n\x1a\n"
+    is_webp = raw[:4] == b"RIFF" and raw[8:12] == b"WEBP"
+    if not (is_jpeg or is_png or is_webp):
+        raise HTTPException(status_code=422, detail="The photo must be a JPEG, PNG or WebP image.")
+    return raw
+
+
+def _photo_media_type(raw: bytes) -> str:
+    if raw[:3] == b"\xff\xd8\xff":
+        return "image/jpeg"
+    if raw[:8] == b"\x89PNG\r\n\x1a\n":
+        return "image/png"
+    return "image/webp"
+
+
+def _clean(value: Optional[str]) -> Optional[str]:
+    value = (value or "").strip()
+    return value or None
+
+
+@app.post("/api/submissions/storyboard", response_model=schemas.StoryboardSubmitted, status_code=status.HTTP_201_CREATED)
 def submit_storyboard(submission: schemas.StoryboardSubmissionCreate, db: Session = Depends(get_db)):
     """Add a story to a campfire's storyboard.
 
     Only against a published campfire -- a draft is 404, exactly like the
     capsule GETs, so this cannot be used to probe for hidden capsules.
 
-    The payload schema carries no moderation fields, so every submission lands
-    unapproved and waits for review. Whether it is ever shown publicly also
-    depends on the visitor's own `consent_to_share`.
+    Every submission lands pending: nobody else sees it until an admin approves
+    it. The response carries a one-time `token` the author's browser keeps, to
+    check on this submission later.
     """
     capsule = (
         db.query(models.Capsule)
@@ -523,40 +562,61 @@ def submit_storyboard(submission: schemas.StoryboardSubmissionCreate, db: Sessio
     if not capsule:
         raise _capsule_not_found(submission.capsule_id)
 
-    db_submission = models.StoryboardSubmission(**submission.model_dump())
+    name = _clean(submission.author_name)
+    db_submission = models.StoryboardSubmission(
+        capsule_id=capsule.id,
+        content=submission.content.strip(),
+        author_name=name,
+        author_location=_clean(submission.author_location),
+        is_anonymous=name is None,
+        consent_to_share=True,
+        photo=_decode_photo(submission.photo),
+        owner_token=secrets.token_urlsafe(24),
+    )
     db.add(db_submission)
     db.commit()
     db.refresh(db_submission)
-    return db_submission
+    return schemas.StoryboardSubmitted(
+        id=db_submission.id,
+        token=db_submission.owner_token,
+        status=db_submission.review_status,
+        created_at=db_submission.created_at,
+    )
 
 
-def _storyboard_reveals_at(month: str) -> Optional[datetime]:
-    """The first instant after a campfire's month, as naive UTC.
+@app.get("/api/submissions/storyboard/{item_id}", response_model=schemas.StoryboardOwnStatus)
+def storyboard_own_status(item_id: int, token: str, db: Session = Depends(get_db)):
+    """Whether the author's own submission has been approved yet.
 
-    `month` is 'YYYY-MM'. A storyboard opens once its month is over, and like
-    publishing this is derived at read time -- there is no job that flips it.
-    Returns None for a month string that does not parse, which keeps that
-    storyboard closed rather than guessing.
+    Requires the submission's token; a wrong token is a plain 404, so this
+    can't be used to learn anything about other people's submissions.
     """
-    try:
-        year, mon = (int(part) for part in month.split("-")[:2])
-    except (ValueError, AttributeError):
-        return None
-    if not 1 <= mon <= 12:
-        return None
-    return datetime(year + 1, 1, 1) if mon == 12 else datetime(year, mon + 1, 1)
+    item = (
+        db.query(models.StoryboardSubmission)
+        .options(defer(models.StoryboardSubmission.photo))
+        .filter(models.StoryboardSubmission.id == item_id)
+        .first()
+    )
+    if not item or not item.owner_token or not secrets.compare_digest(item.owner_token, token):
+        raise HTTPException(status_code=404, detail="Submission not found.")
+    return schemas.StoryboardOwnStatus(id=item.id, status=item.review_status)
+
+
+def _public_story_filter():
+    return (
+        models.StoryboardSubmission.consent_to_share.is_(True),
+        models.StoryboardSubmission.is_approved.is_(True),
+        models.StoryboardSubmission.content.isnot(None),
+    )
 
 
 @app.get("/api/capsules/{capsule_id}/storyboard", response_model=schemas.StoryboardResponse)
 def get_storyboard(capsule_id: int, db: Session = Depends(get_db)):
-    """A campfire's public storyboard.
+    """A campfire's public storyboard: approved stories whose authors agreed
+    to share them, oldest first. Unpublished campfires 404.
 
-    Revealed once the campfire's month has ended. A story appears only when
-    its author consented to sharing AND it has been approved. Anonymous
-    authors' names and locations are withheld.
-
-    Before the reveal this still answers 200 -- with `revealed: false` and no
-    stories -- so the page can show when it opens. Unpublished campfires 404.
+    Photos are not inlined -- each story with one carries a `photo_url`, so
+    this list stays a few KB however many photos there are.
     """
     capsule = (
         db.query(models.Capsule)
@@ -566,39 +626,46 @@ def get_storyboard(capsule_id: int, db: Session = Depends(get_db)):
     if not capsule:
         raise _capsule_not_found(capsule_id)
 
-    reveals_at = _storyboard_reveals_at(capsule.month)
-    revealed = reveals_at is not None and datetime.utcnow() >= reveals_at
-
-    stories: List[schemas.StoryboardStory] = []
-    if revealed:
-        rows = (
-            db.query(models.StoryboardSubmission)
-            .filter(
-                models.StoryboardSubmission.capsule_id == capsule.id,
-                models.StoryboardSubmission.consent_to_share.is_(True),
-                models.StoryboardSubmission.is_approved.is_(True),
-                models.StoryboardSubmission.content.isnot(None),
-            )
-            .order_by(models.StoryboardSubmission.created_at.asc(), models.StoryboardSubmission.id.asc())
-            .all()
+    Sub = models.StoryboardSubmission
+    rows = (
+        db.query(Sub, Sub.photo.isnot(None).label("has_photo"))
+        .options(defer(Sub.photo))
+        .filter(Sub.capsule_id == capsule.id, *_public_story_filter())
+        .order_by(Sub.created_at.asc(), Sub.id.asc())
+        .all()
+    )
+    stories = [
+        schemas.StoryboardStory(
+            id=row.id,
+            content=row.content,
+            author_name=None if row.is_anonymous else row.author_name,
+            author_location=None if row.is_anonymous else row.author_location,
+            photo_url=f"/api/storyboard/photos/{row.id}" if has_photo else None,
+            created_at=row.created_at,
         )
-        stories = [
-            schemas.StoryboardStory(
-                id=row.id,
-                content=row.content,
-                author_name=None if row.is_anonymous else row.author_name,
-                author_location=None if row.is_anonymous else row.author_location,
-                created_at=row.created_at,
-            )
-            for row in rows
-        ]
+        for row, has_photo in rows
+    ]
+    return schemas.StoryboardResponse(capsule_id=capsule.id, month=capsule.month, stories=stories)
 
-    return schemas.StoryboardResponse(
-        capsule_id=capsule.id,
-        month=capsule.month,
-        revealed=revealed,
-        reveals_at=reveals_at,
-        stories=stories,
+
+@app.get("/api/storyboard/photos/{item_id}")
+def storyboard_photo(item_id: int, db: Session = Depends(get_db)):
+    """An approved story's photo. Anything not publicly visible is a 404, the
+    same as a story with no photo. Cached for an hour: short enough that
+    un-approving a story takes its photo down the same day."""
+    Sub = models.StoryboardSubmission
+    row = (
+        db.query(Sub.photo)
+        .join(models.Capsule, models.Capsule.id == Sub.capsule_id)
+        .filter(Sub.id == item_id, _published_filter(), *_public_story_filter())
+        .first()
+    )
+    if not row or not row.photo:
+        raise HTTPException(status_code=404, detail="Photo not found.")
+    return Response(
+        content=row.photo,
+        media_type=_photo_media_type(row.photo),
+        headers={"Cache-Control": "public, max-age=3600"},
     )
 
 
@@ -792,36 +859,92 @@ def admin_create_reflection(
     return add_reflection(capsule_id=capsule_id, reflection=reflection, db=db, _=True)
 
 
-@app.get("/api/admin/storyboard", response_model=List[schemas.StoryboardSubmission])
+def _admin_item(row: models.StoryboardSubmission, has_photo: bool) -> schemas.StoryboardAdminItem:
+    return schemas.StoryboardAdminItem(
+        id=row.id,
+        capsule_id=row.capsule_id,
+        content=row.content,
+        author_name=row.author_name,
+        author_location=row.author_location,
+        is_anonymous=bool(row.is_anonymous),
+        consent_to_share=bool(row.consent_to_share),
+        status=row.review_status,
+        has_photo=bool(has_photo),
+        created_at=row.created_at,
+        reviewed_at=row.reviewed_at,
+    )
+
+
+@app.get("/api/admin/storyboard", response_model=List[schemas.StoryboardAdminItem])
 def admin_list_storyboard(
     capsule_id: Optional[int] = None,
+    status_filter: Optional[schemas.StoryboardStatus] = None,
     db: Session = Depends(get_db),
     _: bool = Depends(require_admin),
 ):
-    """Every storyboard submission, newest first -- the moderation queue."""
-    query = db.query(models.StoryboardSubmission)
+    """The review queue. Pending submissions oldest first (first in, first
+    reviewed); approved and declined newest first. Never loads photo bytes."""
+    Sub = models.StoryboardSubmission
+    query = db.query(Sub, Sub.photo.isnot(None).label("has_photo")).options(defer(Sub.photo))
     if capsule_id is not None:
-        query = query.filter(models.StoryboardSubmission.capsule_id == capsule_id)
-    return query.order_by(models.StoryboardSubmission.created_at.desc()).all()
+        query = query.filter(Sub.capsule_id == capsule_id)
+    if status_filter == "pending":
+        query = query.filter(Sub.reviewed_at.is_(None), Sub.is_approved.is_(False))
+        query = query.order_by(Sub.created_at.asc(), Sub.id.asc())
+    else:
+        if status_filter == "approved":
+            query = query.filter(Sub.is_approved.is_(True))
+        elif status_filter == "declined":
+            query = query.filter(Sub.reviewed_at.isnot(None), Sub.is_approved.is_(False))
+        query = query.order_by(Sub.created_at.desc(), Sub.id.desc())
+    return [_admin_item(row, has_photo) for row, has_photo in query.all()]
 
 
-@app.patch("/api/admin/storyboard/{item_id}", response_model=schemas.StoryboardSubmission)
+@app.get("/api/admin/storyboard/pending-counts", response_model=dict[int, int])
+def admin_storyboard_pending_counts(db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    """{capsule_id: pending count}, for the portal's badges. Capsules with
+    nothing pending are omitted. One indexed GROUP BY."""
+    Sub = models.StoryboardSubmission
+    rows = (
+        db.query(Sub.capsule_id, func.count(Sub.id))
+        .filter(Sub.reviewed_at.is_(None), Sub.is_approved.is_(False))
+        .group_by(Sub.capsule_id)
+        .all()
+    )
+    return {capsule_id: count for capsule_id, count in rows}
+
+
+@app.get("/api/admin/storyboard/{item_id}/photo")
+def admin_storyboard_photo(item_id: int, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    """Any submission's photo, approved or not -- reviewers need to see it."""
+    row = db.query(models.StoryboardSubmission.photo).filter(models.StoryboardSubmission.id == item_id).first()
+    if not row or not row.photo:
+        raise HTTPException(status_code=404, detail="Photo not found.")
+    return Response(content=row.photo, media_type=_photo_media_type(row.photo), headers={"Cache-Control": "private, no-store"})
+
+
+@app.patch("/api/admin/storyboard/{item_id}", response_model=schemas.StoryboardAdminItem)
 def admin_moderate_storyboard(
     item_id: int,
     moderation: schemas.StoryboardModeration,
     db: Session = Depends(get_db),
     _: bool = Depends(require_admin),
 ):
-    """Approve or un-approve one submission.
-
-    Approval alone does not publish it: the author must also have consented.
-    Consent is not editable here -- it belongs to the author.
-    """
-    item = _get_or_404(db, models.StoryboardSubmission, item_id, "Storyboard submission")
+    """Approve or decline one submission. Either way it leaves the pending
+    queue. Approving a declined one, or hiding an approved one, also works.
+    Consent is not editable here -- it belongs to the author."""
+    Sub = models.StoryboardSubmission
+    item = (
+        db.query(Sub).options(defer(Sub.photo)).filter(Sub.id == item_id).first()
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Storyboard submission not found.")
     item.is_approved = moderation.is_approved
+    item.reviewed_at = datetime.utcnow()
     db.commit()
     db.refresh(item)
-    return item
+    has_photo = db.query(Sub.photo.isnot(None)).filter(Sub.id == item_id).scalar()
+    return _admin_item(item, has_photo)
 
 
 @app.patch("/api/admin/reflections/{item_id}", response_model=schemas.Reflection)

@@ -87,22 +87,24 @@ export function comingSoonMonths(latestMonth: string, count: number, now: Date =
 
 // ------------------------------------------------------------------ storyboard
 
+export type StoryStatus = 'pending' | 'approved' | 'declined';
+
 export interface StoryboardStory {
   id: number;
   content: string;
-  /** Null when the author chose to be anonymous. */
+  /** Null when the author left their name blank. */
   author_name: string | null;
   author_location: string | null;
+  /** Path to the author's photo (relative to the API), or null. */
+  photo_url: string | null;
   created_at: string | null;
 }
 
+/** Approved stories, oldest first. The page shows them once the visitor has
+ *  shared a story of their own. */
 export interface StoryboardResponse {
   capsule_id: number;
   month: string;
-  /** False until the story's month has ended; `stories` is empty until then. */
-  revealed: boolean;
-  /** ISO-8601 naive UTC -- the first instant after the story's month. */
-  reveals_at: string | null;
   stories: StoryboardStory[];
 }
 
@@ -112,22 +114,87 @@ export async function fetchStoryboard(capsuleId: number): Promise<StoryboardResp
   return res.json();
 }
 
+/** An API-relative photo path made absolute for <img src>. */
+export const storyPhotoSrc = (path: string) => `${API_URL}${path}`;
+
 export interface StorySubmission {
   capsule_id: number;
   content: string;
   author_name?: string;
   author_location?: string;
-  is_anonymous?: boolean;
-  /** The visitor's explicit consent to publication. Without it the story is
-   *  kept privately and never appears on the storyboard. */
-  consent_to_share: boolean;
+  /** Always true: the form is only offered after the visitor agrees to the
+   *  storyboard terms, and the API rejects anything else. */
+  consent_to_share: true;
+  /** A small JPEG data URL (see shrinkPhoto), or omitted. */
+  photo?: string;
 }
 
-export async function submitStory(payload: StorySubmission): Promise<void> {
+export interface StoryReceipt {
+  id: number;
+  /** Lets this browser check on the submission later. Keep it private. */
+  token: string;
+  status: StoryStatus;
+  created_at: string | null;
+}
+
+export async function submitStory(payload: StorySubmission): Promise<StoryReceipt> {
   const res = await fetch(`${API_URL}/api/submissions/storyboard`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(`Could not share your story (${res.status}).`);
+  return res.json();
+}
+
+/** Where the visitor's own submission stands. Null if it can't be checked
+ *  (offline, or the server no longer knows it) -- callers keep what they had. */
+export async function fetchOwnStoryStatus(id: number, token: string): Promise<StoryStatus | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/submissions/storyboard/${id}?token=${encodeURIComponent(token)}`);
+    if (!res.ok) return null;
+    const body = (await res.json()) as { status: StoryStatus };
+    return body.status;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A photo file, shrunk in the browser to a centred 320px square JPEG (~20 KB)
+ * before it ever leaves the device -- the original is never uploaded. Throws a
+ * readable Error for files the browser can't decode (e.g. HEIC on most
+ * desktop browsers).
+ */
+export async function shrinkPhoto(file: File, size = 320): Promise<string> {
+  if (!file.type.startsWith('image/')) throw new Error('Please choose an image file.');
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = url;
+    await img.decode().catch(() => {
+      throw new Error('That photo couldn\u2019t be opened here. Try a JPG or PNG.');
+    });
+    const side = Math.min(img.naturalWidth, img.naturalHeight);
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Your browser couldn\u2019t prepare the photo.');
+    ctx.drawImage(
+      img,
+      (img.naturalWidth - side) / 2,
+      (img.naturalHeight - side) / 2,
+      side,
+      side,
+      0,
+      0,
+      size,
+      size,
+    );
+    return canvas.toDataURL('image/jpeg', 0.82);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
