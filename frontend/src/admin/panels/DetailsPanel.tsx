@@ -447,7 +447,7 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
           rows={4}
           disabled={save.saving}
           onChange={(value) => set('pre_watch_prompt', value)}
-          help="The question the viewer sits with before pressing play."
+          help={"Optional. Leave blank to show the universal line, “Before you press play, take a breath—”. Anything written here replaces it for this film."}
         />
         <TextArea
           label="Pre-watch supporting text"
@@ -455,7 +455,7 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
           rows={6}
           disabled={save.saving}
           onChange={(value) => set('pre_watch_supporting_text', value)}
-          help="Anything that frames the prompt -- context, an instruction, a note on how long to sit with it."
+          help="Optional smaller line under the prompt -- context, an instruction, a note on how long to sit with it. Usually only needed with a custom prompt."
         />
       </Section>
 

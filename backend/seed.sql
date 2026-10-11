@@ -10,8 +10,10 @@ INSERT INTO capsules (
     'Lightpoles', 
     'A community platform that offers one short film each month as common ground for reflection, discussion, and practice.', 
     true, 
-    'Who comes to mind when you hear the phrase “a light in the darkness”? What did they do that made them a light?',
-    'You don’t need to write anything down. Simply carry the question with you as you watch.'
+    -- No custom pre-watch prompt: the card shows the universal
+    -- "Before you press play, take a breath—" (see WatchMode.tsx).
+    NULL,
+    NULL
 ) ON CONFLICT (month) DO UPDATE SET 
     title = EXCLUDED.title,
     description = EXCLUDED.description,
