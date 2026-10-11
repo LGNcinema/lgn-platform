@@ -14,8 +14,10 @@
   box-sizing: border-box;
   /* Crumb line box at y=191 (its cap top at 195.5). The header floats over the
      page, so below 1920 never let the crumb ride up under it. */
-  padding: max(calc(var(--header-bottom) + 32px), clamp(120px, 9.9479vw, 191px))
-    var(--grid-margin) var(--grid-margin);
+  padding: max(calc(var(--header-bottom) + 32px), calc(191 * var(--vdp)))
+    var(--grid-margin) calc(37 * var(--vdp));
+  /* Bottom 37, not the 40 margin: the white card ends at y=1043, so this puts
+     the page's end -- and the footer -- exactly at the 1080 fold. */
 }
 
 /* ---------------------------------------------------------------- crumb */
@@ -31,7 +33,7 @@
   color: var(--text-dark);
   cursor: pointer;
   /* Card top at y=274: 215 + 59. */
-  margin-bottom: clamp(32px, 3.0729vw, 59px);
+  margin-bottom: calc(59 * var(--vdp));
 }
 
 .story-shell-crumb:hover {
@@ -51,10 +53,10 @@
   grid-template-columns: minmax(0, 600fr) minmax(0, 1196fr);
   background: var(--bg-card);
   border-radius: var(--border-radius);
-  padding: calc(17 * var(--dp)) calc(24 * var(--dp)) calc(31 * var(--dp)) calc(20 * var(--dp));
+  padding: calc(17 * var(--vdp)) calc(24 * var(--dp)) calc(31 * var(--vdp)) calc(20 * var(--dp));
   /* 769 tall in every frame. A minimum, so long section content (a
      screenplay, a long reflection) grows the card instead of clipping. */
-  min-height: clamp(560px, 40.0521vw, 769px);
+  min-height: calc(769 * var(--vdp));
   box-sizing: border-box;
 }
 
@@ -73,6 +75,7 @@
 /* "STORY NO. 1" and the month label: 12px caps, cap tops at y=293. */
 .story-shell-label {
   font-size: 12px;
+  font-weight: 550;
   line-height: 1.1667;
   text-transform: uppercase;
   color: var(--text-dark);
@@ -81,24 +84,24 @@
 /* Section content starts at y=342 (the film still's top edge). Children
    start flush with the top of their box; this gap is the shell's. */
 .story-shell-month {
-  margin-bottom: calc(37 * var(--dp));
+  margin-bottom: calc(37 * var(--vdp));
 }
 
 /* ---------------------------------------------------------------- left column */
 
 /* Nav line box at y=592: the intro (from y=291) plus the nav's margin. */
 .story-shell-intro {
-  min-height: calc(261 * var(--dp));
+  min-height: calc(261 * var(--vdp));
 }
 
 .story-shell-title {
   font-size: 64px;
-  font-weight: 500;
+  font-weight: 550;
   line-height: 1;
   letter-spacing: -0.02em;
   /* The -0.045em pulls Inter's wide left side-bearing at display size back so
      the title's stem lines up with "STORY NO." as it does in the frame. */
-  margin: calc(30 * var(--dp)) 0 0 -0.045em;
+  margin: calc(30 * var(--vdp)) 0 0 -0.045em;
   color: var(--primary);
   overflow-wrap: break-word;
 }
@@ -112,10 +115,11 @@
 /* Credit: 12px on a 14px pitch, cap top of line 1 at y=433. */
 .story-shell-credit {
   font-size: 12px;
+  font-weight: 550;
   line-height: 1.1667;
   color: var(--text-dark);
   max-width: calc(440 * var(--dp));
-  margin: calc(32 * var(--dp)) 0 0;
+  margin: calc(32 * var(--vdp)) 0 0;
 }
 
 .story-shell-more,
@@ -146,8 +150,9 @@
 
 .story-shell-more {
   font-size: 12px;
+  font-weight: 550;
   line-height: 1.1667;
-  margin-top: calc(14 * var(--dp));
+  margin-top: calc(14 * var(--vdp));
 }
 
 .story-shell-nav {
@@ -155,8 +160,8 @@
   flex-direction: column;
   align-items: flex-start;
   /* 43.5px pitch between Watch / Reflect / Practice. */
-  gap: calc(19.5 * var(--dp));
-  margin-top: calc(40 * var(--dp));
+  gap: calc(19.5 * var(--vdp));
+  margin-top: calc(40 * var(--vdp));
 }
 
 .story-shell-nav-btn {
@@ -182,7 +187,7 @@
 /* Pinned to the bottom of the card: baseline 35px above the card's edge. */
 .story-shell-storyboard {
   margin-top: auto;
-  padding-top: calc(40 * var(--dp));
+  padding-top: calc(40 * var(--vdp));
   font-size: 16px;
   line-height: 1.25;
 }

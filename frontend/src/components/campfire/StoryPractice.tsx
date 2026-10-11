@@ -153,17 +153,21 @@ export function StoryPractice({ capsule, gemeTuning, gemeTuningVersion }: Props)
               thoughtful questions, help you notice what matters to you, and help you name one
               small next step.
             </p>
-            {/* Not in the frame: surfaces the step a visitor kept from an
-                earlier chat. Renders only when one exists. */}
-            {savedStep && (
-              <p className="story-practice-geme-saved">
-                <span className="story-practice-label">Your last step</span>
-                {savedStep}
-              </p>
-            )}
-            <button type="button" className="story-practice-geme-btn" onClick={() => setChatOpen(true)}>
-              Talk with Geme
-            </button>
+            <div className="story-practice-geme-actions">
+              <button type="button" className="story-practice-geme-btn" onClick={() => setChatOpen(true)}>
+                Talk with Geme
+              </button>
+              {/* Not in the frame: the step a visitor kept from an earlier
+                  chat, in up to two lines beside the button so the card stays
+                  close to the frame's height. Longer steps end in an ellipsis;
+                  the full text is in the tooltip and read in full by screen
+                  readers. */}
+              {savedStep && (
+                <p className="story-practice-geme-saved" title={savedStep}>
+                  <span className="story-practice-geme-saved-label">Your last step:</span> {savedStep}
+                </p>
+              )}
+            </div>
           </div>
         </section>
       )}

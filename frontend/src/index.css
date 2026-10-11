@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Courier+Prime&family=Inter:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime&family=Inter:wght@400..700&display=swap');
 
 @font-face {
   font-family: 'Courier Prime';
@@ -38,6 +38,10 @@
   --hero-btn-text: #000000;
   --hero-btn-hover: #c4c4c4;
 
+  /* Inter loads as one variable font (wght 400..700, see the @import), so any
+     weight renders as itself. The frames use Helvetica Neue Regular, Medium
+     and Bold; measured stroke-for-stroke, those match Inter 400, 550 and 700.
+     Use 550 wherever the frame is Medium. */
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-primary: var(--font-sans);
   --font-secondary: var(--font-sans);
@@ -53,8 +57,8 @@
 
   /* 1920x1080 6-Column Layout Grid System */
   --grid-max-width: 1920px;
-  --grid-margin: 40px;
-  --grid-gutter: 32px;
+  --grid-margin: calc(40 * var(--dp)); /* layout: scales like the frame */
+  --grid-gutter: calc(32 * var(--dp));
   --grid-cols: 6;
   --col-width: 280px;
   --sidebar-start: 40px;
@@ -77,6 +81,12 @@
      as people expect; narrow layouts rearrange them rather than shrink
      them. */
   --dp: clamp(0.75px, calc(100vw / 1920), 1px);
+  /* A vertical design pixel: --dp, but also shrinking when the window is
+     shorter than the frames' 1080 -- e.g. a 1080p screen, where the browser's
+     own toolbars leave ~950px. Used for the vertical spacing of pages built
+     to fit one screen (the story pages), so their bottom edge stays in view.
+     Equal to --dp at 1920x1080. Text and buttons never use it. */
+  --vdp: min(var(--dp), max(0.6px, calc(100svh / 1080)));
 
   /* Header geometry. The floating header does NOT scale with the hero's
      aspect ratio, so anything that must sit below it is measured from these
@@ -174,6 +184,16 @@ body {
   flex-direction: column;
   min-height: 100vh;
   position: relative;
+}
+
+/* The footer sits just below the window. Everything above it is at least one
+   window tall, and the header floats over the page (it takes no height), so
+   on any page whose content fits on one screen the footer starts exactly at
+   the fold. Taller pages simply push it further down. svh: on phones, the
+   height with the browser's toolbars showing, so it doesn't overshoot. */
+.page-body > main {
+  min-height: 100vh;
+  min-height: 100svh;
 }
 
 /* Layout Utilities & 6-Column Grid Engine */
@@ -329,7 +349,7 @@ body {
   height: 46px;
   font-family: var(--font-sans);
   font-size: 20px;
-  font-weight: 500;
+  font-weight: 550;
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.2s;
@@ -782,7 +802,7 @@ body {
   box-sizing: border-box;
   padding-top: clamp(110px, 10.1563vw, 195px);
   /* 195 / 1920 -- matches Figma content y=195-197 across all About subviews */
-  padding-bottom: 100px;
+  padding-bottom: calc(100 * var(--dp));
   padding-left: var(--grid-margin);
   padding-right: var(--grid-margin);
   background-color: var(--bg-darker);
@@ -790,7 +810,6 @@ body {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: var(--grid-gutter);
-  min-height: 100vh;
 }
 
 .about-sidebar {
@@ -800,7 +819,7 @@ body {
   gap: 0;
   /* Figma puts the nav at y=181 against content at y=195 -- the nav's first
      item optically centres on the content's first line. */
-  margin-top: -14px;
+  margin-top: calc(-14 * var(--dp));
 }
 
 .about-nav-btn {
@@ -840,7 +859,7 @@ body {
    labels above 48px statements set solid (48px line pitch). Gaps are the
    frame's, adjusted so Inter's ink lands where Helvetica's does. */
 .about-mv-section {
-  margin-bottom: 80px;
+  margin-bottom: calc(80 * var(--dp));
 }
 
 .about-mv-label {
@@ -849,12 +868,12 @@ body {
   line-height: 1;
   color: var(--text-muted);
   font-weight: 700;
-  margin-bottom: 30px;
+  margin-bottom: calc(30 * var(--dp));
 }
 
 /* Gap between the Mission block and the Vision block. */
 .about-mv-block + .about-mv-block {
-  margin-top: 89.5px;
+  margin-top: calc(89.5 * var(--dp));
 }
 
 .about-mv-text {
@@ -862,7 +881,7 @@ body {
   font-size: 48px;
   line-height: 1;
   color: var(--primary);
-  font-weight: 500;
+  font-weight: 550;
   letter-spacing: -0.03em;
   margin: 0;
 }
@@ -873,9 +892,9 @@ body {
   font-size: 48px;
   line-height: 1;
   color: var(--primary);
-  font-weight: 500;
+  font-weight: 550;
   letter-spacing: -0.03em;
-  margin: 0 0 48px;
+  margin: 0 0 calc(48 * var(--dp));
 }
 
 /* Board & Staff. From the About-Board + Staff ALT LIGHT frame: 48px names,
@@ -884,8 +903,15 @@ body {
    frame spaces its entries unevenly (61-85px), so the list uses its usual
    ~61px throughout. */
 .team-section {
-  margin-bottom: 73px;
+  margin-bottom: calc(73 * var(--dp));
 }
+/* The gap above is between Board and Staff. After the last section only the
+   page's bottom padding should follow; the 20 makes the footer land where the
+   frame puts it (y=1722 at 1920). */
+.team-section:last-child {
+  margin-bottom: calc(20 * var(--dp));
+}
+
 
 .team-label {
   font-family: var(--font-sans);
@@ -893,13 +919,13 @@ body {
   line-height: 1;
   color: var(--text-muted);
   font-weight: 700;
-  margin: 0 0 30px;
+  margin: 0 0 calc(30 * var(--dp));
 }
 
 .team-list-layout {
   display: flex;
   flex-direction: column;
-  gap: 57.5px;
+  gap: calc(57.5 * var(--dp));
 }
 
 .team-list-item {
@@ -911,7 +937,7 @@ body {
 .team-list-item .person-name {
   font-family: var(--font-sans);
   font-size: 48px;
-  font-weight: 500;
+  font-weight: 550;
   color: var(--primary);
   margin: 0;
   line-height: 1;
@@ -923,7 +949,7 @@ body {
   font-size: 20px;
   line-height: 1;
   color: var(--primary);
-  margin: 18.5px 0 0;
+  margin: calc(18.5 * var(--dp)) 0 0;
   opacity: 1;
 }
 
@@ -931,7 +957,7 @@ body {
   font-family: var(--font-sans);
   font-size: 20px;
   color: var(--text-muted);
-  margin: 17.5px 0 0;
+  margin: calc(17.5 * var(--dp)) 0 0;
   line-height: 0.9;
   max-width: 900px;
   opacity: 1;
@@ -957,7 +983,7 @@ body {
   box-sizing: border-box;
   padding-top: clamp(110px, 10.2083vw, 196px);
   /* 196 / 1920 -- matches Figma "How you can invest..." title y=196 */
-  padding-bottom: 100px;
+  padding-bottom: calc(100 * var(--dp));
   padding-left: var(--grid-margin);
   padding-right: var(--grid-margin);
   background-color: var(--bg-darker);
@@ -965,7 +991,6 @@ body {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: var(--grid-gutter);
-  min-height: 100vh;
 }
 
 .invest-sidebar-placeholder {
@@ -1001,7 +1026,7 @@ body {
      column to 1839, then a 40px well for the +/- icon. */
   grid-template-columns: minmax(120px, 25.33%) 1fr 40px;
   /* Figma: rules at y=196 / 415.5 / 523.5 -- a closed row is 108px. */
-  padding: 9px 0 50px 0;
+  padding: calc(9 * var(--dp)) 0 calc(50 * var(--dp)) 0;
   cursor: pointer;
   align-items: start;
   user-select: none;
@@ -1010,7 +1035,7 @@ body {
 .invest-row-title {
   font-family: var(--font-sans);
   font-size: 48px;
-  font-weight: 500;
+  font-weight: 550;
   color: var(--primary);
   line-height: 1;
   letter-spacing: -0.03em;
@@ -1023,7 +1048,7 @@ body {
   font-size: 20px;
   color: var(--primary);
   line-height: 35px;
-  margin-top: -1.5px;
+  margin-top: calc(-1.5 * var(--dp));
   /* Align with baseline of 48px title */
   align-self: start;
 }
@@ -1054,7 +1079,7 @@ body {
   list-style: none;
   padding-left: 25.5px;
   /* The open row runs to y=415.5 in the frame, well past its last bullet. */
-  margin: 0 0 56px;
+  margin: 0 0 calc(56 * var(--dp));
 }
 
 .invest-bullet-list li {
@@ -1098,10 +1123,10 @@ body {
   height: 38px;
   font-family: var(--font-sans);
   font-size: 20px;
-  font-weight: 500;
+  font-weight: 550;
   border-radius: 5px;
   cursor: pointer;
-  margin-top: 107.5px;
+  margin-top: calc(107.5 * var(--dp));
   transition: background-color 0.2s;
 }
 
@@ -1113,7 +1138,7 @@ body {
 .invest-footer-info {
   /* Figma: 16px on an 18px pitch, under the button (y=804.5 at 1920), ~620px
      measure. */
-  margin-top: 25px;
+  margin-top: calc(25 * var(--dp));
   font-family: var(--font-sans);
   font-size: 16px;
   color: #888888;
@@ -1217,7 +1242,6 @@ body {
 .form-view-wrapper {
   max-width: 600px;
   margin: 0 auto;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
