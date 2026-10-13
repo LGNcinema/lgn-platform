@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { GemeTuningPanel } from './components/GemeTuningPanel';
 import { SiteHeader, type SiteView } from './components/chrome/SiteHeader';
@@ -190,8 +190,9 @@ const VIEW_DEFAULT_THEME: Partial<Record<typeof VALID_VIEWS[number], 'light' | '
 
 function App() {
   // Navigation / Router States
-  // Initial view/sub-view/action can be set via ?view=, ?sub=, ?action= URL params for debugging/QA
-  // (mirrors the existing ?theme= / ?debug= param pattern below).
+  // The page lives in the URL: ?view= (page), ?sub= (About tab), ?story= (which
+  // story) and ?section= (its tab). They are read here on load, and kept in
+  // sync below, so a refresh reopens the same page and Back/Forward work.
   const [currentView, setCurrentView] = useState<SiteView>(() => {
     const viewParam = new URLSearchParams(window.location.search).get('view');
     return (VALID_VIEWS as readonly string[]).includes(viewParam || '') ? (viewParam as typeof VALID_VIEWS[number]) : 'home';
@@ -203,6 +204,8 @@ function App() {
 
   // Database API States
   const [activeCapsule, setActiveCapsule] = useState<CapsuleDetail | null>(null);
+  const activeCapsuleIdRef = useRef<number | null>(null);
+  activeCapsuleIdRef.current = activeCapsule?.id ?? null;
   const [allCapsules, setAllCapsules] = useState<CapsuleSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -339,7 +342,10 @@ function App() {
         ? `${API_URL}/api/capsules/${capsuleId}`
         : `${API_URL}/api/capsules/active`;
 
-      const capsuleRes = await fetch(capsuleEndpoint);
+      let capsuleRes = await fetch(capsuleEndpoint);
+      // A ?story= that no longer exists (or isn't published) falls back to the
+      // current story rather than an error page.
+      if (!capsuleRes.ok && capsuleId) capsuleRes = await fetch(`${API_URL}/api/capsules/active`);
       if (!capsuleRes.ok) {
         throw new Error(`Failed to fetch capsule detail: ${capsuleRes.statusText}`);
       }
@@ -359,7 +365,64 @@ function App() {
   };
 
   useEffect(() => {
-    fetchData();
+    const story = Number(new URLSearchParams(window.location.search).get('story'));
+    fetchData(Number.isInteger(story) && story > 0 ? story : undefined);
+  }, []);
+
+  /* ---- the URL <-> page sync ----
+   * Every navigation writes the page into the address bar, so a refresh
+   * reopens it and Back/Forward step through pages. Only our own keys are
+   * touched; testing params (?theme=, ?grid=, ?modal=, ...) are left as-is. */
+  const NAV_KEYS = ['view', 'sub', 'story', 'section', 'action'];
+  const navSearch = (() => {
+    const params = new URLSearchParams(window.location.search);
+    // While a story is still loading, keep the ?story= already in the URL --
+    // dropping it for a moment would add a stray step to the history.
+    const pendingStory = params.get('story');
+    NAV_KEYS.forEach((k) => params.delete(k));
+    if (currentView !== 'home') params.set('view', currentView);
+    if (currentView === 'about') params.set('sub', aboutSubView);
+    if (['capsule', 'watch', 'storyboard'].includes(currentView)) {
+      const story = activeCapsule ? String(activeCapsule.id) : pendingStory;
+      if (story) params.set('story', story);
+    }
+    if (currentView === 'capsule') params.set('section', storySection);
+    const query = params.toString();
+    return query ? `?${query}` : '';
+  })();
+  const firstNavSync = useRef(true);
+  const restoringFromHistory = useRef(false);
+
+  useEffect(() => {
+    if (navSearch === window.location.search) return;
+    const url = `${window.location.pathname}${navSearch}${window.location.hash}`;
+    // The first write only fills in what the load implied (e.g. ?story=);
+    // the page restored by Back/Forward must not push a new entry either.
+    if (firstNavSync.current || restoringFromHistory.current) window.history.replaceState(null, '', url);
+    else window.history.pushState(null, '', url);
+    firstNavSync.current = false;
+    restoringFromHistory.current = false;
+  }, [navSearch]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const view = params.get('view') || 'home';
+      const sub = params.get('sub');
+      const section = params.get('section');
+      const story = Number(params.get('story'));
+      restoringFromHistory.current = true;
+      setCurrentView((VALID_VIEWS as readonly string[]).includes(view) ? (view as SiteView) : 'home');
+      if ((VALID_ABOUT_SUBVIEWS as readonly string[]).includes(sub || '')) {
+        setAboutSubView(sub as typeof VALID_ABOUT_SUBVIEWS[number]);
+      }
+      if ((VALID_STORY_SECTIONS as readonly string[]).includes(section || '')) {
+        setStorySection(section as StorySection);
+      }
+      if (Number.isInteger(story) && story > 0 && story !== activeCapsuleIdRef.current) fetchData(story);
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
   const handleCapsuleSelect = (id: number) => {
