@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import './Storyboard.css';
 import type { CapsuleDetail } from '../../types';
 import {
@@ -51,6 +51,9 @@ interface MyStory {
   photo: string | null;
   created_at: string | null;
   status: StoryStatus;
+  /** The visitor removed it from their own view (a declined story). Kept in
+   *  storage so the board stays open to them -- they have still shared. */
+  dismissed?: boolean;
 }
 
 function readAgreed(): boolean {
@@ -107,12 +110,18 @@ const STATUS_LABEL: Record<StoryStatus, string> = {
   declined: 'Yours · not added to the storyboard',
 };
 
+/**
+ * One story. Long stories are clipped to the card (see .storyboard-card-text)
+ * with "Read more"; expanded, the card spans the whole row so the grid flows
+ * around it instead of leaving one tall tile with gaps beside it.
+ */
 function StoryCard({
   name,
   location,
   photo,
   content,
   status,
+  onRemove,
 }: {
   name: string | null;
   location: string | null;
@@ -120,9 +129,33 @@ function StoryCard({
   content: string;
   /** Set only on the visitor's own stories. */
   status?: StoryStatus;
+  /** Offered on the visitor's own declined stories. */
+  onRemove?: () => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const [clipped, setClipped] = useState(false);
+  const textRef = useRef<HTMLParagraphElement>(null);
+
+  // Whether the clamp is actually cutting text off -- re-checked when the
+  // card's width changes (window resize, grid reflow).
+  useLayoutEffect(() => {
+    const el = textRef.current;
+    if (!el || expanded) return;
+    // The text is set solid (line-height 1), so descenders always poke a few
+    // px past the box; only a real extra line counts as clipped.
+    const check = () => setClipped(el.scrollHeight - el.clientHeight > parseFloat(getComputedStyle(el).fontSize) * 0.25 + 4);
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [content, expanded]);
+
+  const textId = useId();
+
   return (
-    <article className={`storyboard-card${status ? ' storyboard-card--mine' : ''}`}>
+    <article
+      className={`storyboard-card${status ? ' storyboard-card--mine' : ''}${expanded ? ' storyboard-card--expanded' : ''}`}
+    >
       <header className="storyboard-card-author">
         <Avatar name={name} src={photo} />
         <span className="storyboard-card-byline">
@@ -130,8 +163,35 @@ function StoryCard({
           {name && location && <span className="storyboard-card-location">{location}</span>}
         </span>
       </header>
-      {status && <p className="storyboard-card-status">{STATUS_LABEL[status]}</p>}
-      <p className="storyboard-card-text">{content}</p>
+      {status && (
+        <p className="storyboard-card-status">
+          {STATUS_LABEL[status]}
+          {onRemove && (
+            <>
+              {' \u00b7 '}
+              <button type="button" className="storyboard-link-btn storyboard-card-remove" onClick={onRemove}>
+                Remove
+              </button>
+            </>
+          )}
+        </p>
+      )}
+      <div className="storyboard-card-body">
+        <p id={textId} ref={textRef} className="storyboard-card-text">
+          {content}
+        </p>
+        {(clipped || expanded) && (
+          <button
+            type="button"
+            className="storyboard-link-btn storyboard-card-more"
+            aria-expanded={expanded}
+            aria-controls={textId}
+            onClick={() => setExpanded((v) => !v)}
+          >
+            {expanded ? 'Show less' : 'Read more'}
+          </button>
+        )}
+      </div>
     </article>
   );
 }
@@ -174,6 +234,9 @@ export function Storyboard({ capsule, onBackToCampfire }: Props) {
   const [hint, setHint] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [justShared, setJustShared] = useState(false);
+  // The posting form is open until the visitor has shared a story; after that
+  // it folds into a "Share another story" button so the stories lead.
+  const [formOpen, setFormOpen] = useState(() => readMine(capsule.id).length === 0);
 
   const dialogRef = useRef<HTMLDialogElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -190,6 +253,7 @@ export function Storyboard({ capsule, onBackToCampfire }: Props) {
   useEffect(() => {
     const stored = readMine(capsule.id);
     setMine(stored);
+    setFormOpen(stored.length === 0);
     setBoard({ state: 'idle' });
     setJustShared(false);
     setHint(null);
@@ -297,11 +361,24 @@ export function Storyboard({ capsule, onBackToCampfire }: Props) {
       // A first share opens the board (the effect above loads it). A later one
       // changes nothing public -- the new story is pending -- so no reload.
       setJustShared(true);
+      setFormOpen(false);
     } catch (err) {
       setHint(`${err instanceof Error ? err.message : 'Could not share your story.'} Your words are still here — please try again.`);
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const removeMine = (id: number) => {
+    const updated = mine.map((m) => (m.id === id ? { ...m, dismissed: true } : m));
+    writeMine(capsule.id, updated);
+    setMine(updated);
+  };
+
+  const openForm = () => {
+    setJustShared(false);
+    setFormOpen(true);
+    requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
   // The visitor's own approved stories come back from the server too; show
@@ -317,9 +394,20 @@ export function Storyboard({ capsule, onBackToCampfire }: Props) {
 
       <section className="storyboard-panel" data-theme="dark">
         <h1 className="storyboard-heading">
-          <label htmlFor={textareaId}>Share about your experience</label>
+          {formOpen ? <label htmlFor={textareaId}>Share about your experience</label> : 'Share about your experience'}
         </h1>
         <div className="storyboard-grid">
+          {!formOpen && (
+            <div className="storyboard-compose">
+              <button type="button" className="storyboard-save" onClick={agreed ? openForm : () => setDialogOpen(true)}>
+                Share another story
+              </button>
+              <p className="storyboard-status" role="status">
+                {justShared && 'Thank you. Your story is with our team for review \u2014 it will join the storyboard once approved.'}
+              </p>
+            </div>
+          )}
+          {formOpen && (
           <div className="storyboard-form">
             {agreed && (
               <div className="storyboard-identity">
@@ -403,12 +491,24 @@ export function Storyboard({ capsule, onBackToCampfire }: Props) {
                   Add your story
                 </button>
               )}
+              {hasShared && agreed && (
+                <button
+                  type="button"
+                  className="storyboard-link-btn storyboard-link-btn--quiet"
+                  onClick={() => {
+                    setFormOpen(false);
+                    setHint(null);
+                  }}
+                >
+                  Cancel
+                </button>
+              )}
               <p className="storyboard-status" role="status" id={statusId}>
                 {hint}
-                {!hint && justShared && 'Thank you. Your story is with our team for review — it will join the storyboard once approved.'}
               </p>
             </div>
           </div>
+          )}
 
           {!hasShared && (
             <div className="storyboard-note">
@@ -417,7 +517,7 @@ export function Storyboard({ capsule, onBackToCampfire }: Props) {
             </div>
           )}
 
-          {mine.map((m) => (
+          {mine.filter((m) => !m.dismissed).map((m) => (
             <StoryCard
               key={`mine-${m.id}`}
               name={m.author_name}
@@ -425,6 +525,7 @@ export function Storyboard({ capsule, onBackToCampfire }: Props) {
               photo={m.photo}
               content={m.content}
               status={m.status}
+              onRemove={m.status === 'declined' ? () => removeMine(m.id) : undefined}
             />
           ))}
 
