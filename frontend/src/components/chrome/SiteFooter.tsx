@@ -1,5 +1,13 @@
+import { useState, type FormEvent } from 'react';
 import './SiteFooter.css';
 import type { SiteView } from './SiteHeader';
+import { MAILCHIMP_BOT_FIELD, subscribeEmail } from './mailchimp';
+
+type JoinState =
+  | { kind: 'idle' }
+  | { kind: 'sending' }
+  | { kind: 'done'; already?: boolean }
+  | { kind: 'error'; message: string };
 
 interface Props {
   theme: 'light' | 'dark';
@@ -19,6 +27,27 @@ interface Props {
  * The social link is YouTube, spelled properly (the frame has "Youtube").
  */
 export function SiteFooter({ theme, onNavigate }: Props) {
+  const [join, setJoin] = useState<JoinState>({ kind: 'idle' });
+
+  const handleJoin = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const data = new FormData(form);
+    // A filled-in trap field means a bot: look successful, send nothing.
+    if (String(data.get(MAILCHIMP_BOT_FIELD) ?? '')) {
+      setJoin({ kind: 'done' });
+      return;
+    }
+    setJoin({ kind: 'sending' });
+    const result = await subscribeEmail(String(data.get('EMAIL') ?? '').trim());
+    if (result.ok) {
+      form.reset();
+      setJoin({ kind: 'done', already: result.alreadySubscribed });
+    } else {
+      setJoin({ kind: 'error', message: result.message });
+    }
+  };
+
   return (
     <footer className="lgn-footer">
       <div className="footer-grid">
@@ -52,12 +81,34 @@ export function SiteFooter({ theme, onNavigate }: Props) {
         {/* Column 4: Join */}
         <div className="footer-col col-join">
           <h3>Join</h3>
-          {/* Inert by design: there is no newsletter backend yet. preventDefault
-              stops a native GET submit from reloading the page onto "?" and
-              dropping the current view. The field keeps its browser validation. */}
-          <form className="join-form" onSubmit={(e) => e.preventDefault()}>
-            <input type="email" placeholder="Email Address" aria-label="Email address" autoComplete="email" required />
-            <button type="submit">Submit</button>
+          {/* Mailchimp signup in our own markup, sent in the background (see
+              mailchimp.ts) with the result shown here -- no Mailchimp page or
+              branding. The hidden field is Mailchimp's bot trap. */}
+          <form className="join-form" onSubmit={(e) => void handleJoin(e)}>
+            <input
+              type="email"
+              name="EMAIL"
+              placeholder="Email Address"
+              aria-label="Email address"
+              autoComplete="email"
+              required
+              onChange={() => {
+                if (join.kind === 'done' || join.kind === 'error') setJoin({ kind: 'idle' });
+              }}
+            />
+            <div aria-hidden="true" className="join-form-trap">
+              <input type="text" name={MAILCHIMP_BOT_FIELD} tabIndex={-1} defaultValue="" autoComplete="off" />
+            </div>
+            <button type="submit" disabled={join.kind === 'sending'} aria-busy={join.kind === 'sending' || undefined}>
+              {join.kind === 'sending' ? 'Sending…' : 'Submit'}
+            </button>
+            <p className={`join-form-status${join.kind === 'error' ? ' is-error' : ''}`} role="status">
+              {join.kind === 'done' &&
+                (join.already
+                  ? 'You’re already on the list — thank you!'
+                  : 'Thank you! Check your inbox to confirm.')}
+              {join.kind === 'error' && join.message}
+            </p>
           </form>
           <button type="button" className="footer-bottom-text footer-link" onClick={() => onNavigate('timeline')}>A witness through time</button>
         </div>
