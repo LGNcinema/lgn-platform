@@ -151,6 +151,28 @@ const AccordionIcon = ({ expanded }: { expanded: boolean }) => (
 
 // `capsule` is a single story's page; `campfire` is the hub listing them. The
 // backend still calls stories capsules, and so does this view name.
+/**
+ * A film link as typed -> a full web address, or null if it isn't one.
+ * Accepts bare addresses ("youtube.com/watch?v=...", "www.vimeo.com/123") by
+ * adding https://, and rejects things that clearly aren't links: spaces, no
+ * domain dot, or a scheme other than http(s).
+ */
+function normalizeFilmLink(raw: string): string | null {
+  const text = raw.trim();
+  if (!text || /\s/.test(text)) return null;
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(text) ? text : `https://${text}`;
+  try {
+    const url = new URL(withScheme);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+    if (!url.hostname.includes('.') || url.hostname.startsWith('.') || url.hostname.endsWith('.')) return null;
+    return withScheme;
+  } catch {
+    return null;
+  }
+}
+
+const FILM_LINK_INVALID = 'Please enter a link to your film, like youtube.com/watch?v=… or vimeo.com/123456.';
+
 const VALID_VIEWS = ['home', 'campfire', 'capsule', 'watch', 'storyboard', 'timeline', 'about', 'invest', 'contact', 'submit-film'] as const;
 const VALID_ABOUT_SUBVIEWS = ['purpose', 'mission-vision', 'board-staff'] as const;
 
@@ -207,6 +229,8 @@ function App() {
   const [filmLink, setFilmLink] = useState('');
   const [filmSynopsis, setFilmSynopsis] = useState('');
   const [filmEmail, setFilmEmail] = useState('');
+  // The submitter confirms the film is their own. Required to submit.
+  const [filmIsOwn, setFilmIsOwn] = useState(false);
   const [filmSuccess, setFilmSuccess] = useState(false);
   const [filmSubmitting, setFilmSubmitting] = useState(false);
 
@@ -379,7 +403,8 @@ function App() {
 
   const handleFilmSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!filmTitle || !filmDirector || !filmLink || !filmEmail) return;
+    const link = normalizeFilmLink(filmLink);
+    if (!filmTitle || !filmDirector || !link || !filmEmail || !filmIsOwn) return;
     setFilmSubmitting(true);
     try {
       const res = await fetch(`${API_URL}/api/submissions/film`, {
@@ -389,7 +414,7 @@ function App() {
           title: filmTitle,
           director: filmDirector,
           duration: filmDuration || null,
-          link: filmLink,
+          link,
           synopsis: filmSynopsis || null,
           email: filmEmail,
         }),
@@ -402,6 +427,7 @@ function App() {
         setFilmLink('');
         setFilmSynopsis('');
         setFilmEmail('');
+        setFilmIsOwn(false);
       }
     } catch (err) {
       console.error(err);
@@ -880,12 +906,29 @@ function App() {
                   <label htmlFor="film-link">Video Link (Vimeo / YouTube / GDrive)</label>
                   <input
                     id="film-link"
-                    type="url"
+                    // Text, not type="url": the browser's URL check rejects bare
+                    // addresses like "youtube.com". normalizeFilmLink accepts
+                    // those and adds https://; the custom validity below keeps
+                    // non-links from submitting.
+                    type="text"
+                    inputMode="url"
+                    autoComplete="url"
+                    spellCheck={false}
                     className="form-input"
                     value={filmLink}
-                    onChange={(e) => setFilmLink(e.target.value)}
+                    onChange={(e) => {
+                      setFilmLink(e.target.value);
+                      e.target.setCustomValidity(
+                        !e.target.value.trim() || normalizeFilmLink(e.target.value) ? '' : FILM_LINK_INVALID,
+                      );
+                    }}
+                    onBlur={(e) => {
+                      // Show the full address once they leave the field.
+                      const link = normalizeFilmLink(e.target.value);
+                      if (link && link !== e.target.value) setFilmLink(link);
+                    }}
                     required
-                    placeholder="https://vimeo.com/..."
+                    placeholder="vimeo.com/... or youtube.com/..."
                   />
                 </div>
                 <div className="form-group">
@@ -910,6 +953,17 @@ function App() {
                     placeholder="Provide a short summary and credits..."
                     style={{ minHeight: '100px' }}
                   />
+                </div>
+                <div className="form-group full-width form-check">
+                  {/* Required: the browser won't submit until it's ticked. */}
+                  <input
+                    id="film-is-own"
+                    type="checkbox"
+                    required
+                    checked={filmIsOwn}
+                    onChange={(e) => setFilmIsOwn(e.target.checked)}
+                  />
+                  <label htmlFor="film-is-own">This is YOUR film</label>
                 </div>
                 <button type="submit" className="rsvp-button full-width" style={{ marginTop: '8px' }} disabled={filmSubmitting} id="btn-submit-film">
                   {filmSubmitting ? 'Submitting...' : 'Submit Film Details'}

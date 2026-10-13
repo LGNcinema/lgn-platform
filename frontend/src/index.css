@@ -1288,6 +1288,25 @@ body {
   color: var(--text-main);
 }
 
+/* A checkbox row: box beside its label rather than stacked. */
+.form-group.form-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-group.form-check input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.form-group.form-check label {
+  cursor: pointer;
+}
+
 .form-success-card {
   background: var(--bg-dark);
   border: 1px solid var(--border-glow);
