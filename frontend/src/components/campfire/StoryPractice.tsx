@@ -44,10 +44,6 @@ export function StoryPractice({ capsule, gemeTuning, gemeTuningVersion }: Props)
   // null = still asking the server. The whole "None of these fit?" block stays
   // hidden until Geme is confirmed available, so it never flashes in and out.
   const [gemeEnabled, setGemeEnabled] = useState<boolean | null>(null);
-  const [savedStep, setSavedStep] = useState<string | null>(null);
-
-  // GemeChat writes the visitor's chosen next step under this key.
-  const stepStorageKey = `geme_next_step_${capsule.id}`;
 
   // Only offer a conversation the server can actually hold.
   useEffect(() => {
@@ -64,17 +60,6 @@ export function StoryPractice({ capsule, gemeTuning, gemeTuningVersion }: Props)
       cancelled = true;
     };
   }, []);
-
-  // A step kept from an earlier conversation lives in this browser only;
-  // re-read it whenever the chat closes, since that's when it may have changed.
-  useEffect(() => {
-    if (chatOpen) return;
-    try {
-      setSavedStep(localStorage.getItem(stepStorageKey));
-    } catch {
-      setSavedStep(null);
-    }
-  }, [chatOpen, stepStorageKey]);
 
   // A different story's practices have different ids; don't carry an open
   // panel across stories.
@@ -157,16 +142,6 @@ export function StoryPractice({ capsule, gemeTuning, gemeTuningVersion }: Props)
               <button type="button" className="story-practice-geme-btn" onClick={() => setChatOpen(true)}>
                 Talk with Geme
               </button>
-              {/* Not in the frame: the step a visitor kept from an earlier
-                  chat, in up to two lines beside the button so the card stays
-                  close to the frame's height. Longer steps end in an ellipsis;
-                  the full text is in the tooltip and read in full by screen
-                  readers. */}
-              {savedStep && (
-                <p className="story-practice-geme-saved" title={savedStep}>
-                  <span className="story-practice-geme-saved-label">Your last step:</span> {savedStep}
-                </p>
-              )}
             </div>
           </div>
         </section>

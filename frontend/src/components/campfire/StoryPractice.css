@@ -217,26 +217,6 @@
   margin-top: calc(24 * var(--vdp));
 }
 
-.story-practice-geme-saved {
-  flex: 1 1 auto;
-  min-width: 0;
-  margin: 0;
-  font-size: 14px;
-  font-weight: 550;
-  line-height: 1.2;
-  color: var(--text-dark);
-  /* Up to two lines beside the button; longer steps end in an ellipsis. */
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  overflow: hidden;
-}
-
-.story-practice-geme-saved-label {
-  color: var(--primary);
-}
-
 .story-practice-geme-btn {
   display: inline-flex;
   align-items: center;
