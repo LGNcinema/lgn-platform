@@ -11,7 +11,7 @@
 
 .story-practice-heading {
   font-size: 24px;
-  font-weight: 400;
+  font-weight: 550;
   /* 1.05 puts the cap top 3.9px into the box, as in the frame: the shell
      starts the column's content at y=342 and the heading's cap top is 345.9. */
   line-height: 1.05;
@@ -27,15 +27,17 @@
 
 .story-practice-subtitle {
   font-size: 16px;
+  font-weight: 550;
   line-height: 1.2;
   color: var(--text-dark);
-  margin: clamp(14px, 1.125vw, 21.6px) 0 0;
+  margin: calc(21.6 * var(--vdp)) 0 0;
 }
 
 /* Small uppercase caption, shared by the level cards and the Geme card. */
 .story-practice-label {
   display: block;
   font-size: 12px;
+  font-weight: 550;
   line-height: 1.2;
   text-transform: uppercase;
   color: var(--text-dark);
@@ -47,15 +49,15 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: clamp(16px, 1.4063vw, 27px);
-  margin-top: clamp(24px, 1.875vw, 36px);
+  margin-top: calc(36 * var(--vdp));
 }
 
 .story-practice-card {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  min-height: clamp(160px, 10.5208vw, 202px);
-  padding: calc(11 * var(--dp)) calc(16 * var(--dp)) calc(14 * var(--dp));
+  min-height: calc(202 * var(--vdp));
+  padding: calc(11 * var(--vdp)) calc(16 * var(--dp)) calc(14 * var(--vdp));
   background: var(--bg-darker);
   border: 0;
   border-radius: var(--border-radius);
@@ -78,8 +80,9 @@
 
 .story-practice-prompt {
   font-size: 20px;
+  font-weight: 550;
   line-height: 1;
-  margin-top: clamp(20px, 1.5885vw, 30.5px);
+  margin-top: calc(30.5 * var(--vdp));
 }
 
 @media (max-width: 768px) {
@@ -112,8 +115,8 @@
 
 /* The open practice in full. One panel for the row, same grey as the cards. */
 .story-practice-detail {
-  margin-top: clamp(16px, 1.4063vw, 27px);
-  padding: clamp(16px, 1.25vw, 24px) calc(16 * var(--dp));
+  margin-top: calc(27 * var(--vdp));
+  padding: calc(24 * var(--vdp)) calc(16 * var(--dp));
   background: var(--bg-darker);
   border-radius: var(--border-radius);
   max-width: 100%;
@@ -125,10 +128,10 @@
 
 .story-practice-detail-title {
   font-size: 20px;
-  font-weight: 400;
+  font-weight: 550;
   line-height: 1.2;
   color: var(--primary);
-  margin: 0 0 calc(12 * var(--dp));
+  margin: 0 0 calc(12 * var(--vdp));
 }
 
 @media (max-width: 768px) {
@@ -146,7 +149,7 @@
 
 .story-practice-detail-desc {
   color: var(--text-dark);
-  margin-bottom: calc(12 * var(--dp));
+  margin-bottom: calc(12 * var(--vdp));
 }
 
 .story-practice-detail-step {
@@ -154,7 +157,7 @@
 }
 
 .story-practice-detail-step + .story-practice-detail-step {
-  margin-top: calc(8 * var(--dp));
+  margin-top: calc(8 * var(--vdp));
 }
 
 /* ---- None of these fit? / Geme ------------------------------------- */
@@ -163,15 +166,18 @@
   display: flex;
   flex-direction: column;
   /* The frame leaves a wide pause between the levels and this fallback. */
-  margin-top: clamp(64px, 5.8125vw, 111.6px);
+  margin-top: calc(111.6 * var(--vdp));
+  /* The frame closes the white card 25px under this section; the shell's own
+     bottom padding is 31 (it places "Add to Storyboard" on the other pages). */
+  margin-bottom: calc(-6 * var(--vdp));
 }
 
 .story-practice-geme-card {
   position: relative;
   width: 100%;
   max-width: clamp(320px, 30.2083vw, 580px);
-  margin-top: clamp(20px, 1.7292vw, 33.2px);
-  padding: calc(16.5 * var(--dp)) calc(17 * var(--dp)) calc(14 * var(--dp));
+  margin-top: calc(33.2 * var(--vdp));
+  padding: calc(16.5 * var(--vdp)) calc(17 * var(--dp)) calc(14 * var(--vdp));
   background: var(--bg-darker);
   border-radius: var(--border-radius);
 }
@@ -187,44 +193,43 @@
 
 .story-practice-geme-title {
   font-size: 20px;
-  font-weight: 400;
+  font-weight: 550;
   line-height: 1.2;
   color: var(--primary);
-  margin: clamp(10px, 0.6771vw, 13px) 0 0;
+  margin: calc(13 * var(--vdp)) 0 0;
   padding-right: calc(60 * var(--dp));
 }
 
 .story-practice-geme-text {
   font-size: 16px;
+  font-weight: 550;
   line-height: 1;
   color: var(--text-dark);
   max-width: calc(490 * var(--dp));
-  margin-top: calc(13.5 * var(--dp));
+  margin-top: calc(13.5 * var(--vdp));
 }
 
-.story-practice-geme-saved {
-  font-size: 16px;
-  line-height: 1.3;
-  color: var(--primary);
-  margin-top: calc(16 * var(--dp));
-}
-
-.story-practice-geme-saved .story-practice-label {
-  margin-bottom: calc(4 * var(--dp));
+.story-practice-geme-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  margin-top: calc(24 * var(--vdp));
 }
 
 .story-practice-geme-btn {
   display: inline-flex;
   align-items: center;
   align-self: flex-start;
+  flex: none;
   height: 35px;
-  margin-top: calc(24 * var(--dp));
   padding: 0 16px;
   background: var(--header-pill-right-bg);
   border: 0;
   border-radius: var(--border-radius);
   font: inherit;
   font-size: 14px;
+  font-weight: 550;
   color: var(--primary);
   cursor: pointer;
 }

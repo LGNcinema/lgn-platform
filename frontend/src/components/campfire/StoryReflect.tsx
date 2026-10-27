@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import './StoryReflect.css';
 import type { CapsuleDetail, Reflection } from '../../types';
 
@@ -6,7 +6,7 @@ interface Props {
   capsule: CapsuleDetail;
 }
 
-/** One numbered prompt, ready to render and to write into the kept copy. */
+/** One numbered prompt, ready to render and to write into the copied text. */
 interface Prompt {
   id: number;
   /** The reflection's own name, minus any "Reflection 2:" numbering -- the
@@ -59,28 +59,72 @@ function writeDraft(capsuleId: number, text: string) {
   }
 }
 
-/** Plain text, CRLF-free, so it opens cleanly in any editor or notes app. */
-function buildCopy(storyTitle: string, prompts: Prompt[], text: string): string {
-  const lines = [storyTitle, ''];
+/** "2026-07" -> "July 2026". The month is a calendar label, not an instant, so
+ *  it is formatted from its parts -- no Date, no timezone to shift it a month. */
+function monthLabel(month: string): string {
+  const [year, m] = month.split('-').map(Number);
+  const names = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+    'August', 'September', 'October', 'November', 'December'];
+  return names[m - 1] && year ? `${names[m - 1]} ${year}` : month;
+}
+
+/**
+ * The text "Take it with you." puts on the clipboard: the story, its prompts,
+ * the visitor's own words, and where it came from. Plain text so it pastes
+ * cleanly into notes, email or a journal.
+ *
+ *   Lightpoles
+ *   LGN · July 2026
+ *
+ *   Reflection questions:
+ *   1. ...
+ *
+ *   My reflection:
+ *   ...
+ *
+ *   Life > Numbers · <this site's address>
+ *
+ * The sign-off uses the site's own host rather than a fixed domain, so the
+ * copy always points somewhere real -- localhost, a preview, or production.
+ */
+function buildCopy(capsule: CapsuleDetail, prompts: Prompt[], text: string): string {
+  const lines = [capsule.title, `LGN · ${monthLabel(capsule.month)}`, ''];
   if (prompts.length) {
-    // Label on its own line, question indented under it -- reads like the
-    // page's numbered list rather than one run-on line per prompt.
-    prompts.forEach((p, i) => {
-      if (p.label) lines.push(`${i + 1}. ${p.label}`, `   ${p.question}`, '');
-      else lines.push(`${i + 1}. ${p.question}`, '');
-    });
+    lines.push('Reflection questions:');
+    prompts.forEach((p, i) => lines.push(`${i + 1}. ${p.question}`));
+    lines.push('');
   }
-  lines.push(text.trim() ? text.trimEnd() : '(Nothing written yet.)', '');
+  lines.push('My reflection:', text.trim() ? text.trim() : '(Nothing written yet.)', '');
+  lines.push(`Life > Numbers · ${window.location.host}`);
   return lines.join('\n');
 }
 
-const fileNameFor = (storyTitle: string) => {
-  const slug = storyTitle
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  return `${slug || 'story'}-reflection.txt`;
-};
+/** Clipboard API where available; the old execCommand route as a fallback for
+ *  browsers or contexts (plain-http LAN addresses) that don't expose it. */
+async function copyToClipboard(value: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+  } catch {
+    // Permission denied or unavailable -- try the fallback below.
+  }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = value;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return ok;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Right column of the Reflect section.
@@ -93,8 +137,7 @@ const fileNameFor = (storyTitle: string) => {
  * goes are both on-device:
  *   - a draft in localStorage, so leaving for Watch/Practice (which unmounts
  *     this component) doesn't lose it;
- *   - "Keep a copy", which hands the visitor a .txt download built from a
- *     local Blob URL.
+ *   - "Take it with you.", which copies it to the visitor's own clipboard.
  * Anyone changing this: keep it that way, or change the copy first.
  */
 export function StoryReflect({ capsule }: Props) {
@@ -107,41 +150,27 @@ export function StoryReflect({ capsule }: Props) {
   const intro = (capsule.reflections ?? []).find((r) => r.introduction?.trim())?.introduction?.trim();
 
   const [text, setText] = useState(() => readDraft(capsule.id));
-  const [kept, setKept] = useState(false);
+  // 'copied' holds until the visitor edits again, so the button keeps saying
+  // the copy is theirs; 'failed' asks them to copy by hand.
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
   const textareaId = useId();
-  const keptTimer = useRef<number | undefined>(undefined);
 
   // The same component instance can be handed a different capsule (e.g. the
   // storyboard switching stories) -- load that story's draft, not this one's.
   useEffect(() => {
     setText(readDraft(capsule.id));
-    setKept(false);
+    setCopyState('idle');
   }, [capsule.id]);
-
-  useEffect(() => () => window.clearTimeout(keptTimer.current), []);
 
   const handleChange = (value: string) => {
     setText(value);
-    setKept(false);
+    setCopyState('idle');
     writeDraft(capsule.id, value);
   };
 
-  const handleKeepCopy = () => {
-    const blob = new Blob([buildCopy(capsule.title, prompts, text)], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileNameFor(capsule.title);
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    // Revoke on the next tick: some browsers start the download asynchronously
-    // and a synchronous revoke cancels it.
-    window.setTimeout(() => URL.revokeObjectURL(url), 0);
-
-    setKept(true);
-    window.clearTimeout(keptTimer.current);
-    keptTimer.current = window.setTimeout(() => setKept(false), 4000);
+  const handleTakeIt = async () => {
+    const ok = await copyToClipboard(buildCopy(capsule, prompts, text));
+    setCopyState(ok ? 'copied' : 'failed');
   };
 
   return (
@@ -177,13 +206,20 @@ export function StoryReflect({ capsule }: Props) {
       />
 
       <div className="story-reflect-actions">
-        <button type="button" className="story-reflect-keep" onClick={handleKeepCopy}>
-          Keep a copy
+        <button type="button" className="story-reflect-keep" onClick={handleTakeIt}>
+          {copyState === 'copied' ? 'Copied. It\u2019s yours to keep.' : 'Take it with you.'}
         </button>
-        {/* Announced to screen readers too; the download itself is silent. */}
-        <span className="story-reflect-status" role="status">
-          {kept ? 'Saved to your device as a text file.' : ''}
-        </span>
+        {/* A changed button label isn't reliably announced, so screen readers
+            get the outcome here; the failure note is visible to everyone. */}
+        {copyState === 'failed' ? (
+          <span className="story-reflect-status" role="status">
+            Couldn&rsquo;t copy automatically &mdash; select your text and copy it.
+          </span>
+        ) : (
+          <span className="story-reflect-sr-only" role="status">
+            {copyState === 'copied' ? 'Copied to your clipboard.' : ''}
+          </span>
+        )}
       </div>
     </div>
   );

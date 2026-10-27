@@ -8,6 +8,9 @@
   /* The shell's right column is 1196 wide (PRACTICE's card row); the still
      is 1187 in LIGHTPOLES. A percentage, so it keeps that ratio below 1920. */
   max-width: calc(100% * 1187 / 1196);
+  /* ...and no wider than 1187 vertical design px, so in a window shorter than
+     1080 the 16:9 still shrinks with it and the page still fits on screen. */
+  max-width: min(calc(100% * 1187 / 1196), calc(1187 * var(--vdp)));
   padding: 0;
   border: 0;
   border-radius: var(--border-radius);

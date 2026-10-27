@@ -1,7 +1,7 @@
 from datetime import datetime
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, and_, or_
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, LargeBinary, String, Text, and_, or_
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import deferred, relationship
 
 from app.database import Base
 
@@ -177,4 +177,21 @@ class StoryboardSubmission(Base):
     # needs both. See migrations/20260928120000_storyboard_consent.sql.
     consent_to_share = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    # NULL until an admin approves or declines it -- what tells "pending" from
+    # "declined" (both have is_approved False). See `review_status`.
+    reviewed_at = Column(DateTime, nullable=True)
+    # The author's optional photo: a ~20 KB JPEG the browser already shrank.
+    # Deferred, so loading a submission never pulls the image unless asked;
+    # it is served only from the photo endpoints.
+    photo = deferred(Column(LargeBinary, nullable=True))
+    # Secret handed back to the author on submit, for checking on their own
+    # submission without an account. Never returned by any list or admin read.
+    owner_token = Column(String(64), nullable=True)
+    # migrations/20261006120000_storyboard_review_and_photos.sql
+
+    @property
+    def review_status(self) -> str:
+        if self.is_approved:
+            return "approved"
+        return "pending" if self.reviewed_at is None else "declined"
 

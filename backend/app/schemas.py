@@ -280,71 +280,96 @@ class UserReflection(UserReflectionBase):
     model_config = ConfigDict(from_attributes=True)
 
 # Storyboard Submission schemas
-class StoryboardSubmissionBase(BaseModel):
-    capsule_id: int
-    content: Optional[str] = None
-    media_url: Optional[str] = None
-    author_name: Optional[str] = None
-    author_location: Optional[str] = None
-    author_age: Optional[str] = None
-    is_anonymous: bool = False
-    is_approved: bool = False
-    consent_to_share: bool = False
+# Storyboard
+#
+# A visitor agrees to the storyboard terms, then submits a story -- optionally
+# with a first name, a city, and a small photo of themselves. Every submission
+# waits for an admin to approve it before anyone else can see it.
+
+StoryboardStatus = Literal["pending", "approved", "declined"]
+
+# A base64 photo of a 320px JPEG is ~27 KB; this leaves generous headroom while
+# keeping a public endpoint from accepting arbitrary payloads.
+MAX_PHOTO_BASE64_CHARS = 200_000
+
 
 class StoryboardSubmissionCreate(BaseModel):
     """What an anonymous visitor may send.
 
-    Deliberately NOT derived from StoryboardSubmissionBase. It used to be, which
-    let the public, unauthenticated POST accept `is_approved` from the client --
-    anyone could approve their own submission and skip moderation entirely. That
-    was latent while nothing read approved stories back; the public storyboard
-    would have made it live. Moderation fields are server-controlled, so they
-    are simply absent here, and the model's default (False) applies.
+    Moderation fields are server-controlled and simply absent, so every
+    submission lands pending. (An earlier version derived this from a schema
+    with `is_approved`, which let anyone approve their own story.)
 
+    `consent_to_share` must be true: the page only offers the form after the
+    visitor agrees to the storyboard terms, and the API holds the same line.
     Lengths are bounded because this endpoint is public.
     """
     capsule_id: int
     content: str = Field(..., min_length=1, max_length=5000)
-    author_name: Optional[str] = Field(None, max_length=120)
-    author_location: Optional[str] = Field(None, max_length=120)
-    is_anonymous: bool = False
-    consent_to_share: bool = False
+    author_name: Optional[str] = Field(None, max_length=60)
+    author_location: Optional[str] = Field(None, max_length=80)
+    consent_to_share: Literal[True]
+    # data:image/jpeg;base64,... (or bare base64). Decoded and checked server-side.
+    photo: Optional[str] = Field(None, max_length=MAX_PHOTO_BASE64_CHARS)
 
-class StoryboardSubmission(StoryboardSubmissionBase):
+
+class StoryboardSubmitted(BaseModel):
+    """The author's receipt. `token` lets their browser check on this
+    submission later (see StoryboardOwnStatus); it is shown only here."""
     id: int
+    token: str
+    status: StoryboardStatus
     created_at: Optional[datetime] = None
 
-    model_config = ConfigDict(from_attributes=True)
+
+class StoryboardOwnStatus(BaseModel):
+    id: int
+    status: StoryboardStatus
+
 
 class StoryboardStory(BaseModel):
-    """One story as the public sees it on a storyboard.
-
-    Carries no moderation state and no age. Name and location are withheld
-    (None) when the author asked to be anonymous.
-    """
+    """One story as the public sees it. No moderation state, no token, no age.
+    `photo_url` is set only when the author added a photo."""
     id: int
     content: str
     author_name: Optional[str] = None
     author_location: Optional[str] = None
+    photo_url: Optional[str] = None
     created_at: Optional[datetime] = None
 
-class StoryboardResponse(BaseModel):
-    """A campfire's storyboard.
 
-    Stories are revealed once the campfire's month has ended. Before that,
-    `revealed` is False, `stories` is empty, and `reveals_at` says when -- so the
-    page can say "revealed at month's end" without the server leaking early.
+class StoryboardResponse(BaseModel):
+    """A campfire's approved, consented stories, oldest first.
+
+    There is no month-end reveal any more: the page shows these to a visitor
+    once they have submitted a story of their own (a soft, browser-side gate).
     """
     capsule_id: int
     month: str
-    revealed: bool
-    reveals_at: Optional[datetime] = None
     stories: List[StoryboardStory] = []
 
+
+class StoryboardAdminItem(BaseModel):
+    """One submission in the admin review queue. Never carries the photo bytes
+    (fetched separately, only when shown) or the owner token."""
+    id: int
+    capsule_id: int
+    content: Optional[str] = None
+    author_name: Optional[str] = None
+    author_location: Optional[str] = None
+    is_anonymous: bool = False
+    consent_to_share: bool = False
+    status: StoryboardStatus
+    has_photo: bool = False
+    created_at: Optional[datetime] = None
+    reviewed_at: Optional[datetime] = None
+
+
 class StoryboardModeration(BaseModel):
-    """The one thing moderation changes. Consent is the visitor's, so it is
+    """Approve (true) or decline (false). Consent is the visitor's, so it is
     not editable here."""
     is_approved: bool
+
 
 # Admin portal auth schemas
 class AdminLoginRequest(BaseModel):

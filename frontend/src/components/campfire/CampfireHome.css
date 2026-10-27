@@ -17,7 +17,9 @@
      when it wraps to two rows on phones (--header-bottom is measured by
      SiteHeader). Same guard as the story shell. */
   padding: max(calc(var(--header-bottom) + 32px), clamp(120px, 10vw, 192px))
-    var(--grid-margin) var(--grid-margin);
+    var(--grid-margin) calc(37 * var(--dp));
+  /* Bottom 37, not the 40 margin: the white card ends at y=1043, so this puts
+     the page's end -- and the footer -- exactly at the 1080 fold. */
   background-color: var(--bg-darker);
   color: var(--primary);
 }
@@ -84,6 +86,7 @@
   grid-template-columns: 1fr 1fr;
   column-gap: calc(24 * var(--dp));
   font-size: 12px;
+  font-weight: 550;
   line-height: 1.2;
   text-transform: uppercase;
   color: var(--text-dark);
@@ -93,7 +96,7 @@
   /* 198 / 1920 -- title cap top 235px below the card's top edge. */
   margin: clamp(64px, 10.3125vw, 198px) 0 0;
   font-size: 48px;
-  font-weight: 500;
+  font-weight: 550;
   line-height: 1;
   letter-spacing: -0.02em;
   color: var(--primary);
@@ -146,6 +149,7 @@
   /* 29 / 1920 -- credit cap top 308px below the card's top edge. */
   margin: clamp(16px, 1.5104vw, 29px) 0 0;
   font-size: 12px;
+  font-weight: 550;
   line-height: 1.2;
   color: var(--text-dark);
 }

@@ -10,3 +10,4 @@ export { DiscussPanel } from './DiscussPanel';
 export { PracticePanel } from './PracticePanel';
 export { DetailsPanel } from './DetailsPanel';
 export { PreviewPanel } from './PreviewPanel';
+export { StoryboardPanel } from './StoryboardPanel';

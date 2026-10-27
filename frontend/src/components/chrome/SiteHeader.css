@@ -112,7 +112,7 @@
   color: var(--primary);
   font-family: var(--font-sans);
   font-size: var(--site-header-font-size);
-  font-weight: 500;
+  font-weight: 550;
   cursor: pointer;
   transition: var(--transition);
   text-decoration: none;
@@ -208,7 +208,7 @@
   color: var(--text-main);
   font-family: var(--font-sans);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 550;
   text-align: left;
   padding: 10px 16px;
   width: 100%;

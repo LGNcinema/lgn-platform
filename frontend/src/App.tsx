@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { GemeTuningPanel } from './components/GemeTuningPanel';
 import { SiteHeader, type SiteView } from './components/chrome/SiteHeader';
@@ -151,6 +151,28 @@ const AccordionIcon = ({ expanded }: { expanded: boolean }) => (
 
 // `capsule` is a single story's page; `campfire` is the hub listing them. The
 // backend still calls stories capsules, and so does this view name.
+/**
+ * A film link as typed -> a full web address, or null if it isn't one.
+ * Accepts bare addresses ("youtube.com/watch?v=...", "www.vimeo.com/123") by
+ * adding https://, and rejects things that clearly aren't links: spaces, no
+ * domain dot, or a scheme other than http(s).
+ */
+function normalizeFilmLink(raw: string): string | null {
+  const text = raw.trim();
+  if (!text || /\s/.test(text)) return null;
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(text) ? text : `https://${text}`;
+  try {
+    const url = new URL(withScheme);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+    if (!url.hostname.includes('.') || url.hostname.startsWith('.') || url.hostname.endsWith('.')) return null;
+    return withScheme;
+  } catch {
+    return null;
+  }
+}
+
+const FILM_LINK_INVALID = 'Please enter a link to your film, like youtube.com/watch?v=… or vimeo.com/123456.';
+
 const VALID_VIEWS = ['home', 'campfire', 'capsule', 'watch', 'storyboard', 'timeline', 'about', 'invest', 'contact', 'submit-film'] as const;
 const VALID_ABOUT_SUBVIEWS = ['purpose', 'mission-vision', 'board-staff'] as const;
 
@@ -168,8 +190,9 @@ const VIEW_DEFAULT_THEME: Partial<Record<typeof VALID_VIEWS[number], 'light' | '
 
 function App() {
   // Navigation / Router States
-  // Initial view/sub-view/action can be set via ?view=, ?sub=, ?action= URL params for debugging/QA
-  // (mirrors the existing ?theme= / ?debug= param pattern below).
+  // The page lives in the URL: ?view= (page), ?sub= (About tab), ?story= (which
+  // story) and ?section= (its tab). They are read here on load, and kept in
+  // sync below, so a refresh reopens the same page and Back/Forward work.
   const [currentView, setCurrentView] = useState<SiteView>(() => {
     const viewParam = new URLSearchParams(window.location.search).get('view');
     return (VALID_VIEWS as readonly string[]).includes(viewParam || '') ? (viewParam as typeof VALID_VIEWS[number]) : 'home';
@@ -181,6 +204,8 @@ function App() {
 
   // Database API States
   const [activeCapsule, setActiveCapsule] = useState<CapsuleDetail | null>(null);
+  const activeCapsuleIdRef = useRef<number | null>(null);
+  activeCapsuleIdRef.current = activeCapsule?.id ?? null;
   const [allCapsules, setAllCapsules] = useState<CapsuleSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -207,6 +232,8 @@ function App() {
   const [filmLink, setFilmLink] = useState('');
   const [filmSynopsis, setFilmSynopsis] = useState('');
   const [filmEmail, setFilmEmail] = useState('');
+  // The submitter confirms the film is their own. Required to submit.
+  const [filmIsOwn, setFilmIsOwn] = useState(false);
   const [filmSuccess, setFilmSuccess] = useState(false);
   const [filmSubmitting, setFilmSubmitting] = useState(false);
 
@@ -315,7 +342,10 @@ function App() {
         ? `${API_URL}/api/capsules/${capsuleId}`
         : `${API_URL}/api/capsules/active`;
 
-      const capsuleRes = await fetch(capsuleEndpoint);
+      let capsuleRes = await fetch(capsuleEndpoint);
+      // A ?story= that no longer exists (or isn't published) falls back to the
+      // current story rather than an error page.
+      if (!capsuleRes.ok && capsuleId) capsuleRes = await fetch(`${API_URL}/api/capsules/active`);
       if (!capsuleRes.ok) {
         throw new Error(`Failed to fetch capsule detail: ${capsuleRes.statusText}`);
       }
@@ -335,7 +365,64 @@ function App() {
   };
 
   useEffect(() => {
-    fetchData();
+    const story = Number(new URLSearchParams(window.location.search).get('story'));
+    fetchData(Number.isInteger(story) && story > 0 ? story : undefined);
+  }, []);
+
+  /* ---- the URL <-> page sync ----
+   * Every navigation writes the page into the address bar, so a refresh
+   * reopens it and Back/Forward step through pages. Only our own keys are
+   * touched; testing params (?theme=, ?grid=, ?modal=, ...) are left as-is. */
+  const NAV_KEYS = ['view', 'sub', 'story', 'section', 'action'];
+  const navSearch = (() => {
+    const params = new URLSearchParams(window.location.search);
+    // While a story is still loading, keep the ?story= already in the URL --
+    // dropping it for a moment would add a stray step to the history.
+    const pendingStory = params.get('story');
+    NAV_KEYS.forEach((k) => params.delete(k));
+    if (currentView !== 'home') params.set('view', currentView);
+    if (currentView === 'about') params.set('sub', aboutSubView);
+    if (['capsule', 'watch', 'storyboard'].includes(currentView)) {
+      const story = activeCapsule ? String(activeCapsule.id) : pendingStory;
+      if (story) params.set('story', story);
+    }
+    if (currentView === 'capsule') params.set('section', storySection);
+    const query = params.toString();
+    return query ? `?${query}` : '';
+  })();
+  const firstNavSync = useRef(true);
+  const restoringFromHistory = useRef(false);
+
+  useEffect(() => {
+    if (navSearch === window.location.search) return;
+    const url = `${window.location.pathname}${navSearch}${window.location.hash}`;
+    // The first write only fills in what the load implied (e.g. ?story=);
+    // the page restored by Back/Forward must not push a new entry either.
+    if (firstNavSync.current || restoringFromHistory.current) window.history.replaceState(null, '', url);
+    else window.history.pushState(null, '', url);
+    firstNavSync.current = false;
+    restoringFromHistory.current = false;
+  }, [navSearch]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const view = params.get('view') || 'home';
+      const sub = params.get('sub');
+      const section = params.get('section');
+      const story = Number(params.get('story'));
+      restoringFromHistory.current = true;
+      setCurrentView((VALID_VIEWS as readonly string[]).includes(view) ? (view as SiteView) : 'home');
+      if ((VALID_ABOUT_SUBVIEWS as readonly string[]).includes(sub || '')) {
+        setAboutSubView(sub as typeof VALID_ABOUT_SUBVIEWS[number]);
+      }
+      if ((VALID_STORY_SECTIONS as readonly string[]).includes(section || '')) {
+        setStorySection(section as StorySection);
+      }
+      if (Number.isInteger(story) && story > 0 && story !== activeCapsuleIdRef.current) fetchData(story);
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
   const handleCapsuleSelect = (id: number) => {
@@ -379,7 +466,8 @@ function App() {
 
   const handleFilmSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!filmTitle || !filmDirector || !filmLink || !filmEmail) return;
+    const link = normalizeFilmLink(filmLink);
+    if (!filmTitle || !filmDirector || !link || !filmEmail || !filmIsOwn) return;
     setFilmSubmitting(true);
     try {
       const res = await fetch(`${API_URL}/api/submissions/film`, {
@@ -389,7 +477,7 @@ function App() {
           title: filmTitle,
           director: filmDirector,
           duration: filmDuration || null,
-          link: filmLink,
+          link,
           synopsis: filmSynopsis || null,
           email: filmEmail,
         }),
@@ -402,6 +490,7 @@ function App() {
         setFilmLink('');
         setFilmSynopsis('');
         setFilmEmail('');
+        setFilmIsOwn(false);
       }
     } catch (err) {
       console.error(err);
@@ -749,7 +838,8 @@ function App() {
                 </div>
               </div>
 
-              <button className="invest-give-btn" id="btn-give-treasure">Give Here</button>
+              {/* Stripe-hosted donation page, in a new tab so the visitor keeps their place here. */}
+              <a className="invest-give-btn" id="btn-give-treasure" href="https://donate.stripe.com/cNi9AT2g6fxc6j1bs4cjS00" target="_blank" rel="noopener noreferrer">Give Here</a>
 
               <div className="invest-footer-info">
                 <p>As a registered 501(c)(3), donations to Life is Greater than Numbers, Inc. are tax-deductible to the fullest extent allowed by law. Charitable disclosure & state registration info will be added here as we complete our national registration process. This page is not intended as a solicitation in jurisdictions where Life is Greater than Numbers, Inc. is not yet registered or exempt from registration.</p>
@@ -879,12 +969,29 @@ function App() {
                   <label htmlFor="film-link">Video Link (Vimeo / YouTube / GDrive)</label>
                   <input
                     id="film-link"
-                    type="url"
+                    // Text, not type="url": the browser's URL check rejects bare
+                    // addresses like "youtube.com". normalizeFilmLink accepts
+                    // those and adds https://; the custom validity below keeps
+                    // non-links from submitting.
+                    type="text"
+                    inputMode="url"
+                    autoComplete="url"
+                    spellCheck={false}
                     className="form-input"
                     value={filmLink}
-                    onChange={(e) => setFilmLink(e.target.value)}
+                    onChange={(e) => {
+                      setFilmLink(e.target.value);
+                      e.target.setCustomValidity(
+                        !e.target.value.trim() || normalizeFilmLink(e.target.value) ? '' : FILM_LINK_INVALID,
+                      );
+                    }}
+                    onBlur={(e) => {
+                      // Show the full address once they leave the field.
+                      const link = normalizeFilmLink(e.target.value);
+                      if (link && link !== e.target.value) setFilmLink(link);
+                    }}
                     required
-                    placeholder="https://vimeo.com/..."
+                    placeholder="vimeo.com/... or youtube.com/..."
                   />
                 </div>
                 <div className="form-group">
@@ -909,6 +1016,17 @@ function App() {
                     placeholder="Provide a short summary and credits..."
                     style={{ minHeight: '100px' }}
                   />
+                </div>
+                <div className="form-group full-width form-check">
+                  {/* Required: the browser won't submit until it's ticked. */}
+                  <input
+                    id="film-is-own"
+                    type="checkbox"
+                    required
+                    checked={filmIsOwn}
+                    onChange={(e) => setFilmIsOwn(e.target.checked)}
+                  />
+                  <label htmlFor="film-is-own">This is YOUR film</label>
                 </div>
                 <button type="submit" className="rsvp-button full-width" style={{ marginTop: '8px' }} disabled={filmSubmitting} id="btn-submit-film">
                   {filmSubmitting ? 'Submitting...' : 'Submit Film Details'}
