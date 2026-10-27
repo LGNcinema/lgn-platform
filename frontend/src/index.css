@@ -93,8 +93,8 @@
      rather than from a percentage of the hero's height. */
   --header-top: clamp(16px, 2.0833vw, 40px);
   /* 40 / 1920 -- matches Figma's Header y=40 at full width */
-  /* The pill as built: 58px (it was 49 before the Campfire redesign). */
-  --header-pill-height: 58px;
+  /* V3: no pill any more -- the header is the 41px-tall logo (y=39..80). */
+  --header-pill-height: 41px;
   /* Fallback only. SiteHeader measures its real bottom edge at runtime and
      overrides this on <html> -- the header wraps on narrow screens, which this
      formula cannot know. See SiteHeader.tsx. */
@@ -114,6 +114,33 @@
   /* A step lighter than --footer-text, so an empty email field still reads as
      empty. Tracks --footer-text: bump this whenever that changes. */
   --footer-placeholder: #adadad;
+
+  /* ---- V3 design language (Figma "LGN Web" v3, 2026-10) ----
+     Black text on the #F5F5F5 page, #EDEDED panels, #888 for secondary text,
+     1px black rules, and outlined boxes for buttons and fields. Type is
+     regular weight throughout, at four sizes: 12 (labels, set in caps), 20
+     (body and UI), 36 (section headings) and 48 (titles), on ~1.1 leading. */
+  /* The frames' panel is #EDEDED. Deepened two steps (Justin, 2026-10-26):
+     8 levels off the #F5F5F5 page washed out to white on some screens (HDR,
+     high brightness), hiding the panels entirely. */
+  --panel: #e5e5e5;
+  --rule: var(--primary);
+  --text-grey: #888888;
+  --placeholder-box: #d9d9d9;  /* an image that hasn't loaded / isn't set */
+  --text-12: 12px;
+  --text-20: 20px;
+  --text-36: 36px;
+  --text-48: 48px;
+  --leading: 1.1;
+  /* Tracking per size. The frames (Helvetica Neue) track 12px at -0.03em,
+     20 and 36 at -0.02em and 48 at -0.04em. Inter is wider, so these are
+     what bring Inter's line lengths to the frames' (measured against the
+     text-SVG export, 2026-10-26): 12 and 36 exact, 48 ~1% long, 20 ~2%
+     long (-0.05em would be exact but reads too tight at body size). */
+  --track-12: -0.03em;
+  --track-20: -0.04em;
+  --track-36: -0.02em;
+  --track-48: -0.04em;
 }
 
 [data-theme="dark"] {
@@ -143,6 +170,9 @@
   --header-btn-active-text: #ffffff;
 
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+
+  --panel: #181818;
+  --placeholder-box: #333333;
 }
 
 * {
@@ -157,8 +187,24 @@ body {
   font-family: var(--font-sans);
   min-height: 100vh;
   overflow-x: hidden;
-  line-height: 1.6;
+  font-size: var(--text-20);
+  font-weight: 400;
+  line-height: var(--leading);
+  /* Tracking per size: see --track-* in :root. letter-spacing in em is
+     fixed to px where it is declared and inherited as px, so every size
+     that differs from 20px sets its own. */
+  letter-spacing: var(--track-20);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Form controls don't inherit type by default. */
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
 }
 
 /* Scrollbar styling */
@@ -227,8 +273,125 @@ body {
   box-sizing: border-box;
 }
 
-/* Header styles (floating header, nav pills, About dropdown) live with the
-   component: components/chrome/SiteHeader.css */
+/* ---- V3 shared controls ----
+   The outlined button: a 1px box with its label on the left and a ">" on the
+   right. Figma: 202x37 by default (wider where the label needs it), label
+   inset 11px, the ">" 12px in from the right edge. A fixed size, like all
+   text and buttons -- it never scales with the window. */
+.lgn-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 202px;
+  height: 37px;
+  padding: 0 11px 0 10px;
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  background: transparent;
+  color: var(--primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-20);
+  font-weight: 400;
+  line-height: var(--leading);
+  text-align: left;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.lgn-btn::after {
+  content: '>';
+  flex: none;
+}
+
+.lgn-btn:hover {
+  background: var(--primary);
+  color: var(--bg-darker);
+}
+
+.lgn-btn:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.lgn-btn:disabled:hover {
+  background: transparent;
+  color: var(--primary);
+}
+
+.lgn-btn:focus-visible,
+.lgn-link:focus-visible,
+.lgn-field:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* A text-only control: header and footer links, tabs, "Submit". Underlined
+   when hovered or current, as the frames mark the current page. */
+.lgn-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--primary);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  cursor: pointer;
+}
+
+.lgn-link:hover,
+.lgn-link.active {
+  text-decoration-line: underline;
+}
+
+/* The outlined field: the same 1px box as the button, 37px tall. */
+.lgn-field {
+  display: block;
+  width: 100%;
+  height: 37px;
+  padding: 0 11px;
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  background: transparent;
+  color: var(--primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-20);
+  line-height: var(--leading);
+}
+
+.lgn-field::placeholder {
+  color: var(--primary);
+  opacity: 1;
+}
+
+/* The grey variant (Reflect, the Storyboard form): grey box, grey hint. */
+.lgn-field--quiet {
+  border-color: var(--text-grey);
+}
+
+.lgn-field--quiet::placeholder {
+  color: var(--text-grey);
+}
+
+textarea.lgn-field {
+  height: auto;
+  padding: 11px;
+  resize: vertical;
+}
+
+/* Small caps labels: "STORY NO. 1", "FILM NO.1", "LIGHTPOLES". */
+.lgn-label {
+  font-size: var(--text-12);
+  letter-spacing: var(--track-12);
+  line-height: 14px;
+  text-transform: uppercase;
+}
+
+/* Header styles live with the component: components/chrome/SiteHeader.css */
 
 /* About Dropdown Menu */
 .about-dropdown-wrapper {
@@ -248,115 +411,40 @@ body {
   text-transform: uppercase;
 }
 
-/* Home View
-   Figma "home LIGHT" frame (node 122:622) is 1920x1457: a 1920x1080 hero area
-   followed by a 1920x377 footer. This wrapper is locked to the hero's exact
-   1920:1080 aspect ratio so every child's top/left/width/height, expressed as
-   percentages of the Figma px values, lands on the same spot at any viewport
-   width (percentages of an aspect-locked box == percentages of the design). */
+/* Home. Figma v3 "home" (at 1920x1080), everything centred on the page:
+   - the logo, 611x68, top at y=363 (a graphic: it scales with --dp);
+   - "Watch. Reflect. Practice.", 20px, baseline y=468;
+   - "Go Beyond", a 292px outlined button, top at y=528;
+   - the definition, two centred lines, baselines y=639 / 661.
+   Vertical spacing uses --vdp so the page still fits a shorter window. */
 .home-view-wrapper {
-  width: 100%;
-  max-width: var(--grid-max-width);
-  margin: 0 auto;
-  box-sizing: border-box;
-  position: relative;
-  aspect-ratio: 1920 / 1080;
-  min-height: 560px;
-  background-color: var(--bg-darker);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: calc(363 * var(--vdp)) var(--grid-margin) 0;
   color: var(--primary);
-}
-
-.home-definition-block {
-  position: absolute;
-  left: var(--grid-margin);
-  /* Figma x=40 -- locked to the same margin as the nav pill and the footer */
-  top: calc(var(--header-bottom) + clamp(20px, 1.6146vw, 31px));
-  /* Figma y=120 == header bottom (89) + 31 */
-  width: max(240px, calc(var(--content-width) * 0.254348));
-  /* 468 / 1840 of the column area -- the column expands, the margin does not */
-  font-family: var(--font-sans);
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text-main);
-  line-height: 1.2;
-  letter-spacing: -0.03em;
-}
-
-.home-hero-logo-row {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  /* Figma home LIGHT: the logo is 632x70 at y=472 of the 1080 hero. */
-  top: 43.7037%;
-  /* 472 / 1080 */
-  height: 6.4815%;
-  /* 70 / 1080 */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.home-hero-subtitle-row {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  top: 53.8426%;
-  /* 581.5 / 1080 -- puts Inter's ink where the frame's is */
-  height: 2.1296%;
-  /* 23 / 1080 -- one line of the 20px subtitle */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.home-hero-btn-row {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  top: 59.2593%;
-  /* 640 / 1080 */
-  height: 4.2593%;
-  /* 46 / 1080 */
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  text-align: center;
 }
 
 .home-hero-logo {
-  width: auto;
-  /* A graphic, so it scales with the hero; the text and button below don't. */
-  height: 100%;
-  max-width: 90%;
+  display: block;
+  width: calc(611 * var(--dp));
+  max-width: 100%;
+  height: auto;
 }
 
+/* 20px/22px lines: the baseline sits 18.3px below the line's top. */
 .home-hero-subtitle {
-  font-family: var(--font-sans);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--primary);
-  margin: 0;
-  letter-spacing: -0.03em;
-  line-height: 1.15;
+  margin-top: calc(18.7 * var(--vdp));
 }
 
 .home-hero-btn {
-  background-color: var(--hero-btn-bg);
-  color: var(--hero-btn-text);
-  border: none;
-  /* Figma 128x46 with a 20px label. A fixed size like every other button --
-     only the logo above it scales with the viewport. */
-  width: 128px;
-  height: 46px;
-  font-family: var(--font-sans);
-  font-size: 20px;
-  font-weight: 550;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  width: 292px;
+  margin-top: calc(56.3 * var(--vdp));
 }
 
-.home-hero-btn:hover {
-  background-color: var(--hero-btn-hover);
+.home-definition {
+  margin-top: calc(55.7 * var(--vdp));
 }
 
 /* Capsule View */
@@ -788,372 +876,259 @@ body {
 
 /* Timeline styles have been moved to the bottom timeline section */
 
-/* About Page Styling */
-/* Stale about page wrapper styles removed */
-
 /* ==========================================================================
-   PAGE: ABOUT
+   PAGES: ABOUT and INVEST. Figma v3, at 1920.
+   Both: a left column at x=40 (the About menu / Invest's heading, and a
+   static photo) and the content from x=660. Line tops sit (leading -
+   baseline) above a baseline: 20/22 -> 18.3, 36/39.6 -> 32.9, 48/52.8 ->
+   43.85.
    ========================================================================== */
-.about-container {
-  position: relative;
-  width: 100%;
-  max-width: var(--grid-max-width);
-  margin: 0 auto;
-  box-sizing: border-box;
-  padding-top: clamp(110px, 10.1563vw, 195px);
-  /* 195 / 1920 -- matches Figma content y=195-197 across all About subviews */
-  padding-bottom: calc(100 * var(--dp));
-  padding-left: var(--grid-margin);
-  padding-right: var(--grid-margin);
-  background-color: var(--bg-darker);
-  color: var(--primary);
+
+.about-container,
+.invest-container {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: var(--grid-gutter);
+  grid-template-columns: calc(620 * var(--dp)) minmax(0, 1fr) auto;
+  padding: calc(185 * var(--vdp)) var(--grid-margin) calc(141 * var(--vdp));
+  color: var(--primary);
 }
 
+/* The About menu: baselines y = 207 / 251 / 295. */
 .about-sidebar {
-  grid-column: 1 / span 2;
   display: flex;
   flex-direction: column;
-  gap: 0;
-  /* Figma puts the nav at y=181 against content at y=195 -- the nav's first
-     item optically centres on the content's first line. */
-  margin-top: calc(-14 * var(--dp));
-}
-
-.about-nav-btn {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-family: var(--font-sans);
-  /* Figma About frames: 20px, regular when inactive, bold when active. */
-  font-size: 20px;
-  font-weight: 400;
-  text-align: left;
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.2s ease;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-}
-
-.about-nav-btn:hover {
-  color: var(--primary);
-}
-
-.about-nav-btn.active {
-  color: var(--primary);
-  font-weight: 700;
+  align-items: flex-start;
+  gap: 22px;
+  padding-top: 3.7px;
 }
 
 .about-content {
-  grid-column: 3 / span 4;
-  width: 100%;
-  max-width: 1216px;
+  min-width: 0;
 }
 
-/* Mission & Vision. Sizes from the About-* ALT LIGHT frames: 20px bold grey
-   labels above 48px statements set solid (48px line pitch). Gaps are the
-   frame's, adjusted so Inter's ink lands where Helvetica's does. */
-.about-mv-section {
-  margin-bottom: calc(80 * var(--dp));
+/* The photo on the right (Mission + Vision, Purpose): 289/290 wide, its
+   top at y=193. */
+.about-photo {
+  display: block;
+  width: calc(290 * var(--dp));
+  height: auto;
+  margin-top: calc(8 * var(--vdp));
+  margin-left: calc(40 * var(--dp));
 }
 
-.about-mv-label {
-  font-family: var(--font-sans);
-  font-size: 20px;
-  line-height: 1;
-  color: var(--text-muted);
-  font-weight: 700;
-  margin-bottom: calc(30 * var(--dp));
-}
-
-/* Gap between the Mission block and the Vision block. */
-.about-mv-block + .about-mv-block {
-  margin-top: calc(89.5 * var(--dp));
-}
-
-.about-mv-text {
-  font-family: var(--font-sans);
-  font-size: 48px;
-  line-height: 1;
-  color: var(--primary);
-  font-weight: 550;
-  letter-spacing: -0.03em;
+/* The photo under the menu (Board + Staff: y=540) or Invest's heading
+   (y=489.5). Grid row 2 of the left column. */
+.about-photo--left {
   margin: 0;
 }
 
-/* Purpose */
+.about-sidebar .about-photo--left {
+  margin-top: calc(241.3 * var(--vdp));
+}
+
+/* Mission + Vision: 48px titles (baselines 228 / 420), each statement 44px
+   under its title. */
+.about-title {
+  font-size: var(--text-48);
+  letter-spacing: var(--track-48);
+  font-weight: 400;
+  line-height: 52.8px;
+}
+
+.about-statement {
+  margin-top: 16.75px;
+  max-width: 700px;
+}
+
+.about-block + .about-block {
+  margin-top: calc(100.45 * var(--vdp));
+}
+
+/* Purpose: the text 70px under the title's baseline, ~600px wide. */
 .about-purpose-text {
-  font-family: var(--font-sans);
-  font-size: 48px;
-  line-height: 1;
-  color: var(--primary);
-  font-weight: 550;
-  letter-spacing: -0.03em;
-  margin: 0 0 calc(48 * var(--dp));
+  max-width: 605px;
 }
 
-/* Board & Staff. From the About-Board + Staff ALT LIGHT frame: 48px names,
-   20px roles, 20px grey bios on an 18px line pitch (the frame's own, tight,
-   leading). Gaps are set so Inter's ink lands where the frame's does; the
-   frame spaces its entries unevenly (61-85px), so the list uses its usual
-   ~61px throughout. */
-.team-section {
-  margin-bottom: calc(73 * var(--dp));
-}
-/* The gap above is between Board and Staff. After the last section only the
-   page's bottom padding should follow; the 20 makes the footer land where the
-   frame puts it (y=1722 at 1920). */
-.team-section:last-child {
-  margin-bottom: calc(20 * var(--dp));
+.about-purpose-text:first-of-type {
+  margin-top: 42.75px;
 }
 
+.about-purpose-text + .about-purpose-text {
+  margin-top: 22px;
+}
+
+/* Board + Staff: a 36px heading over a rule (as the Campfire's), then two
+   columns of people (x = 660 / 1280). */
+.team-section + .team-section {
+  margin-top: calc(140 * var(--vdp));
+}
 
 .team-label {
-  font-family: var(--font-sans);
-  font-size: 20px;
-  line-height: 1;
-  color: var(--text-muted);
-  font-weight: 700;
-  margin: 0 0 calc(30 * var(--dp));
+  padding-bottom: 3.9px;
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--text-36);
+  letter-spacing: var(--track-36);
+  font-weight: 400;
+  line-height: 39.6px;
 }
 
 .team-list-layout {
-  display: flex;
-  flex-direction: column;
-  gap: calc(57.5 * var(--dp));
-}
-
-.team-list-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: calc(20 * var(--dp));
+  row-gap: calc(85.45 * var(--vdp));
+  margin-top: calc(48.65 * var(--vdp));
 }
 
 .team-list-item .person-name {
-  font-family: var(--font-sans);
-  font-size: 48px;
-  font-weight: 550;
-  color: var(--primary);
-  margin: 0;
-  line-height: 1;
-  letter-spacing: -0.03em;
+  font-size: var(--text-48);
+  letter-spacing: var(--track-48);
+  font-weight: 400;
+  line-height: 52.8px;
 }
 
 .team-list-item .person-title {
-  font-family: var(--font-sans);
-  font-size: 20px;
-  line-height: 1;
-  color: var(--primary);
-  margin: calc(18.5 * var(--dp)) 0 0;
-  opacity: 1;
+  margin-top: 12.75px;
 }
 
 .team-list-item .person-bio {
-  font-family: var(--font-sans);
-  font-size: 20px;
-  color: var(--text-muted);
-  margin: calc(17.5 * var(--dp)) 0 0;
-  line-height: 0.9;
-  max-width: 900px;
-  opacity: 1;
+  max-width: 510px;
+  margin-top: 22px;
 }
 
-/* Phones: the 48px statements and names step down to a smaller fixed size. */
-@media (max-width: 768px) {
-  .about-mv-text,
-  .about-purpose-text,
-  .team-list-item .person-name {
-    font-size: 32px;
-  }
+/* ---------------------------------------------------------------- invest */
+
+/* "How you can invest / in this vision": 36px on 38px, baselines 226/264. */
+.invest-title {
+  font-size: var(--text-36);
+  letter-spacing: var(--track-36);
+  font-weight: 400;
+  line-height: 38px;
+  margin-top: 8.9px;
 }
 
-/* ==========================================================================
-   PAGE: INVEST
-   ========================================================================== */
-.invest-container {
-  position: relative;
-  width: 100%;
-  max-width: var(--grid-max-width);
-  margin: 0 auto;
-  box-sizing: border-box;
-  padding-top: clamp(110px, 10.2083vw, 196px);
-  /* 196 / 1920 -- matches Figma "How you can invest..." title y=196 */
-  padding-bottom: calc(100 * var(--dp));
-  padding-left: var(--grid-margin);
-  padding-right: var(--grid-margin);
-  background-color: var(--bg-darker);
-  color: var(--primary);
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: var(--grid-gutter);
-}
-
-.invest-sidebar-placeholder {
-  grid-column: 1 / span 2;
+.invest-sidebar .about-photo--left {
+  margin-top: calc(219.5 * var(--vdp));
+  width: calc(291 * var(--dp));
 }
 
 .invest-content {
-  grid-column: 3 / span 4;
-  width: 100%;
-  max-width: 1216px;
+  grid-column: 2 / -1;
+  min-width: 0;
+  padding-top: calc(7.5 * var(--vdp));
 }
 
-/* Figma Invest LIGHT: the left column's heading, 20px bold, set solid. */
-.invest-title {
-  font-family: var(--font-sans);
-  font-size: 20px;
-  color: var(--primary);
-  font-weight: 700;
-  margin: 0;
-  line-height: 1;
-}
-
-/* The frame has rules above each row and none below the last. */
-.invest-accordion {
-  width: 100%;
-}
-
+/* Rows: a rule above each, the name (48px) 3.65px under it, the open row's
+   list in the third column (x=1280), the chevron at the right. A closed row
+   is 124 rule to rule, the open one 318. */
 .invest-accordion-row {
-  /* Figma Invest LIGHT: 1px black rules. */
-  border-top: 1px solid var(--primary);
   display: grid;
-  /* Figma: title column 662->970 of a 1216px content area (25.33%), body
-     column to 1839, then a 40px well for the +/- icon. */
-  grid-template-columns: minmax(120px, 25.33%) 1fr 40px;
-  /* Figma: rules at y=196 / 415.5 / 523.5 -- a closed row is 108px. */
-  padding: calc(9 * var(--dp)) 0 calc(50 * var(--dp)) 0;
+  grid-template-columns: calc(620 * var(--dp)) minmax(0, 1fr) auto;
+  width: 100%;
+  min-height: calc(124 * var(--vdp));
+  padding: 0;
+  border: none;
+  border-top: 1px solid var(--rule);
+  background: none;
+  color: var(--primary);
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
   cursor: pointer;
-  align-items: start;
-  user-select: none;
+}
+
+.invest-accordion-row.open {
+  min-height: calc(318 * var(--vdp));
+}
+
+.invest-accordion-row:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.invest-accordion-row:hover .invest-row-title {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 6px;
 }
 
 .invest-row-title {
-  font-family: var(--font-sans);
-  font-size: 48px;
-  font-weight: 550;
-  color: var(--primary);
-  line-height: 1;
-  letter-spacing: -0.03em;
-  align-self: start;
+  padding-top: 2.65px;
+  font-size: var(--text-48);
+  letter-spacing: var(--track-48);
+  line-height: 52.8px;
 }
 
 .invest-row-content {
-  font-family: var(--font-sans);
-  /* Figma: 20px bullets on a 35px pitch. */
-  font-size: 20px;
-  color: var(--primary);
-  line-height: 35px;
-  margin-top: calc(-1.5 * var(--dp));
-  /* Align with baseline of 48px title */
-  align-self: start;
+  padding-top: 10.2px;
+  max-width: 400px;
 }
 
 .invest-row-icon {
-  align-self: start;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  color: var(--primary);
+  padding-top: 2px;
+  font-size: 24px;
+  line-height: 24px;
 }
 
-.invest-row-icon svg {
-  /* A 24x24 box top-aligned with the row title; nudged right so the 17px
-     marks land where the frame's do (plus centred at x=1857 at 1920). */
-  width: 24px;
-  height: 24px;
-  margin-left: 5px;
-  display: block;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: var(--invest-rule-weight);
-  stroke-linecap: butt;
-  vector-effect: non-scaling-stroke;
-}
-
-.invest-bullet-list {
-  list-style: none;
-  padding-left: 25.5px;
-  /* The open row runs to y=415.5 in the frame, well past its last bullet. */
-  margin: 0 0 calc(56 * var(--dp));
-}
-
-.invest-bullet-list li {
-  position: relative;
-  margin-bottom: 0;
-}
-
-/* Figma's bullet: a small ~4px dot, 17px left of the text and centred on
-   the first line's lowercase letters -- much lighter than the browser disc. */
-.invest-bullet-list li::before {
-  content: '';
-  position: absolute;
-  left: -17px;
-  top: 14.5px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.invest-bullet-list li:last-child {
-  margin-bottom: 0;
-}
-
-.invest-row-text {
+.invest-steps {
   margin: 0;
+  padding-left: 17px;
 }
 
-/* A link (to Stripe) styled as the frame's button. */
+.invest-steps li + li {
+  margin-top: 22px;
+}
+
+/* "Give Here": 250px under Treasure's rule; the small print 31px under it. */
 .invest-give-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  text-decoration: none;
-  background-color: var(--hero-btn-bg);
-  color: var(--hero-btn-text);
-  border: none;
-  /* Figma: 116x38 with a 20px label, at y=739. */
-  width: 116px;
-  height: 38px;
-  font-family: var(--font-sans);
-  font-size: 20px;
-  font-weight: 550;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-top: calc(107.5 * var(--dp));
-  transition: background-color 0.2s;
-}
-
-
-.invest-give-btn:hover {
-  background-color: var(--hero-btn-hover);
+  margin-top: calc(126.5 * var(--vdp));
 }
 
 .invest-footer-info {
-  /* Figma: 16px on an 18px pitch, under the button (y=804.5 at 1920), ~620px
-     measure. */
-  margin-top: calc(25 * var(--dp));
-  font-family: var(--font-sans);
-  font-size: 16px;
-  color: #888888;
-  line-height: 18px;
-  max-width: 620px;
+  max-width: 820px;
+  margin-top: 30.9px;
+  font-size: 14px;
+  line-height: 16px;
+  color: var(--text-grey);
 }
 
-@media (max-width: 768px) {
-  .invest-row-title {
-    font-size: 32px;
+@media (max-width: 1024px) {
+  .about-container,
+  .invest-container {
+    grid-template-columns: 1fr;
+    row-gap: 32px;
+  }
+
+  .about-photo {
+    margin: 0;
+    width: 260px;
+  }
+
+  .invest-content {
+    grid-column: auto;
+  }
+
+  .invest-accordion-row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .invest-row-content {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    padding-bottom: 24px;
+  }
+
+  .team-list-layout {
+    grid-template-columns: 1fr;
   }
 }
 
-.invest-footer-info p {
-  margin: 0;
+@media (max-width: 768px) {
+  .about-title,
+  .team-list-item .person-name,
+  .invest-row-title {
+    font-size: 32px;
+    line-height: 36px;
+  }
 }
 
 .capsule-list {
@@ -1404,191 +1379,122 @@ body {
 
 /* Footer styles live with the component: components/chrome/SiteFooter.css */
 
-/* New Timeline Grid/Table Layout */
+/* Timeline -- "A witness through time". Figma v3, at 1920: white Courier
+   on black, 20px on tight 18px leading throughout; four columns at x = 40 /
+   350 / 660 / 970; the title's baseline at y=210, the column heads' 130px
+   further, the first entry's 85px under those; ~80px from an entry's last
+   line to the next. (V3 drops V2's [Tag] column.) */
 .timeline-view-wrapper {
-  position: relative;
-  width: 100%;
-  max-width: var(--grid-max-width);
-  margin: clamp(96px, 7.8125vw, 150px) auto 0;
-  /* Pulled in from the Figma's 197px lead-in per design review. */
-  box-sizing: border-box;
-  /* Bottom padding, not a negative bottom margin. The -60px that used to sit in
-     the margin above pulled the footer up under this wrapper, and because the
-     wrapper is positioned and paints its own background it covered the footer's
-     top edge and border. 72px of padding minus that 60px is the ~12px gap the
-     page actually had, so that is what is kept here. */
-  padding: 0 var(--grid-margin) 12px;
+  min-height: 100vh;
+  padding: calc(191 * var(--vdp)) var(--grid-margin) calc(120 * var(--vdp));
   background-color: var(--bg-darker);
   color: var(--primary);
-  min-height: 100vh;
+  font-family: var(--font-serif);
+  font-size: var(--text-20);
+  line-height: 18px;
+  letter-spacing: 0;
 }
 
-.timeline-header-grid {
+.timeline-header-grid,
+.timeline-table thead tr,
+.timeline-table tbody tr {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: var(--grid-gutter);
-  margin-bottom: 48px;
-  align-items: start;
+  grid-template-columns: calc(310 * var(--dp)) calc(310 * var(--dp)) calc(310 * var(--dp)) minmax(0, 1fr);
 }
 
 .timeline-title-col {
-  grid-column: 1 / span 1;
-  font-family: var(--font-serif);
-  font-size: 24px;
-  color: var(--primary);
-  line-height: 1.2;
-}
-
-@media (max-width: 768px) {
-  .timeline-title-col {
-    font-size: 14px;
-  }
+  padding-right: 24px;
 }
 
 .timeline-desc-col {
-  grid-column: 2 / span 5;
-  font-family: var(--font-serif);
-  font-size: 24px;
-  color: var(--text-muted);
-  line-height: 1.2;
-  max-width: 731px;
-}
-
-@media (max-width: 768px) {
-  .timeline-desc-col {
-    font-size: 14px;
-  }
+  grid-column: 2 / -1;
+  color: var(--text-grey);
 }
 
 .timeline-table-container {
   width: 100%;
-  overflow-x: auto;
+  margin-top: calc(105 * var(--vdp));
 }
 
 .timeline-table {
   width: 100%;
-  max-width: 1840px;
   border-collapse: collapse;
 }
 
-.timeline-table thead tr,
-.timeline-table tbody tr {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: var(--grid-gutter);
-}
-
-.timeline-table th.col-period,
-.timeline-table td.col-period {
-  grid-column: 1 / span 1;
-}
-
-.timeline-table th.col-source,
-.timeline-table td.col-source {
-  grid-column: 2 / span 1;
-}
-
-.timeline-table th.col-recorded,
-.timeline-table td.col-recorded {
-  grid-column: 3 / span 1;
-}
-
-.timeline-table th.col-witness,
-.timeline-table td.col-witness {
-  grid-column: 4 / span 2;
-}
-
-.timeline-table th.col-tag,
-.timeline-table td.col-tag {
-  grid-column: 6 / span 1;
-}
-
 .timeline-table th {
+  padding: 0 0 calc(67 * var(--vdp));
+  font: inherit;
+  font-weight: 400;
   text-align: left;
-  font-family: var(--font-serif);
-  font-size: 24px;
-  color: var(--primary);
-  padding: 0 0 24px 0;
-  font-weight: normal;
-}
-
-@media (max-width: 768px) {
-  .timeline-table th {
-    font-size: 14px;
-  }
 }
 
 .timeline-table td {
-  padding: 16px 0;
-  border-bottom: none;
+  padding: 0 8px calc(62 * var(--vdp)) 0;
   vertical-align: top;
-  font-family: var(--font-serif);
-  font-size: 24px;
-  color: var(--primary);
-  line-height: 1.3;
 }
 
-@media (max-width: 768px) {
-  .timeline-table td {
-    font-size: 14px;
-  }
+.timeline-table td.col-witness {
+  max-width: 900px;
+  padding-right: 0;
+}
+
+.timeline-table .col-tag {
+  display: none;
 }
 
 .timeline-era-nav-btn {
-  background: none;
-  border: none;
-  text-align: left;
-  font-family: var(--font-serif);
-  font-size: 24px;
-  color: var(--primary);
-  cursor: pointer;
   padding: 0;
-  text-decoration: none;
-  display: inline-block;
-  line-height: 1.2;
-}
-
-@media (max-width: 768px) {
-  .timeline-era-nav-btn {
-    font-size: 14px;
-  }
+  border: none;
+  background: none;
+  color: var(--primary);
+  font: inherit;
+  letter-spacing: inherit;
+  line-height: 18px;
+  text-align: left;
+  cursor: pointer;
 }
 
 .timeline-era-nav-btn:hover {
   text-decoration: underline;
 }
 
-.active-era-name {
-  font-family: var(--font-serif);
-  font-size: 24px;
-  color: var(--primary);
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  line-height: 1.2;
+.timeline-era-nav-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
-@media (max-width: 768px) {
-  .active-era-name {
-    font-size: 14px;
-  }
+.active-era-name {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .timeline-spacer-row td {
-  padding: 24px 0;
+  padding: 0 0 calc(60 * var(--vdp));
 }
 
 .era-nav-row td {
-  padding: 24px 0;
+  padding-bottom: calc(76 * var(--vdp));
 }
 
 .col-empty-message {
-  color: #888888 !important;
-  font-size: 24px;
+  color: var(--text-grey);
 }
 
 @media (max-width: 768px) {
-  .col-empty-message {
+  .timeline-view-wrapper {
     font-size: 14px;
+    line-height: 16px;
+  }
+
+  .timeline-header-grid,
+  .timeline-table thead tr,
+  .timeline-table tbody tr {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 8px;
+  }
+
+  .timeline-table td.col-witness {
+    grid-column: 1 / -1;
   }
 }
 
@@ -3678,4 +3584,14 @@ body {
   color: #000000;
   border-color: #00e5ff;
   font-weight: 700;
+}
+
+/* Invest's small print ends 77px above the footer's rule (the About pages
+   leave the window's fold to place the footer). */
+.invest-container {
+  padding-bottom: calc(71 * var(--vdp));
+}
+
+h1.timeline-title-col {
+  font: inherit;
 }

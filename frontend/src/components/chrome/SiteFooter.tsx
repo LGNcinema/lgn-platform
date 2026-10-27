@@ -14,17 +14,15 @@ interface Props {
   onNavigate: (view: SiteView) => void;
 }
 
+const CONTACT_EMAIL = 'info@lgncinema.org';
+
 /**
- * Global footer. Figma: `Footer`, and the bottom of every [CAMPFIRE] frame.
+ * Global footer. Figma v3: the bottom of every frame -- a 1px rule across the
+ * page, then four columns: the logo, Navigate, Contact and Join, with a
+ * bottom row of small print under them.
  *
- * Extracted from App.tsx as-is apart from "Lightpoles" -> "Campfire" in the
- * nav column, matching the header.
- *
- * Two places the Figma frame differs and this deliberately does NOT follow it:
- * - The frame reads "5501(c)(3)". The designation is 501(c)(3); the extra 5 is
- *   a typo in the frame, and this is a legal/tax identifier.
- *
- * The social link is YouTube, spelled properly (the frame has "Youtube").
+ * Where it deliberately does NOT follow the frame: the frame spells the
+ * social link "Youtube"; the brand is "YouTube".
  */
 export function SiteFooter({ theme, onNavigate }: Props) {
   const [join, setJoin] = useState<JoinState>({ kind: 'idle' });
@@ -48,44 +46,69 @@ export function SiteFooter({ theme, onNavigate }: Props) {
     }
   };
 
+  const nav = (view: SiteView, label: string) => (
+    <li>
+      <button type="button" className="lgn-link" onClick={() => onNavigate(view)}>
+        {label}
+      </button>
+    </li>
+  );
+
   return (
     <footer className="lgn-footer">
       <div className="footer-grid">
-        {/* Column 1: Logo & Copyright */}
         <div className="footer-col col-logo">
-          <img className="footer-logo" src={theme === 'dark' ? '/images/lgn-logo-registered-white.svg' : '/images/lgn-logo-registered.svg'} alt="Life is Greater than Numbers" />
-          <div className="footer-bottom-text">&copy;{new Date().getFullYear()} Life is Greater than Numbers, Inc.</div>
+          <img
+            className="footer-logo"
+            src={theme === 'dark' ? '/images/lgn-logo-registered-white.svg' : '/images/lgn-logo-registered.svg'}
+            alt="Life is Greater than Numbers"
+          />
+          <p className="footer-bottom">501(c)(3) EIN: 33-2376438</p>
         </div>
 
-        {/* Column 2: Navigation */}
-        <div className="footer-col col-nav">
-          <nav className="footer-nav" aria-label="Footer">
-            <button onClick={() => onNavigate('campfire')}>Campfire</button>
-            <button onClick={() => onNavigate('about')}>About</button>
-            <button onClick={() => onNavigate('invest')}>Invest</button>
-            <button onClick={() => onNavigate('submit-film')}>Submit a film</button>
-            <button onClick={() => onNavigate('contact')}>Contact</button>
-          </nav>
-          <div className="footer-bottom-text">501(c)(3) EIN: 33-2376438</div>
+        <nav className="footer-col col-nav" aria-labelledby="footer-nav-heading">
+          <h2 id="footer-nav-heading" className="footer-heading">Navigate</h2>
+          <ul className="footer-list">
+            {nav('campfire', 'Go Beyond')}
+            {nav('invest', 'Invest')}
+            {nav('about', 'About')}
+            {nav('storyboard', 'Storyboard')}
+            {nav('submit-film', 'Submit a film')}
+          </ul>
+          <p className="footer-bottom">
+            <button type="button" className="lgn-link" onClick={() => onNavigate('timeline')}>
+              A witness through time
+            </button>
+          </p>
+        </nav>
+
+        <div className="footer-col col-contact">
+          <h2 className="footer-heading">Contact</h2>
+          <p className="footer-text">
+            <a className="lgn-link" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+          </p>
+          <address className="footer-text">
+            Life is Greater than Numbers, Inc.
+            <br />
+            1950 W Corporate Way, STE 31556
+            <br />
+            Anaheim, CA 92801
+          </address>
+          <p className="footer-bottom">
+            <a className="lgn-link" href="https://www.youtube.com/@lgncinema" target="_blank" rel="noopener noreferrer">
+              YouTube
+            </a>
+          </p>
         </div>
 
-        {/* Column 3: Mailing & Social */}
-        <div className="footer-col col-mailing">
-          <h3>Mailing</h3>
-          <p>Life is Greater than Numbers, Inc.<br />1950 W Corporate Way, STE 31556<br />Anaheim, CA 92801</p>
-          <div className="footer-bottom-text social-links">
-            <a href="https://www.youtube.com/@lgncinema" target="_blank" rel="noopener noreferrer">YouTube</a>
-          </div>
-        </div>
-
-        {/* Column 4: Join */}
         <div className="footer-col col-join">
-          <h3>Join</h3>
+          <h2 className="footer-heading">Join</h2>
           {/* Mailchimp signup in our own markup, sent in the background (see
-              mailchimp.ts) with the result shown here -- no Mailchimp page or
-              branding. The hidden field is Mailchimp's bot trap. */}
+              mailchimp.ts) with the result shown here. The hidden field is
+              Mailchimp's bot trap. */}
           <form className="join-form" onSubmit={(e) => void handleJoin(e)}>
             <input
+              className="lgn-field join-form-field"
               type="email"
               name="EMAIL"
               placeholder="Email Address"
@@ -99,7 +122,12 @@ export function SiteFooter({ theme, onNavigate }: Props) {
             <div aria-hidden="true" className="join-form-trap">
               <input type="text" name={MAILCHIMP_BOT_FIELD} tabIndex={-1} defaultValue="" autoComplete="off" />
             </div>
-            <button type="submit" disabled={join.kind === 'sending'} aria-busy={join.kind === 'sending' || undefined}>
+            <button
+              type="submit"
+              className="lgn-link join-form-submit"
+              disabled={join.kind === 'sending'}
+              aria-busy={join.kind === 'sending' || undefined}
+            >
               {join.kind === 'sending' ? 'Sending…' : 'Submit'}
             </button>
             <p className={`join-form-status${join.kind === 'error' ? ' is-error' : ''}`} role="status">
@@ -110,7 +138,7 @@ export function SiteFooter({ theme, onNavigate }: Props) {
               {join.kind === 'error' && join.message}
             </p>
           </form>
-          <button type="button" className="footer-bottom-text footer-link" onClick={() => onNavigate('timeline')}>A witness through time</button>
+          <p className="footer-bottom">&copy;{new Date().getFullYear()} Life is Greater than Numbers, Inc.</p>
         </div>
       </div>
     </footer>

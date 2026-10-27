@@ -1,22 +1,20 @@
 /* StoryWatch -- the film still in the Watch section's right column.
-   Figma: [CAMPFIRE]-LIGHTPOLES. */
+   Figma v3 "Campfire—lightpoles": 1180x664 at x=660, y=377 (the column's
+   full width, square corners), the 91px play mark at its centre. */
 
 .story-watch {
   position: relative;
   display: block;
   width: 100%;
-  /* The shell's right column is 1196 wide (PRACTICE's card row); the still
-     is 1187 in LIGHTPOLES. A percentage, so it keeps that ratio below 1920. */
-  max-width: calc(100% * 1187 / 1196);
-  /* ...and no wider than 1187 vertical design px, so in a window shorter than
-     1080 the 16:9 still shrinks with it and the page still fits on screen. */
-  max-width: min(calc(100% * 1187 / 1196), calc(1187 * var(--vdp)));
+  /* No wider than 1180 vertical design px, so in a window shorter than 1080
+     the 16:9 still shrinks with it. */
+  max-width: min(100%, calc(1180 * var(--vdp)));
   padding: 0;
   border: 0;
-  border-radius: var(--border-radius);
+  border-radius: 0;
   overflow: hidden;
   /* Shows while the still loads, and is the whole panel when there is none. */
-  background: var(--bg-card-hover);
+  background: var(--placeholder-box);
   cursor: pointer;
   color: inherit;
   font: inherit;

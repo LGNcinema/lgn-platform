@@ -11,7 +11,7 @@ import { WatchMode } from './components/campfire/WatchMode';
 import { StoryReflect } from './components/campfire/StoryReflect';
 import { StoryPractice } from './components/campfire/StoryPractice';
 import { Storyboard } from './components/campfire/Storyboard';
-import { VALID_STORY_SECTIONS, storyNumber, type StorySection } from './components/campfire/campfire';
+import { VALID_STORY_SECTIONS, formatStoryMonth, storyNumber, type StorySection } from './components/campfire/campfire';
 import type { CapsuleDetail, CapsuleSummary, GemeTuning } from './types';
 import { API_URL } from './api';
 
@@ -131,23 +131,6 @@ const GridOverlay = ({ cols, rows }: { cols: number; rows: number }) => (
 );
 
 
-// Invest accordion +/- glyph. Drawn rather than typed so its weight and size
-// can match the frame's glyphs exactly: both marks are 17px across with a
-// ~2.25px stroke (--invest-rule-weight). The frame's minus is a text dash,
-// which sits higher and a little left of the plus's centre, so it is drawn
-// there too rather than through the plus's middle.
-const AccordionIcon = ({ expanded }: { expanded: boolean }) => (
-  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    {expanded ? (
-      <line x1="1" y1="8.75" x2="18.5" y2="8.75" />
-    ) : (
-      <>
-        <line x1="3.5" y1="14.5" x2="20.5" y2="14.5" />
-        <line x1="12" y1="6" x2="12" y2="23" />
-      </>
-    )}
-  </svg>
-);
 
 // `capsule` is a single story's page; `campfire` is the hub listing them. The
 // backend still calls stories capsules, and so does this view name.
@@ -503,11 +486,6 @@ function App() {
 
 
 
-  const navigateToAbout = (subView: 'purpose' | 'mission-vision' | 'board-staff') => {
-    setCurrentView('about');
-    setAboutSubView(subView);
-  };
-
   const renderActiveView = () => {
     if (loading) {
       return (
@@ -534,21 +512,16 @@ function App() {
       case 'home':
         return (
           <div className="home-view-wrapper">
-            <div className="home-definition-block">
-              LGN (n.)&nbsp; A community platform that offers one short film each month as common ground for reflection, discussion, and practice.
-            </div>
-
-            <div className="home-hero-logo-row">
+            <h1>
               <img className="home-hero-logo" src={theme === 'dark' ? '/images/lgn-logo-registered-white.svg' : '/images/lgn-logo-registered.svg'} alt="Life is Greater than Numbers" />
-            </div>
-            
-            <div className="home-hero-subtitle-row">
-              <p className="home-hero-subtitle">Great stories for greater living.</p>
-            </div>
-            
-            <div className="home-hero-btn-row">
-              <button className="home-hero-btn" onClick={() => setCurrentView('campfire')}>Campfire</button>
-            </div>
+            </h1>
+            <p className="home-hero-subtitle">Watch. Reflect. Practice.</p>
+            <button type="button" className="lgn-btn home-hero-btn" onClick={() => setCurrentView('campfire')}>Go Beyond</button>
+            <p className="home-definition">
+              LGN (n.)&nbsp; A community platform that offers one short film each
+              <br />
+              month as common ground for reflection, discussion, and practice.
+            </p>
           </div>
         );
 
@@ -560,23 +533,18 @@ function App() {
         return (
           <StoryShell
             capsule={activeCapsule}
-            storyNumber={number}
+            labels={['LGN', `Story No. ${number}`, formatStoryMonth(activeCapsule.month)]}
             section={storySection}
             onSelectSection={setStorySection}
             onBackToCampfire={() => setCurrentView('campfire')}
-            onAddToStoryboard={() => setCurrentView('storyboard')}
+            gemeTuning={gemeTuning}
+            gemeTuningVersion={gemeTuningVersion}
           >
             {storySection === 'watch' && (
               <StoryWatch capsule={activeCapsule} onEnterWatch={() => setCurrentView('watch')} />
             )}
             {storySection === 'reflect' && <StoryReflect capsule={activeCapsule} />}
-            {storySection === 'practice' && (
-              <StoryPractice
-                capsule={activeCapsule}
-                gemeTuning={gemeTuning}
-                gemeTuningVersion={gemeTuningVersion}
-              />
-            )}
+            {storySection === 'practice' && <StoryPractice capsule={activeCapsule} />}
             {storySection === 'making' && <StoryMaking capsule={activeCapsule} />}
           </StoryShell>
         );
@@ -589,8 +557,8 @@ function App() {
         return (
           <Storyboard
             capsule={activeCapsule}
-            storyNumber={storyNumber(activeCapsule.id, allCapsules)}
-            onBackToCampfire={() => setCurrentView('campfire')}
+            films={allCapsules}
+            onOpenFilm={(id) => openStory(id)}
           />
         );
 
@@ -608,12 +576,12 @@ function App() {
         return (
           <div className="timeline-view-wrapper">
             <div className="timeline-header-grid">
-              <div className="timeline-title-col">
-                A Witness through<br />Time
-              </div>
+              <h1 className="timeline-title-col">
+                A Witness Through Time
+              </h1>
               <div className="timeline-desc-col">
-                A chronological chorus affirming the<br />
-                Life &gt; Numbers Tenet.
+                A chronological chorus affirming that<br />
+                Life &gt; Numbers
               </div>
             </div>
 
@@ -696,157 +664,133 @@ function App() {
         );
       }
 
-      case 'about':
+      case 'about': {
+        const aboutTab = (sub: typeof aboutSubView, label: string) => (
+          <button
+            type="button"
+            className={`lgn-link${aboutSubView === sub ? ' active' : ''}`}
+            aria-current={aboutSubView === sub ? 'page' : undefined}
+            onClick={() => setAboutSubView(sub)}
+          >
+            {label}
+          </button>
+        );
+        const LOREM = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vitae consequat lectus. Morbi pulvinar mauris nec leo ultricies rutrum.';
+        const person = (name: string, title: string, bio = LOREM) => (
+          <div className="team-list-item" key={name + title}>
+            <h3 className="person-name">{name}</h3>
+            <p className="person-title">{title}</p>
+            <p className="person-bio">{bio}</p>
+          </div>
+        );
         return (
-          <div className="about-container animate-fade">
-            <div className="about-sidebar">
-              <button className={`about-nav-btn ${aboutSubView === 'mission-vision' ? 'active' : ''}`} onClick={() => setAboutSubView('mission-vision')}>
-                Mission + Vision
-              </button>
-              <button className={`about-nav-btn ${aboutSubView === 'purpose' ? 'active' : ''}`} onClick={() => setAboutSubView('purpose')}>
-                Purpose
-              </button>
-              <button className={`about-nav-btn ${aboutSubView === 'board-staff' ? 'active' : ''}`} onClick={() => setAboutSubView('board-staff')}>
-                Board + Staff
-              </button>
-            </div>
+          <div className="about-container">
+            {/* Figma v3 About: the menu on the left; on Board + Staff a photo
+                sits under it, on the other two a photo sits on the right. The
+                photos are fixed artwork from the frames. */}
+            <nav className="about-sidebar" aria-label="About">
+              {aboutTab('mission-vision', 'Mission + Vision')}
+              {aboutTab('purpose', 'Purpose')}
+              {aboutTab('board-staff', 'Board + Staff')}
+              {aboutSubView === 'board-staff' && (
+                <img className="about-photo about-photo--left" src="/images/about-board-staff.jpg" alt="" />
+              )}
+            </nav>
 
             <div className="about-content">
               {aboutSubView === 'mission-vision' && (
-                <div className="about-mv-section animate-fade">
-                  <div className="about-mv-block">
-                    <div className="about-mv-label">Mission</div>
-                    <h2 className="about-mv-text">To equip short films with pathways for reflection, discussion, and practice.</h2>
-                  </div>
-                  <div className="about-mv-block">
-                    <div className="about-mv-label">Vision</div>
-                    <h2 className="about-mv-text">A culture of common ground, where life is greater than numbers.</h2>
-                  </div>
-                </div>
+                <>
+                  <section className="about-block">
+                    <h1 className="about-title">Mission</h1>
+                    <p className="about-statement">To equip short films with pathways for reflection, discussion, and practice.</p>
+                  </section>
+                  <section className="about-block">
+                    <h2 className="about-title">Vision</h2>
+                    <p className="about-statement">A culture of common ground, where life is greater than numbers.</p>
+                  </section>
+                </>
               )}
 
               {aboutSubView === 'purpose' && (
-                <div className="animate-fade">
-                  <div className="about-mv-label">Purpose</div>
+                <>
+                  <h1 className="about-title">Purpose</h1>
                   <p className="about-purpose-text">LGN stands for Life &gt; Numbers—a reminder that people are more than metrics, outcomes, opinions, identities, and categories.</p>
                   <p className="about-purpose-text">We gather people around great stories that help us see life more fully. Each month, LGN offers one film as common ground, with simple pathways for reflection, discussion, and practice that help the story move beyond the screen and into greater living.</p>
-                </div>
+                </>
               )}
 
               {aboutSubView === 'board-staff' && (
-                <div className="animate-fade">
-                  <div className="team-section">
-                    <h2 className="team-label">Board</h2>
+                <>
+                  <section className="team-section">
+                    <h1 className="team-label">Board</h1>
                     <div className="team-list-layout">
-                      <div className="team-list-item">
-                        <h3 className="person-name">Kirk Utzinger</h3>
-                        <p className="person-title">Board Chair</p>
-                        <p className="person-bio">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vitae consequat lectus. Morbi pulvinar mauris nec leo ultricies rutrum.</p>
-                      </div>
-                      <div className="team-list-item">
-                        <h3 className="person-name">Lorem Ipsum</h3>
-                        <p className="person-title">Secretary</p>
-                        <p className="person-bio">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vitae consequat lectus. Morbi pulvinar mauris nec leo ultricies rutrum.</p>
-                      </div>
-                      <div className="team-list-item">
-                        <h3 className="person-name">Dean Kato</h3>
-                        <p className="person-title">Director of Board Development</p>
-                        <p className="person-bio">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vitae consequat lectus. Morbi pulvinar mauris nec leo ultricies rutrum.</p>
-                      </div>
-                      <div className="team-list-item">
-                        <h3 className="person-name">Lorem Ipsum</h3>
-                        <p className="person-title">Director of Community Engagement</p>
-                        <p className="person-bio">Bio: </p>
-                      </div>
+                      {person('Kirk Utzinger', 'Board Chair')}
+                      {person('Dean Kato', 'Director of Board Development')}
+                      {person('Ann Swann', 'Secretary')}
+                      {person('Lorem Ipsum', 'Director of Community Engagement')}
                     </div>
-                  </div>
-
-                  <div className="team-section">
+                  </section>
+                  <section className="team-section">
                     <h2 className="team-label">Staff</h2>
                     <div className="team-list-layout">
-                      <div className="team-list-item">
-                        <h3 className="person-name">Karson Utzinger</h3>
-                        <p className="person-title">Founder and Executive Director</p>
-                        <p className="person-bio">I love jo. She's my love.</p>
-                      </div>
-                      <div className="team-list-item">
-                        <h3 className="person-name">Stephen Brown</h3>
-                        <p className="person-title">Pipeline Producer</p>
-                        <p className="person-bio">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vitae consequat lectus. Morbi pulvinar mauris nec leo ultricies rutrum.</p>
-                      </div>
-                      <div className="team-list-item">
-                        <h3 className="person-name">Joëlle Utzinger</h3>
-                        <p className="person-title">Brand Designer</p>
-                        <p className="person-bio">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vitae consequat lectus. Morbi pulvinar mauris nec leo ultricies rutrum.</p>
-                      </div>
+                      {person('Karson Utzinger', 'Founder and Executive Director')}
+                      {person('Stephen Brown', 'Pipeline Producer')}
+                      {person('Joëlle Utzinger', 'Brand Designer')}
                     </div>
-                  </div>
-                </div>
+                  </section>
+                </>
               )}
             </div>
+
+            {aboutSubView === 'mission-vision' && <img className="about-photo" src="/images/about-mission-vision.jpg" alt="" />}
+            {aboutSubView === 'purpose' && <img className="about-photo" src="/images/about-purpose.jpg" alt="" />}
           </div>
         );
+      }
 
-      case 'invest':
+      case 'invest': {
+        const investRow = (key: string, title: string, body: React.ReactNode) => {
+          const open = investExpandedRow === key;
+          return (
+            <button
+              type="button"
+              className={`invest-accordion-row${open ? ' open' : ''}`}
+              aria-expanded={open}
+              onClick={() => setInvestExpandedRow(open ? null : key)}
+            >
+              <span className="invest-row-title">{title}</span>
+              <span className="invest-row-content">{open && body}</span>
+              <span className="invest-row-icon" aria-hidden="true">{open ? 'v' : '>'}</span>
+            </button>
+          );
+        };
         return (
-          <div className="invest-container animate-fade">
-            {/* Figma Invest LIGHT: the heading sits in the left column, on two lines. */}
-            <div className="invest-sidebar-placeholder">
+          <div className="invest-container">
+            <div className="invest-sidebar">
               <h1 className="invest-title">How you can invest<br />in this vision</h1>
+              <img className="about-photo about-photo--left" src="/images/invest.jpg" alt="" />
             </div>
             <div className="invest-content">
-
               <div className="invest-accordion">
-                <div className="invest-accordion-row" onClick={() => setInvestExpandedRow(investExpandedRow === 'time' ? null : 'time')}>
-                  <div className="invest-row-title">Time</div>
-                  <div className="invest-row-content">
-                    {investExpandedRow === 'time' && (
-                      <ul className="invest-bullet-list">
-                        <li>Share this vision with your network</li>
-                        <li>Join the LGN discourse (in beta)</li>
-                        <li>Partner with us to kickstart a peer-to-peer fundraising campaign</li>
-                      </ul>
-                    )}
-                  </div>
-                  <div className="invest-row-icon">
-                    <AccordionIcon expanded={investExpandedRow === 'time'} />
-                  </div>
-                </div>
-
-                <div className="invest-accordion-row" onClick={() => setInvestExpandedRow(investExpandedRow === 'talent' ? null : 'talent')}>
-                  <div className="invest-row-title">Talent</div>
-                  <div className="invest-row-content">
-                    {investExpandedRow === 'talent' && (
-                      <p className="invest-row-text">Contribute your skills to our platform. We are currently seeking volunteers with experience in web development, design, and content writing.</p>
-                    )}
-                  </div>
-                  <div className="invest-row-icon">
-                    <AccordionIcon expanded={investExpandedRow === 'talent'} />
-                  </div>
-                </div>
-
-                <div className="invest-accordion-row" onClick={() => setInvestExpandedRow(investExpandedRow === 'treasure' ? null : 'treasure')}>
-                  <div className="invest-row-title">Treasure</div>
-                  <div className="invest-row-content">
-                    {investExpandedRow === 'treasure' && (
-                      <p className="invest-row-text">Your financial support helps us license great films, maintain the platform, and grow the community.</p>
-                    )}
-                  </div>
-                  <div className="invest-row-icon">
-                    <AccordionIcon expanded={investExpandedRow === 'treasure'} />
-                  </div>
-                </div>
+                {investRow('time', 'Time', (
+                  <ol className="invest-steps">
+                    <li>Share this vision with your network</li>
+                    <li>Join the LGN discourse (in beta)</li>
+                    <li>Partner with us to kickstart a peer-to-peer fundraising campaign</li>
+                  </ol>
+                ))}
+                {investRow('talent', 'Talent', 'Contribute your skills to our platform. We are currently seeking volunteers with experience in web development, design, and content writing.')}
+                {investRow('treasure', 'Treasure', 'Your financial support helps us license great films, maintain the platform, and grow the community.')}
               </div>
 
               {/* Stripe-hosted donation page, in a new tab so the visitor keeps their place here. */}
-              <a className="invest-give-btn" id="btn-give-treasure" href="https://donate.stripe.com/cNi9AT2g6fxc6j1bs4cjS00" target="_blank" rel="noopener noreferrer">Give Here</a>
+              <a className="lgn-btn invest-give-btn" id="btn-give-treasure" href="https://donate.stripe.com/cNi9AT2g6fxc6j1bs4cjS00" target="_blank" rel="noopener noreferrer">Give Here</a>
 
-              <div className="invest-footer-info">
-                <p>As a registered 501(c)(3), donations to Life is Greater than Numbers, Inc. are tax-deductible to the fullest extent allowed by law. Charitable disclosure & state registration info will be added here as we complete our national registration process. This page is not intended as a solicitation in jurisdictions where Life is Greater than Numbers, Inc. is not yet registered or exempt from registration.</p>
-              </div>
+              <p className="invest-footer-info">As a registered 501(c)(3), donations to Life is Greater than Numbers, Inc. are tax-deductible to the fullest extent allowed by law. Charitable disclosure &amp; state registration info will be added here as we complete our national registration process. This page is not intended as a solicitation in jurisdictions where Life is Greater than Numbers, Inc. is not yet registered or exempt from registration.</p>
             </div>
           </div>
         );
+      }
 
 
       case 'contact':
@@ -1046,7 +990,6 @@ function App() {
           currentView={currentView}
           theme={theme}
           onNavigate={setCurrentView}
-          onNavigateAbout={navigateToAbout}
         />
       )}
 
@@ -1055,7 +998,7 @@ function App() {
         {renderActiveView()}
       </main>
 
-      {currentView !== 'watch' && <SiteFooter theme={theme} onNavigate={setCurrentView} />}
+      <SiteFooter theme={theme} onNavigate={setCurrentView} />
 
       {showGridOverlay && <GridOverlay cols={currentView === 'home' ? 12 : 6} rows={currentView === 'home' ? 6 : 3} />}
       </div>

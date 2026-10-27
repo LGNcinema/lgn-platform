@@ -1,182 +1,37 @@
-/* StoryReflect -- right column of the Reflect section.
-   Figma: [CAMPFIRE]-REFLECT. Measured at 1920; sizes scale with the viewport
-   per the house clamp(min, vw, max) rule (vw = px@1920 / 1920 * 100).
-   Spacing is carried on margin-top of each block so the rhythm survives any
-   block being absent (no introduction, no prompts). */
+/* Reflect's open circle. Figma v3 "Campfire—reflect", at 1920: the
+   question (20px) 2px in from the column; the answer box 58px under it,
+   full width, 109 tall, a grey 1px outline with a grey hint inset ~10px;
+   "Save my answer", a 202x33 outlined button, 15px under the box. */
 
-.story-reflect {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.story-reflect-heading {
-  /* No top margin: StoryShell owns the gap below the month label. */
-  margin: 0;
-  /* Keeps a long introduction at the textarea's measure rather than letting it
-     run the full column. */
-  max-width: clamp(320px, 47.3438vw, 909px);
-  font-size: 24px;
-  font-weight: 550;
-  line-height: 1.125;
-  color: var(--primary);
-}
-
-@media (max-width: 768px) {
-  .story-reflect-heading {
-    font-size: 20px;
-  }
-}
-
-.story-reflect-private,
-.story-reflect-empty {
-  margin: clamp(18px, 1.3542vw, 26px) 0 0;
-  font-size: 12px;
-  font-weight: 550;
-  line-height: 1.25;
-  color: var(--text-dark);
-}
-
-.story-reflect-empty {
-  margin-top: clamp(36px, 2.6042vw, 50px);
-  font-size: 20px;
-  line-height: 1.5;
-  color: var(--text-muted);
-}
-
-@media (max-width: 768px) {
-  .story-reflect-empty {
-    font-size: 16px;
-  }
-}
-
-.story-reflect-prompts {
-  margin: clamp(36px, 2.6042vw, 50px) 0 0;
-  padding: 0;
+.reflect-questions {
   list-style: none;
-  counter-reset: story-reflect-prompt;
-  display: flex;
-  flex-direction: column;
-  /* No gap, as in the frame: its prompts are one line each, stacked on the
-     line pitch alone. (An 8px gap was here while the Lightpoles prompts were
-     two-to-three-line paragraphs; the Figma copy is one-liners.) If prompts
-     grow long again, a small gap stops one from reading into the next. */
-  gap: 0;
-  /* Real prompts are paragraphs, not one-liners -- hold them to the
-     textarea's width for a readable measure. */
-  max-width: clamp(320px, 47.3438vw, 909px);
+  margin: 0;
+  padding: 0 0 0 2px;
+  line-height: 22px;
 }
 
-/* Custom counter rather than the native marker: the frame sets the number
-   flush with the column edge and the text on a fixed indent, with wrapped
-   lines hanging under the text rather than under the number. */
-.story-reflect-prompt {
-  counter-increment: story-reflect-prompt;
-  display: grid;
-  grid-template-columns: 1.125em 1fr;
-  font-size: 20px;
-  font-weight: 550;
-  line-height: 1.5;
-  color: var(--primary);
+.reflect-questions li + li {
+  margin-top: 22px;
 }
 
-.story-reflect-prompt::before {
-  content: counter(story-reflect-prompt) '.';
+.reflect-field {
+  height: 109px;
+  min-height: 109px;
+  margin-top: calc(58.3 * var(--vdp));
+  padding: 13px 10px;
 }
 
-.story-reflect-textarea {
-  box-sizing: border-box;
-  display: block;
-  width: 100%;
-  max-width: clamp(320px, 47.3438vw, 909px);
-  height: clamp(128px, 8.5417vw, 164px);
-  margin-top: clamp(36px, 2.7604vw, 53px);
-  padding: calc(15 * var(--dp)) calc(14 * var(--dp));
-  border: 1px solid var(--primary);
-  border-radius: var(--border-radius);
-  background: var(--bg-card);
-  color: var(--text-main);
-  font-family: var(--font-sans);
-  font-size: 12px;
-  line-height: 1.25;
-  resize: vertical;
-}
-
-.story-reflect-textarea::placeholder {
-  /* Frame: #454545, darker than --text-muted and with no token of its own.
-     Derived from --text-main (73% of black on white = #454545) rather than a
-     literal, so it stays legible when the dark theme flips the text color. */
-  color: color-mix(in srgb, var(--text-main) 73%, transparent);
-  opacity: 1;
-}
-
-.story-reflect-textarea:focus {
-  outline: none;
-}
-
-.story-reflect-textarea:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
-.story-reflect-actions {
+.reflect-actions {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: calc(16 * var(--dp));
-  margin-top: clamp(18px, 1.25vw, 24px);
+  gap: 16px;
+  margin-top: 15px;
 }
 
-.story-reflect-keep {
-  box-sizing: border-box;
-  height: 44px;
-  padding: 0 17px;
-  border: 0;
-  border-radius: var(--border-radius);
-  /* Frame fill is #EDEDED -- --bg-card-hover, which also gives the right
-     fill in dark mode. */
-  background: var(--bg-card-hover);
-  /* Frame: the label is #242424, not black -- --secondary in the light theme. */
-  color: var(--secondary);
-  font-family: var(--font-sans);
-  font-size: 20px;
-  font-weight: 550;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
+.reflect-save {
+  height: 33px;
 }
 
-.story-reflect-keep:hover {
-  background: var(--border);
-}
-
-.story-reflect-keep:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
-.story-reflect-status {
-  font-size: 12px;
-  color: var(--text-dark);
-}
-
-.story-reflect-sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-@media (max-width: 768px) {
-  /* The column is the full width here; the 1920-derived caps would leave
-     the textarea and prompts narrower than the screen. */
-  .story-reflect-heading,
-  .story-reflect-prompts,
-  .story-reflect-textarea {
-    max-width: none;
-  }
+.reflect-status {
+  color: var(--text-grey);
 }

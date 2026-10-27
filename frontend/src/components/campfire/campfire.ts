@@ -5,7 +5,9 @@
  * name and only the UI speaks of stories.
  */
 import { API_URL } from '../../api';
-import type { CapsuleSummary } from '../../types';
+import type { CapsuleSummary, Dimension } from '../../types';
+
+export type { Dimension };
 
 /** Sections of a story page. `making` is reached from "More on making this
  *  film", not from the section nav, so it is absent from STORY_NAV_SECTIONS. */
@@ -18,6 +20,37 @@ export const STORY_NAV_SECTIONS: { key: StorySection; label: string }[] = [
 ];
 
 export const VALID_STORY_SECTIONS = ['watch', 'reflect', 'practice', 'making'] as const;
+
+/** Reflect and Practice are each organised in three widening circles. */
+
+export const DIMENSIONS: { key: Dimension; label: string }[] = [
+  { key: 'self', label: 'Self' },
+  { key: 'neighbor', label: 'Neighbor' },
+  { key: 'world', label: 'World' },
+];
+
+/**
+ * Sort a story's reflections or practices into Self / Neighbor / World.
+ *
+ * Items the admin has tagged with a dimension go under it. Untagged items --
+ * everything written before the dimensions existed -- fill the empty ones in
+ * their CMS order, so Lightpoles' "Return / Respond / Join" practices land on
+ * Self / Neighbor / World without anyone re-entering them. Anything left over
+ * joins the last dimension rather than disappearing.
+ */
+export function byDimension<T extends { dimension?: Dimension | null }>(items: T[]): Record<Dimension, T[]> {
+  const out: Record<Dimension, T[]> = { self: [], neighbor: [], world: [] };
+  const untagged: T[] = [];
+  for (const item of items) {
+    if (item.dimension && item.dimension in out) out[item.dimension].push(item);
+    else untagged.push(item);
+  }
+  for (const { key } of DIMENSIONS) {
+    if (out[key].length === 0 && untagged.length > 0) out[key].push(untagged.shift() as T);
+  }
+  if (untagged.length) out.world.push(...untagged);
+  return out;
+}
 
 const MONTH_NAMES = [
   'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',

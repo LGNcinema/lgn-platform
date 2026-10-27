@@ -31,7 +31,7 @@ import { StoryReflect } from '../../components/campfire/StoryReflect';
 import { StoryShell } from '../../components/campfire/StoryShell';
 import { StoryWatch } from '../../components/campfire/StoryWatch';
 import { WatchMode } from '../../components/campfire/WatchMode';
-import type { StorySection } from '../../components/campfire/campfire';
+import { formatStoryMonth, type StorySection } from '../../components/campfire/campfire';
 import type { CapsuleSummary } from '../../types';
 import { formatLocal, localTimeLabel, parseNaiveUtc, publicationState } from '../publishing';
 import { StatusPill } from '../StatusPill';
@@ -137,17 +137,16 @@ export function PreviewPanel({ capsule }: PanelProps) {
           ) : (
             <StoryShell
               capsule={capsule}
-              storyNumber={storyNumber}
+              labels={['LGN', `Story No. ${storyNumber}`, formatStoryMonth(capsule.month)]}
               section={section}
               onSelectSection={setSection}
               onBackToCampfire={noop}
-              onAddToStoryboard={noop}
+              gemeTuning={null}
+              gemeTuningVersion={0}
             >
               {section === 'watch' && <StoryWatch capsule={capsule} onEnterWatch={() => setWatching(true)} />}
               {section === 'reflect' && <StoryReflect capsule={capsule} />}
-              {section === 'practice' && (
-                <StoryPractice capsule={capsule} gemeTuning={null} gemeTuningVersion={0} />
-              )}
+              {section === 'practice' && <StoryPractice capsule={capsule} />}
               {section === 'making' && <StoryMaking capsule={capsule} />}
             </StoryShell>
           )}

@@ -1,3 +1,5 @@
+export type Dimension = 'self' | 'neighbor' | 'world';
+
 export type VideoProvider = 'vimeo' | 'mux' | 'youtube' | 'file';
 
 export interface Film {
@@ -34,6 +36,8 @@ export interface Reflection {
   content: string;
   author?: string;
   created_at: string;
+  /** Self / Neighbor / World. Null on reflections written before V3. */
+  dimension?: Dimension | null;
 }
 
 export interface DiscussionCircle {
@@ -51,6 +55,8 @@ export interface Practice {
   title: string;
   description?: string;
   steps: string;
+  /** Self / Neighbor / World. Null on practices written before V3. */
+  dimension?: Dimension | null;
 }
 
 export interface CapsuleDetail {

@@ -1,0 +1,22 @@
+/* "How these guides are made". Figma v3, at 1920: a 630px panel; the body
+   starts ~30px under the two-line label; 20px type on 22px; paragraphs one
+   line apart; the tier list a little further down. */
+.guides-dialog {
+  width: 630px;
+}
+
+.guides-dialog-body {
+  margin-top: 28px;
+  font-size: var(--text-20);
+  line-height: 22px;
+}
+
+.guides-dialog-body p + p {
+  margin-top: 22px;
+}
+
+.guides-dialog-tiers {
+  list-style: none;
+  margin: 34px 0 0;
+  padding: 0;
+}
