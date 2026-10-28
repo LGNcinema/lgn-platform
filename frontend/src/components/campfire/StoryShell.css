@@ -57,7 +57,9 @@
 .story-shell-labels {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: calc(599 * var(--dp)) calc(620 * var(--dp)) minmax(0, 1fr);
+  /* The last label keeps its own width when the panel is narrow (the admin
+     preview), the first two giving way instead. */
+  grid-template-columns: minmax(0, calc(599 * var(--dp))) minmax(0, calc(620 * var(--dp))) minmax(max-content, 1fr);
 }
 
 /* ---------------------------------------------------------------- left */

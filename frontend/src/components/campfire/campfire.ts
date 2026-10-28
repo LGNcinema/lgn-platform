@@ -155,6 +155,8 @@ export interface StorySubmission {
   content: string;
   author_name?: string;
   author_location?: string;
+  /** Optional, only so LGN can ask about edits; never shown publicly. */
+  author_email?: string;
   /** Always true: the form is only offered after the visitor agrees to the
    *  storyboard terms, and the API rejects anything else. */
   consent_to_share: true;

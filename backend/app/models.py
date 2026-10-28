@@ -37,6 +37,11 @@ class Capsule(Base):
     publish_at = Column(DateTime, nullable=True)
     pre_watch_prompt = Column(String, nullable=True)
     pre_watch_supporting_text = Column(Text, nullable=True)
+    # V3 (migrations/20261027120000_v3_stories_admin.sql): one introduction for
+    # Reflect, the Practice tab's title, and the story's LGN Spark link.
+    reflect_intro = Column(Text, nullable=True)
+    practice_title = Column(Text, nullable=True)
+    spark_url = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     @hybrid_property
@@ -62,9 +67,22 @@ class Capsule(Base):
 
     # Relationships
     film = relationship("Film", back_populates="capsule", uselist=False, cascade="all, delete-orphan")
-    reflections = relationship("Reflection", back_populates="capsule", cascade="all, delete-orphan")
-    discussion_circles = relationship("DiscussionCircle", back_populates="capsule", cascade="all, delete-orphan")
-    practices = relationship("Practice", back_populates="capsule", cascade="all, delete-orphan")
+    reflections = relationship("Reflection", back_populates="capsule", cascade="all, delete-orphan", order_by="Reflection.id")
+    practices = relationship("Practice", back_populates="capsule", cascade="all, delete-orphan", order_by="Practice.id")
+    photos = relationship(
+        "CapsulePhoto", back_populates="capsule", cascade="all, delete-orphan",
+        order_by="(CapsulePhoto.position, CapsulePhoto.id)",
+    )
+
+    @property
+    def bts_photos(self):
+        """Behind-the-scenes photos by reference, for CapsuleDetail. The
+        image bytes are deferred on the rows, so this never loads them."""
+        return [
+            {"id": p.id, "url": f"/api/capsule-photos/{p.id}", "caption": p.caption, "position": p.position}
+            for p in self.photos
+            if p.kind == "bts"
+        ]
 
 class Film(Base):
     __tablename__ = "films"
@@ -103,20 +121,11 @@ class Reflection(Base):
     content = Column(Text, nullable=False) # Supports markdown (e.g. questions)
     author = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    # self / neighbor / world. Several questions may share one; the first is
+    # the featured question.
+    dimension = Column(String(16), nullable=True)
 
     capsule = relationship("Capsule", back_populates="reflections")
-
-class DiscussionCircle(Base):
-    __tablename__ = "discussion_circles"
-
-    id = Column(Integer, primary_key=True, index=True)
-    capsule_id = Column(Integer, ForeignKey("capsules.id"), nullable=False)
-    title = Column(String, nullable=False)
-    opening_round = Column(Text, nullable=True)
-    discuss_prompts = Column(Text, nullable=True)
-    closing_question = Column(Text, nullable=True)
-
-    capsule = relationship("Capsule", back_populates="discussion_circles")
 
 class Practice(Base):
     __tablename__ = "practices"
@@ -126,6 +135,8 @@ class Practice(Base):
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     steps = Column(Text, nullable=False) # Can be list of steps or markdown
+    dimension = Column(String(16), nullable=True)  # self / neighbor / world
+    tips = Column(Text, nullable=True)
 
     capsule = relationship("Capsule", back_populates="practices")
 
@@ -188,6 +199,11 @@ class StoryboardSubmission(Base):
     # submission without an account. Never returned by any list or admin read.
     owner_token = Column(String(64), nullable=True)
     # migrations/20261006120000_storyboard_review_and_photos.sql
+    # Set by the reviewer (self / neighbor / world), and the author's optional
+    # email for questions about edits -- never public.
+    dimension = Column(String(16), nullable=True)
+    author_email = Column(String(254), nullable=True)
+    # migrations/20261027120000_v3_stories_admin.sql
 
     @property
     def review_status(self) -> str:
@@ -195,3 +211,20 @@ class StoryboardSubmission(Base):
             return "approved"
         return "pending" if self.reviewed_at is None else "declined"
 
+
+
+class CapsulePhoto(Base):
+    """A story's behind-the-scenes photo. The admin's browser shrinks it before
+    upload, so the image lives in the row (deferred: list reads never load it)
+    and is served from its own endpoint."""
+    __tablename__ = "capsule_photos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    capsule_id = Column(Integer, ForeignKey("capsules.id", ondelete="CASCADE"), nullable=False)
+    kind = Column(String(16), nullable=False, default="bts")
+    position = Column(Integer, nullable=False, default=0)
+    image = deferred(Column(LargeBinary, nullable=False))
+    caption = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    capsule = relationship("Capsule", back_populates="photos")

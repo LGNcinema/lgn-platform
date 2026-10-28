@@ -41,7 +41,11 @@
 
 .cf-beyond {
   display: grid;
-  grid-template-columns: calc(601 * var(--dp)) minmax(0, calc(912 * var(--dp))) auto;
+  /* The field starts on the 660 grid line under "Go Beyond": 300 design px
+     left of the page's centre, less the 18px gap -- measured from the centre
+     line like the header, so the space after the intro shrinks as the menu
+     moves in on narrower windows. */
+  grid-template-columns: max(200px, calc(50% - 318 * var(--dp))) minmax(0, calc(912 * var(--dp))) auto;
   justify-content: start;
   column-gap: calc(18 * var(--dp));
   align-items: start;

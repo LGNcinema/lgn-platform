@@ -54,8 +54,11 @@ function questionOf(r: { title?: string; content?: string }): string {
 export function StoryReflect({ capsule }: Props) {
   const groups = useMemo(() => byDimension(capsule.reflections ?? []), [capsule.reflections]);
 
-  // The admin's framing note (written once, on the first reflection).
-  const intro = (capsule.reflections ?? []).find((r) => r.introduction?.trim())?.introduction?.trim();
+  // One introduction for the whole tab (the admin's Reflect introduction), or,
+  // for stories written before it existed, the first reflection's.
+  const intro =
+    capsule.reflect_intro?.trim() ||
+    (capsule.reflections ?? []).find((r) => r.introduction?.trim())?.introduction?.trim();
 
   return (
     <DimensionSections

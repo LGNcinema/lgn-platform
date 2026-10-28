@@ -23,3 +23,21 @@
 .practice-steps-empty {
   color: var(--text-grey);
 }
+
+/* The admin's title for the tab, which may run several lines. */
+.practice-intro {
+  white-space: pre-line;
+}
+
+/* Tips (not in the frames): under the steps, in the label style, the text
+   in grey so the steps stay the lead. */
+.practice-tips {
+  margin-top: 32px;
+  padding-left: 32px;
+}
+
+.practice-tips-text {
+  margin-top: 8px;
+  color: var(--text-grey);
+  white-space: pre-line;
+}

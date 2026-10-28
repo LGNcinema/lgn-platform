@@ -40,13 +40,11 @@ export interface Reflection {
   dimension?: Dimension | null;
 }
 
-export interface DiscussionCircle {
+export interface CapsulePhoto {
   id: number;
-  capsule_id: number;
-  title: string;
-  opening_round?: string;
-  discuss_prompts?: string;
-  closing_question?: string;
+  url: string;
+  caption?: string | null;
+  position: number;
 }
 
 export interface Practice {
@@ -57,6 +55,8 @@ export interface Practice {
   steps: string;
   /** Self / Neighbor / World. Null on practices written before V3. */
   dimension?: Dimension | null;
+  /** Optional tips shown with the practice (V3). */
+  tips?: string | null;
 }
 
 export interface CapsuleDetail {
@@ -71,9 +71,16 @@ export interface CapsuleDetail {
   is_published?: boolean;
   pre_watch_prompt?: string;
   pre_watch_supporting_text?: string;
+  /** One introduction for the whole Reflect tab (V3). */
+  reflect_intro?: string | null;
+  /** The Practice tab's title / intro line (V3). */
+  practice_title?: string | null;
+  /** The story's LGN Spark: its YouTube interview. Public placement TBD. */
+  spark_url?: string | null;
+  /** Behind-the-scenes photos; `url` is API-relative. Not shown publicly yet. */
+  bts_photos?: CapsulePhoto[];
   film?: Film;
   reflections: Reflection[];
-  discussion_circles: DiscussionCircle[];
   practices: Practice[];
 }
 

@@ -638,6 +638,7 @@ function AddStoryDialog({ open, films, initialFilm, onClose, onShared }: AddProp
         content,
         author_name: name,
         author_location: city,
+        author_email: email.trim() || undefined,
         consent_to_share: true,
         photo: photo ?? undefined,
       });

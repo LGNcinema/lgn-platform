@@ -58,7 +58,12 @@
   /* 1920x1080 6-Column Layout Grid System */
   --grid-max-width: 1920px;
   --grid-margin: calc(40 * var(--dp)); /* layout: scales like the frame */
-  --grid-gutter: calc(32 * var(--dp));
+  /* V3's grid: 20px gutters (V2's was 32). 6 columns start at x = 40 / 350
+     / 660 / 970 / 1280 / 1590 at 1920; 12 at every 155 from 40. The line
+     that matters most is 660 -- 300 design px left of centre -- where the
+     home logo's "L", the header's "Go Beyond" and the inner pages' body
+     text all start. */
+  --grid-gutter: calc(20 * var(--dp));
   --grid-cols: 6;
   --col-width: 280px;
   --sidebar-start: 40px;
@@ -225,10 +230,18 @@ select {
   background: var(--primary);
 }
 
+/* The page is the 1920 frame, centred. Wider windows get the same
+   composition in the middle, the page colour (on <body>) filling either
+   side, so the column lines -- the header links, the home logo, every page's
+   content -- stay aligned and centred instead of hugging the left edge.
+   Below 1920 the layout scales as before (--dp). */
 #root {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 1920px;
   min-height: 100vh;
+  margin: 0 auto;
   position: relative;
 }
 
@@ -424,6 +437,16 @@ textarea.lgn-field {
   padding: calc(363 * var(--vdp)) var(--grid-margin) 0;
   color: var(--primary);
   text-align: center;
+}
+
+/* On the 660 grid line, not dead centre (as the frame draws it): the "L"
+   starts there (the logo file draws it 2.5px left of its own box, hence
+   297.5 rather than 300) --
+   like "Go Beyond" above it. Measured from the centre line, so the two stay
+   together at any width (the padding is symmetric: 50% is the centre). */
+.home-view-wrapper > h1 {
+  align-self: flex-start;
+  margin-left: calc(50% - 297.5 * var(--dp));
 }
 
 .home-hero-logo {
@@ -887,7 +910,12 @@ textarea.lgn-field {
 .about-container,
 .invest-container {
   display: grid;
-  grid-template-columns: calc(620 * var(--dp)) minmax(0, 1fr) auto;
+  /* The text column starts on the 660 grid line, with "Go Beyond" above it
+     -- 300 design px left of the page's centre, measured from the centre
+     line like the links, so the white space before it shrinks as the menu
+     moves in on narrower windows (the padding is symmetric, so 50% of the
+     content box is the centre). Never less than room for the side menu. */
+  grid-template-columns: max(240px, calc(50% - 300 * var(--dp))) minmax(0, 1fr) auto;
   padding: calc(185 * var(--vdp)) var(--grid-margin) calc(141 * var(--vdp));
   color: var(--primary);
 }
@@ -3320,89 +3348,6 @@ textarea.lgn-field {
 .geme-tune-status {
   flex: 1;
   min-width: 180px;
-}
-
-/* Discuss View -- circle-discussion-guide (Figma "[CAPSULE]-Discuss LIGHT"), shares the
-   light "card" + "inner panel" treatment with the other Capsule sub-pages */
-.discuss-guide-note {
-  font-family: var(--font-sans);
-  font-size: 14px;
-  color: var(--text-muted);
-  margin-top: 8px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--text-dark);
-}
-
-.discuss-guide-circle {
-  padding-top: 32px;
-  padding-bottom: 32px;
-  border-bottom: 1px solid var(--text-dark);
-}
-
-.discuss-guide-circle:last-of-type {
-  border-bottom: none;
-}
-
-.discuss-guide-circle-title {
-  font-family: var(--font-sans);
-  font-weight: 500;
-  font-size: 28px;
-  letter-spacing: -0.02em;
-  color: var(--text-main);
-  margin-bottom: 24px;
-}
-
-@media (max-width: 768px) {
-  .discuss-guide-circle-title {
-    font-size: 20px;
-  }
-}
-
-.discuss-guide-columns {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 24px;
-}
-
-@media (min-width: 768px) {
-  .discuss-guide-columns {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 32px;
-  }
-}
-
-.discuss-guide-col {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.discuss-guide-col-label {
-  font-family: var(--font-sans);
-  font-weight: 700;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--text-muted);
-}
-
-.discuss-guide-col-text {
-  font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: 1.5;
-  color: var(--text-main);
-}
-
-/* Currently unrendered: no capsule-level closing question exists in the data
-   model -- each DiscussionCircle carries its own `closing_question`, which the
-   three-column layout above already shows. Kept because the Figma spec has this
-   element; wire it up if a capsule-wide closing question is ever added. */
-.discuss-guide-overall-closing {
-  font-family: var(--font-sans);
-  font-weight: 500;
-  font-size: 16px;
-  color: var(--text-main);
-  margin-top: 32px;
 }
 
 /* ==========================================================================

@@ -60,7 +60,7 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
         onUnauthorized();
         return;
       }
-      setError(err instanceof Error ? err.message : 'Could not load capsules.');
+      setError(err instanceof Error ? err.message : 'Could not load stories.');
     } finally {
       setLoading(false);
     }
@@ -163,25 +163,25 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
         onUnauthorized();
         return;
       }
-      setCreateError(err instanceof Error ? err.message : 'Could not create the capsule.');
+      setCreateError(err instanceof Error ? err.message : 'Could not create the story.');
     } finally {
       setSaving(false);
     }
   };
 
   const emptyMessage = (() => {
-    if (query.trim()) return 'No capsules match that search.';
-    if (bucket === 'published') return 'Nothing is published yet. Publish a capsule from its Details tab.';
-    if (bucket === 'scheduled') return 'Nothing is scheduled. Set a go-live time on the Details tab of any capsule.';
-    return 'No drafts. Every capsule is published or scheduled.';
+    if (query.trim()) return 'No stories match that search.';
+    if (bucket === 'published') return 'Nothing is published yet. Publish a story from its Details tab.';
+    if (bucket === 'scheduled') return 'Nothing is scheduled. Set a go-live time on the Details tab of any story.';
+    return 'No drafts. Every story is published or scheduled.';
   })();
 
   return (
-    <section className="admin-picker" aria-label="Capsules">
+    <section className="admin-picker" aria-label="Stories">
       <div className="admin-picker-head">
-        <h2 className="admin-section-title">Capsules</h2>
+        <h2 className="admin-section-title">Stories</h2>
         <button type="button" className="admin-btn-primary admin-btn-sm" onClick={openCreate}>
-          + New capsule
+          + New story
         </button>
       </div>
 
@@ -216,7 +216,7 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
               value={newTitle}
               disabled={saving}
               onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="Capsule title"
+              placeholder="Story title"
               required
               aria-required="true"
             />
@@ -244,7 +244,7 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search month or title"
-        aria-label="Search capsules"
+        aria-label="Search stories"
       />
 
       <div className="admin-bucket-toggle" role="group" aria-label="Capsule status filter">
@@ -261,7 +261,7 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
         ))}
       </div>
 
-      {loading && <p className="admin-muted">Loading capsules...</p>}
+      {loading && <p className="admin-muted">Loading stories...</p>}
       {!loading && error && (
         <div className="admin-inline-error" role="alert">
           {error}
@@ -297,7 +297,7 @@ export function CapsulePicker({ selectedId, onSelect, refreshKey = 0, onUnauthor
                     {isCurrent ? (
                       <span
                         className="admin-current-badge"
-                        title="The newest published capsule -- the one the public site opens on."
+                        title="The newest published story -- the one the public site opens on."
                       >
                         Current
                       </span>

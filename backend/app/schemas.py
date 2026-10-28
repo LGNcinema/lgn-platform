@@ -53,11 +53,15 @@ class Film(FilmBase):
     model_config = ConfigDict(from_attributes=True)
 
 # Reflection schemas
+Dimension = Literal["self", "neighbor", "world"]
+
+
 class ReflectionBase(BaseModel):
     title: str
     introduction: Optional[str] = None
     content: str
     author: Optional[str] = None
+    dimension: Optional[Dimension] = None
 
 class ReflectionCreate(ReflectionBase):
     pass
@@ -67,6 +71,7 @@ class ReflectionUpdate(BaseModel):
     introduction: Optional[str] = None
     content: Optional[str] = None
     author: Optional[str] = None
+    dimension: Optional[Dimension] = None
 
 class Reflection(ReflectionBase):
     id: int
@@ -75,33 +80,13 @@ class Reflection(ReflectionBase):
 
     model_config = ConfigDict(from_attributes=True)
 
-# Discussion Circle schemas
-class DiscussionCircleBase(BaseModel):
-    title: str
-    opening_round: Optional[str] = None
-    discuss_prompts: Optional[str] = None
-    closing_question: Optional[str] = None
-
-class DiscussionCircleCreate(DiscussionCircleBase):
-    pass
-
-class DiscussionCircleUpdate(BaseModel):
-    title: Optional[str] = None
-    opening_round: Optional[str] = None
-    discuss_prompts: Optional[str] = None
-    closing_question: Optional[str] = None
-
-class DiscussionCircle(DiscussionCircleBase):
-    id: int
-    capsule_id: int
-
-    model_config = ConfigDict(from_attributes=True)
-
 # Practice schemas
 class PracticeBase(BaseModel):
     title: str
     description: Optional[str] = None
     steps: str
+    dimension: Optional[Dimension] = None
+    tips: Optional[str] = None
 
 class PracticeCreate(PracticeBase):
     pass
@@ -110,6 +95,8 @@ class PracticeUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     steps: Optional[str] = None
+    dimension: Optional[Dimension] = None
+    tips: Optional[str] = None
 
 class Practice(PracticeBase):
     id: int
@@ -147,6 +134,10 @@ class CapsuleBase(BaseModel):
     publish_at: Optional[datetime] = None
     pre_watch_prompt: Optional[str] = None
     pre_watch_supporting_text: Optional[str] = None
+    reflect_intro: Optional[str] = None
+    practice_title: Optional[str] = None
+    # The story's LGN Spark (YouTube interview). Public placement TBD.
+    spark_url: Optional[str] = Field(None, max_length=500)
 
 class CapsuleCreate(CapsuleBase):
     pass
@@ -161,6 +152,9 @@ class CapsuleUpdate(BaseModel):
     publish_at: Optional[datetime] = None
     pre_watch_prompt: Optional[str] = None
     pre_watch_supporting_text: Optional[str] = None
+    reflect_intro: Optional[str] = None
+    practice_title: Optional[str] = None
+    spark_url: Optional[str] = Field(None, max_length=500)
 
 class Capsule(CapsuleBase):
     id: int
@@ -174,11 +168,31 @@ class Capsule(CapsuleBase):
     model_config = ConfigDict(from_attributes=True)
 
 # Detailed Capsule with all relation models loaded (useful for frontend homepage)
+class CapsulePhoto(BaseModel):
+    """A behind-the-scenes photo, by reference: `url` is API-relative."""
+    id: int
+    url: str
+    caption: Optional[str] = None
+    position: int = 0
+
+
+class CapsulePhotoUpdate(BaseModel):
+    caption: Optional[str] = None
+    position: Optional[int] = None
+
+
+class CapsulePhotoCreate(BaseModel):
+    # data:image/jpeg;base64,... from the admin's browser (already shrunk).
+    image: str = Field(..., max_length=3_000_000)
+    caption: Optional[str] = None
+
+
 class CapsuleDetail(Capsule):
     film: Optional[Film] = None
     reflections: List[Reflection] = []
-    discussion_circles: List[DiscussionCircle] = []
     practices: List[Practice] = []
+    # Filled in by the endpoint (the rows' bytes are never serialised).
+    bts_photos: List[CapsulePhoto] = []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -308,6 +322,8 @@ class StoryboardSubmissionCreate(BaseModel):
     content: str = Field(..., min_length=1, max_length=5000)
     author_name: Optional[str] = Field(None, max_length=60)
     author_location: Optional[str] = Field(None, max_length=80)
+    # Optional, only for asking the author about edits; never shown publicly.
+    author_email: Optional[str] = Field(None, max_length=254)
     consent_to_share: Literal[True]
     # data:image/jpeg;base64,... (or bare base64). Decoded and checked server-side.
     photo: Optional[str] = Field(None, max_length=MAX_PHOTO_BASE64_CHARS)
@@ -336,6 +352,7 @@ class StoryboardStory(BaseModel):
     author_location: Optional[str] = None
     photo_url: Optional[str] = None
     created_at: Optional[datetime] = None
+    dimension: Optional[Dimension] = None
 
 
 class StoryboardResponse(BaseModel):
@@ -363,12 +380,19 @@ class StoryboardAdminItem(BaseModel):
     has_photo: bool = False
     created_at: Optional[datetime] = None
     reviewed_at: Optional[datetime] = None
+    dimension: Optional[Dimension] = None
+    author_email: Optional[str] = None
+    # Plain-language reasons it might be spam (links, repeats, ...). Empty when
+    # nothing looks off. A hint for the reviewer, never an automatic decline.
+    spam_reasons: List[str] = []
 
 
 class StoryboardModeration(BaseModel):
-    """Approve (true) or decline (false). Consent is the visitor's, so it is
-    not editable here."""
-    is_approved: bool
+    """Approve (true) or decline (false), and/or tag Self / Neighbor / World.
+    Either may be sent alone. Consent is the visitor's, so it is not editable
+    here."""
+    is_approved: Optional[bool] = None
+    dimension: Optional[Dimension] = None
 
 
 # Admin portal auth schemas

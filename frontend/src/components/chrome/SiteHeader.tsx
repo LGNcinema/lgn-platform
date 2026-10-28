@@ -61,9 +61,11 @@ export function SiteHeader({ currentView, theme, onNavigate }: Props) {
         <img src={theme === 'dark' ? '/images/lgn-icon-white.svg' : '/images/lgn-icon-black.svg'} alt="LGN home" />
       </button>
       <nav className="site-header-nav" aria-label="Main">
-        {link('campfire', 'Go Beyond', CAMPFIRE_VIEWS.includes(currentView), 'site-header-link--campfire')}
-        {link('about', 'About', currentView === 'about', 'site-header-link--about')}
-        {link('invest', 'Invest', currentView === 'invest', 'site-header-link--invest')}
+        <div className="site-header-main">
+          {link('campfire', 'Go Beyond', CAMPFIRE_VIEWS.includes(currentView), 'site-header-link--campfire')}
+          {link('about', 'About', currentView === 'about', 'site-header-link--about')}
+          {link('invest', 'Invest', currentView === 'invest', 'site-header-link--invest')}
+        </div>
         {link('storyboard', 'Storyboard', currentView === 'storyboard', 'site-header-link--storyboard')}
       </nav>
     </header>

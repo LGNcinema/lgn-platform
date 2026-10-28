@@ -1,7 +1,12 @@
 /* Global header. Figma v3, the top of every frame (at 1920):
    - the LGN icon, 40x41 at (40, 39);
-   - Campfire / About / Invest, 20px, left edges at x = 660 / 815 / 970,
-     baselines on y = 54;
+   - the three main links, 20px, baselines on y = 54. They sit on the
+     page's grid: "Go Beyond" starts on the 660 line (300 design px left of
+     centre), where the home logo's "L" and the inner pages' body text
+     start, and "Invest" on the 970 line (10 right of centre, the footer's
+     Contact column). Both are measured from the centre line, as those are,
+     so they stay lined up at every window width. "About" is centred
+     between them, so its two gaps match whatever the first label's length;
    - Storyboard ending on the right margin (x = 1880), same baseline.
    The x positions are layout, so they scale with --dp like the grid; the text
    itself stays 20px. The header is the logo's box: 41px tall from
@@ -48,10 +53,33 @@
   pointer-events: auto;
 }
 
-/* Offsets from the left margin (x = 40). */
-.site-header-link--campfire { left: calc(620 * var(--dp)); }
-.site-header-link--about { left: calc(775 * var(--dp)); }
-.site-header-link--invest { left: calc(930 * var(--dp)); }
+/* The box runs from the 660 line (300 design px left of centre) to the 970
+   line (10 past it); "Invest" is placed just past its end, and About's auto
+   margins centre it in what "Go Beyond" leaves. The header box is centred
+   on the page, so its 50% is the page's centre line. */
+.site-header-main {
+  position: absolute;
+  top: -3.3px;
+  left: calc(50% - 300 * var(--dp));
+  width: calc(310 * var(--dp));
+  display: flex;
+}
+
+.site-header-main .site-header-link {
+  position: static;
+}
+
+.site-header-main .site-header-link--about {
+  margin: 0 auto;
+}
+
+.site-header-main .site-header-link--invest {
+  position: absolute;
+  /* The box already carries the links' -3.3px nudge. */
+  top: 0;
+  left: 100%;
+}
+
 .site-header-link--storyboard { right: 0; }
 
 /* Phones: the four links no longer fit at their desktop points. They move
@@ -69,7 +97,12 @@
     margin-top: 12px;
   }
 
-  .site-header-link {
+  .site-header-link,
+  .site-header-main {
     position: static;
+  }
+
+  .site-header-main {
+    display: contents;
   }
 }
