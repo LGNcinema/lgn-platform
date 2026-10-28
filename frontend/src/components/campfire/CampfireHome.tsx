@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import './CampfireHome.css';
 import { API_URL } from '../../api';
 import type { CapsuleDetail, CapsuleSummary } from '../../types';
 import { FilmCredit } from './FilmCredit';
-import { comingSoonMonths, formatStoryMonth, storiesInOrder } from './campfire';
+import { GuidesDialog } from './GuidesDialog';
+import { comingSoonMonths, storiesInOrder } from './campfire';
 
 interface Props {
   /** Published stories only (the public API never returns drafts). */
@@ -11,25 +12,45 @@ interface Props {
   onOpenStory: (capsuleId: number) => void;
 }
 
-/** Cards per row in the frame. The last row is padded to this with placeholders. */
-const ROW_SIZE = 3;
-
 /** Per-story detail state. A missing key means the fetch is still in flight. */
 type DetailState = CapsuleDetail | 'failed';
 
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+/** "2027-01" -> "January 2027" (the label is set in caps by CSS). */
+function monthLabel(month: string): string {
+  const [y, m] = month.split('-').map(Number);
+  return y && m >= 1 && m <= 12 ? `${MONTHS[m - 1]} ${y}` : month;
+}
+
+/** "2027-02" -> "02.2027", the coming-soon card's date. */
+function monthDots(month: string): string {
+  const [y, m] = month.split('-');
+  return y && m ? `${m}.${y}` : month;
+}
+
 /**
- * The Campfire hub. Figma: [CAMPFIRE]-HOME, cards from "Capsule Menu".
+ * The Campfire hub. Figma v3: "Campfire—home".
  *
- * Every published story gets a white card, oldest first (Story No. 1 is the
- * first story ever published). The list endpoint carries no film data, so each
- * card fetches its own story's detail for the credit line and still; until that
- * arrives -- or if it fails -- the card still shows what the summary already
- * gives it (number, month, title), just without the credit line and with the
- * grey still placeholder.
+ * Two sections:
+ * - "Take it beyond the screen": the film search. Scaffolding only -- the
+ *   search itself (a page of guidance for any film) is being built
+ *   separately, so for now submitting says it's on its way. "How it works."
+ *   opens the guides explainer.
+ * - "Gather with us": the monthly film. One large card (the newest published
+ *   story, unless the visitor steps back), with the next story -- or a
+ *   "Coming Soon" card after the newest -- to its right behind a ">", and the
+ *   previous story to its left behind a "<" when there is one.
  */
 export function CampfireHome({ stories, onOpenStory }: Props) {
   const ordered = useMemo(() => storiesInOrder(stories), [stories]);
   const [details, setDetails] = useState<Record<number, DetailState>>({});
+  const [selected, setSelected] = useState<number | null>(null);
+  const [guidesOpen, setGuidesOpen] = useState(false);
+  const [searchNote, setSearchNote] = useState<string | null>(null);
 
   // Keyed on the id list rather than the array so a parent re-render that hands
   // us an equal-but-new array does not refetch every story.
@@ -53,91 +74,179 @@ export function CampfireHome({ stories, onOpenStory }: Props) {
     return () => controller.abort();
   }, [idKey]);
 
-  // "Coming Soon" placeholders fill out the last row. The public API never
-  // returns unpublished stories -- drafts and scheduled ones are invisible to it
-  // -- so these are not real upcoming stories, only the next numbers and months
-  // after the latest published one. They exist to show that more is coming.
-  const cardCount = Math.max(ROW_SIZE, Math.ceil(ordered.length / ROW_SIZE) * ROW_SIZE);
-  const placeholderCount = cardCount - ordered.length;
+  // The newest story leads unless the visitor has stepped to another.
+  const index = selected !== null && selected < ordered.length ? selected : ordered.length - 1;
+  const current = ordered[index];
+  const previous = index > 0 ? ordered[index - 1] : undefined;
+  const next = index < ordered.length - 1 ? ordered[index + 1] : undefined;
+  // After the newest story: a placeholder for the next month. Not a real
+  // upcoming story -- the public API hides unpublished ones.
   const latest = ordered[ordered.length - 1];
-  // With nothing published there is no month to count from, so the
-  // placeholders go unlabelled rather than guessing.
-  const placeholderMonths = latest ? comingSoonMonths(latest.month, placeholderCount) : [];
+  const [comingMonth] = latest ? comingSoonMonths(latest.month, 1) : [];
+
+  const onSearch = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const query = String(new FormData(e.currentTarget).get('film') ?? '').trim();
+    setSearchNote(query ? 'Guides for any film are on their way. For now, gather with us below.' : null);
+  };
 
   return (
     <div className="campfire-home">
-      <h1 className="campfire-home-heading">The Campfire</h1>
+      <section className="cf-section" aria-labelledby="cf-beyond-heading">
+        <h1 id="cf-beyond-heading" className="cf-heading cf-heading--beyond">Take it beyond the screen</h1>
+        <div className="cf-beyond">
+          <p className="cf-beyond-intro">
+            Guided reflection and practice for any film.
+            <br />
+            <span className="cf-grey">
+              Starts with AI is refined by people.{' '}
+              <button type="button" className="cf-how" onClick={() => setGuidesOpen(true)}>
+                How it works.
+              </button>
+            </span>
+          </p>
+          <form className="cf-search" role="search" onSubmit={onSearch}>
+            <input
+              className="lgn-field cf-search-field"
+              type="search"
+              name="film"
+              placeholder="What film did you just watch?"
+              aria-label="What film did you just watch?"
+              autoComplete="off"
+              onChange={() => setSearchNote(null)}
+            />
+            <button type="submit" className="lgn-btn">Go beyond</button>
+            <p className="cf-search-note" role="status">{searchNote}</p>
+          </form>
+        </div>
+      </section>
 
-      <ul className="campfire-home-grid">
-        {ordered.map((story, index) => (
-          <StoryCard
-            key={story.id}
-            story={story}
-            number={index + 1}
-            detail={details[story.id]}
-            onOpen={() => onOpenStory(story.id)}
-          />
-        ))}
-        {Array.from({ length: placeholderCount }, (_, k) => (
-          <li key={`coming-${k}`} className="campfire-card campfire-card--coming">
-            <div className="campfire-card-body">
-              <div className="campfire-card-meta">
-                <span>Story No. {ordered.length + k + 1}</span>
-                {placeholderMonths[k] && <span>{formatStoryMonth(placeholderMonths[k])}</span>}
-              </div>
-              <h2 className="campfire-card-title">Coming Soon</h2>
+      <section className="cf-section cf-section--gather" aria-labelledby="cf-gather-heading">
+        <h2 id="cf-gather-heading" className="cf-heading cf-heading--gather">Gather with us</h2>
+
+        {current ? (
+          <div className="cf-gather">
+            <div className="cf-gather-side cf-gather-side--prev">
+              {previous && (
+                <>
+                  <SideCard story={previous} number={index} onSelect={() => setSelected(index - 1)} />
+                  <button type="button" className="cf-arrow" aria-label="Previous film" onClick={() => setSelected(index - 1)}>
+                    &lt;
+                  </button>
+                </>
+              )}
             </div>
-            <div className="campfire-card-still" aria-hidden="true" />
-          </li>
-        ))}
-      </ul>
+
+            <FeatureCard
+              story={current}
+              number={index + 1}
+              detail={details[current.id]}
+              onOpen={() => onOpenStory(current.id)}
+            />
+
+            <div className="cf-gather-side cf-gather-side--next">
+              {next ? (
+                <>
+                  <button type="button" className="cf-arrow" aria-label="Next film" onClick={() => setSelected(index + 1)}>
+                    &gt;
+                  </button>
+                  <SideCard story={next} number={index + 2} onSelect={() => setSelected(index + 1)} />
+                </>
+              ) : (
+                <>
+                  <span className="cf-arrow" aria-hidden="true">&gt;</span>
+                  <ComingSoonCard number={ordered.length + 1} month={comingMonth} />
+                </>
+              )}
+            </div>
+          </div>
+        ) : (
+          <p className="cf-empty">The first film is on its way.</p>
+        )}
+      </section>
+
+      <GuidesDialog open={guidesOpen} onClose={() => setGuidesOpen(false)} />
     </div>
   );
 }
 
-interface StoryCardProps {
+interface FeatureCardProps {
   story: CapsuleSummary;
   number: number;
   detail: DetailState | undefined;
   onOpen: () => void;
 }
 
-function StoryCard({ story, number, detail, onOpen }: StoryCardProps) {
+/** The month's film: labels, title, credit line, still. The whole card opens
+ *  the story, through the title's button (its ::after covers the card), so the
+ *  heading stays a heading and screen readers hear a short name. */
+function FeatureCard({ story, number, detail, onOpen }: FeatureCardProps) {
   const film = detail && detail !== 'failed' ? detail.film : undefined;
   const thumbnail = film?.thumbnail_url?.trim();
-  // A broken thumbnail URL falls back to the same grey block as "no still yet",
-  // instead of the browser's broken-image icon.
+  // A broken thumbnail URL falls back to the same grey block as "no still yet".
   const [stillFailed, setStillFailed] = useState(false);
 
   return (
-    <li className="campfire-card campfire-card--story" aria-busy={detail === undefined}>
-      <div className="campfire-card-body">
-        <div className="campfire-card-meta">
-          <span>Story No. {number}</span>
-          <span>{formatStoryMonth(story.month)}</span>
-        </div>
-        {/* The whole card is clickable, but the only interactive element is this
-            button: its ::after stretches over the card (see the CSS), so the
-            heading stays a heading and screen readers hear a short name
-            ("Lightpoles") rather than the entire card read out as one button. */}
-        <h2 className="campfire-card-title">
-          <button type="button" className="campfire-card-link" onClick={onOpen}>
-            {story.title}
-          </button>
-        </h2>
-        {film && <FilmCredit film={film} className="campfire-card-credit" />}
+    <article className="cf-card cf-card--feature" aria-busy={detail === undefined}>
+      <div className="cf-card-labels lgn-label">
+        <span>Film No. {number}</span>
+        <span>{monthLabel(story.month)}</span>
       </div>
+      <h3 className="cf-card-title">
+        <button type="button" className="cf-card-link" onClick={onOpen}>
+          {story.title}
+        </button>
+      </h3>
+      {film && <FilmCredit film={film} className="cf-card-credit lgn-label" />}
       {thumbnail && !stillFailed ? (
         <img
-          className="campfire-card-still"
+          className="cf-card-still"
           src={thumbnail}
-          alt={film?.title ? `Still from ${film.title}` : `Still from ${story.title}`}
+          alt=""
           loading="lazy"
           onError={() => setStillFailed(true)}
         />
       ) : (
-        <div className="campfire-card-still" aria-hidden="true" />
+        <div className="cf-card-still" aria-hidden="true" />
       )}
-    </li>
+    </article>
+  );
+}
+
+/** A neighbouring film, small, beside the featured one. Selecting it brings
+ *  it to the middle. */
+function SideCard({ story, number, onSelect }: { story: CapsuleSummary; number: number; onSelect: () => void }) {
+  return (
+    <button type="button" className="cf-card cf-card--side" onClick={onSelect}>
+      <span className="cf-side-text lgn-label">
+        <span>Film No. {number}</span>
+        <span>{monthLabel(story.month)}</span>
+        <span className="cf-side-title">{story.title}</span>
+      </span>
+    </button>
+  );
+}
+
+/** The card after the newest film. Figma: centred grey caps. */
+function ComingSoonCard({ number, month }: { number: number; month?: string }) {
+  return (
+    <div className="cf-card cf-card--side cf-card--coming">
+      <p className="cf-side-text lgn-label">
+        <span>Life is Greater than<br />Numbers, Inc.</span>
+        <span>Go Beyond</span>
+        <span>
+          Film No. {number}
+          <br />
+          Coming Soon
+          {month && (
+            <>
+              <br />
+              {monthDots(month)}
+            </>
+          )}
+        </span>
+        <span>Greater Stories for<br />Greater Living</span>
+      </p>
+    </div>
   );
 }

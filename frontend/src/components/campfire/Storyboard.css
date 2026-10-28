@@ -1,525 +1,585 @@
-/* Storyboard -- Figma [CAMPFIRE]-STORYBOARD.
-   Measured at 1920 CSS px from the frame's PDF/SVG export; each clamp's vw is
-   (px at 1920 / 1920) * 100. All text is tracked -3%, the frame's setting. */
+/* The Storyboard. Figma v3 "Storyboard", "—add", "—read", at 1920.
+   Line tops sit (leading - baseline) above a baseline: 12/14 -> 11.4,
+   20/22 -> 18.3, 36/38 -> 32.1, 36/39.6 -> 32.9, 48/52.8 -> 43.85. */
 
 .storyboard {
-  width: 100%;
-  max-width: var(--grid-max-width);
-  margin: 0 auto;
-  /* Breadcrumb baseline at y=210 and panel top at y=282 in the frame. */
-  padding: clamp(120px, 9.9219vw, 190.5px) var(--grid-margin) var(--grid-margin);
-}
-
-.storyboard-crumb {
-  display: block;
-  background: none;
-  border: 0;
-  padding: 0;
-  font: inherit;
-  font-size: 20px;
-  line-height: 1.2;
-  letter-spacing: -0.03em;
-  color: var(--text-dark);
-  cursor: pointer;
-  margin-bottom: clamp(40px, 3.5vw, 67.5px);
-}
-
-@media (max-width: 768px) {
-  .storyboard-crumb {
-    font-size: 16px;
-  }
-}
-
-.storyboard-crumb:hover {
+  padding: calc(185 * var(--vdp)) var(--grid-margin) calc(102 * var(--vdp));
   color: var(--primary);
 }
 
-.storyboard-panel {
-  background: var(--bg-card);
-  border-radius: var(--border-radius);
-  padding: clamp(24px, 2.7344vw, 52.5px) clamp(16px, 2.5vw, 48px) clamp(24px, 2.5vw, 48px);
-  color: var(--text-main);
-}
-
-/* Three columns of 563.3px with 27px gutters inside 48px padding: the frame's
-   lower row exactly. The form takes columns 1-2 of the first row, so the first
-   story sits beside it. */
-.storyboard-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  column-gap: clamp(16px, 1.4063vw, 27px);
-  row-gap: clamp(32px, 3.125vw, 60px);
-}
-
-.storyboard-form {
-  grid-column: 1 / span 2;
-  min-width: 0;
-}
-
+/* "Storyboard": 36px, baseline y=218, the rule 10.5px under it. */
 .storyboard-heading {
-  font-size: 48px;
-  font-weight: 550;
-  line-height: 1.2;
-  letter-spacing: -0.03em;
-  color: var(--primary);
-  margin: 0 0 clamp(14px, 1.1823vw, 22.7px);
+  padding-bottom: 3.9px;
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--text-36);
+  letter-spacing: var(--track-36);
+  font-weight: 400;
+  line-height: 39.6px;
 }
 
-@media (max-width: 768px) {
-  .storyboard-heading {
-    font-size: 32px;
-  }
+/* The tagline (baseline 284), the 912px search field and the 292px button
+   (y=266), then the filters (baseline 343) under the field. */
+.storyboard-bar {
+  display: grid;
+  /* The field starts on the 660 grid line under "Go Beyond": 300 design px
+     left of the page's centre, less the 18px gap -- measured from the centre
+     line like the header, so the space after the intro shrinks as the menu
+     moves in on narrower windows. */
+  grid-template-columns: max(200px, calc(50% - 318 * var(--dp))) minmax(0, calc(912 * var(--dp))) 292px;
+  column-gap: calc(18 * var(--dp));
+  justify-content: start;
+  margin-top: calc(36.5 * var(--vdp));
 }
 
-.storyboard-heading label {
-  cursor: text;
+.storyboard-tagline {
+  margin-top: -0.3px;
 }
 
-.storyboard-textarea {
-  display: block;
-  width: 100%;
-  height: clamp(180px, 13.9583vw, 268px);
-  resize: vertical;
-  background: transparent;
-  border: 1px solid var(--bg-darker);
-  border-radius: var(--border-radius);
-  padding: clamp(14px, 1.1979vw, 23px) clamp(14px, 1.25vw, 24px);
-  font: inherit;
-  font-size: 24px;
-  font-weight: 550;
-  line-height: 1.2;
-  letter-spacing: -0.03em;
-  color: var(--primary);
+.storyboard-search::-webkit-search-cancel-button {
+  -webkit-appearance: none;
 }
 
-@media (max-width: 768px) {
-  .storyboard-textarea {
-    font-size: 18px;
-  }
+.storyboard-search {
+  padding: 0 12px;
 }
 
-.storyboard-textarea::placeholder {
-  color: var(--border);
-  opacity: 1;
+.storyboard-add {
+  width: 292px;
 }
 
-.storyboard-textarea:focus-visible {
-  outline: 2px solid var(--text-muted);
-  outline-offset: 2px;
-}
-
-.storyboard-form-actions {
+.storyboard-filters {
+  grid-column: 2 / -1;
   display: flex;
-  align-items: center;
-  gap: clamp(12px, 1.0417vw, 20px);
-  margin-top: clamp(12px, 1.0417vw, 20px);
+  gap: calc(32 * var(--dp));
+  margin-top: 17.3px;
+  padding-left: 1px;
 }
 
-.storyboard-save {
-  flex: none;
-  height: 44px;
-  min-width: 89px;
-  padding: 0 22px;
-  background: var(--secondary);
-  color: #000; /* the button stays light on the dark panel, per the frame */
-  border: 0;
-  border-radius: var(--border-radius);
-  font: inherit;
-  font-size: 20px;
-  font-weight: 550;
-  line-height: 1;
-  letter-spacing: -0.03em;
-  cursor: pointer;
+.storyboard-sort {
+  margin-left: 0;
+  color: var(--text-grey);
 }
 
-.storyboard-save:hover {
-  background: #fff;
+.storyboard-sort:hover {
+  color: var(--primary);
 }
 
-.storyboard-save:focus-visible,
-.storyboard-crumb:focus-visible,
-.storyboard-modal-submit:focus-visible,
-.storyboard-link-btn:focus-visible,
-.storyboard-input:focus-visible {
-  outline: 2px solid var(--text-muted);
-  outline-offset: 2px;
+.storyboard-thanks {
+  grid-column: 2 / -1;
+  margin-top: 16px;
 }
 
-.storyboard-status {
-  font-size: 16px;
-  line-height: 1.3;
-  letter-spacing: -0.03em;
-  color: var(--text-muted);
-}
-
-.storyboard-status:empty {
+.storyboard-thanks:empty {
   display: none;
 }
 
-/* ---------------------------------------------------------------- the wall */
+.storyboard-note {
+  margin-top: calc(92 * var(--vdp));
+  color: var(--text-grey);
+}
 
+/* ---------------------------------------------------------------- months */
+
+/* "February 2027" (20px, baseline 92px under the filters), a pager on the
+   right, a rule 16.5px under the baseline; the cards 15px under the rule. */
+.storyboard-month {
+  margin-top: calc(92 * var(--vdp));
+}
+
+.storyboard-month + .storyboard-month {
+  margin-top: calc(102.7 * var(--vdp));
+}
+
+.storyboard-month-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0 calc(11 * var(--dp)) 12.8px 1px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.storyboard-month-name {
+  font-size: var(--text-20);
+  font-weight: 400;
+  line-height: 22px;
+}
+
+.storyboard-pager {
+  display: flex;
+  gap: 6px;
+}
+
+.storyboard-pager .lgn-link:disabled {
+  color: var(--text-grey);
+  cursor: default;
+  text-decoration: none;
+}
+
+/* Three 600x309 cards a row, 20px apart. */
+.storyboard-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: calc(20 * var(--dp));
+  margin: 15px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The story's first baseline 53px under the card's top; the byline's foot
+   39px above "READ MORE >", whose baseline is 22px above the bottom. */
 .storyboard-card {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: clamp(24px, 2.0833vw, 40px);
-  min-width: 0;
-  min-height: clamp(280px, 20.9481vw, 402.2px);
-  background: var(--bg-darker);
-  border-radius: var(--border-radius);
-  padding: clamp(20px, 1.7188vw, 33px) clamp(20px, 1.9792vw, 38px) clamp(18px, 1.5625vw, 30px);
-}
-
-.storyboard-card-author {
-  display: flex;
-  align-items: center;
-  gap: clamp(12px, 0.8333vw, 16px);
-  min-width: 0;
-}
-
-.storyboard-avatar {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: clamp(44px, 3.4375vw, 66px);
-  height: clamp(44px, 3.4375vw, 66px);
-  border-radius: 50%;
-  background: var(--border);
-  overflow: hidden;
-  font-size: 24px;
-  font-weight: 550;
-  line-height: 1;
-  color: var(--text-muted);
-}
-
-.storyboard-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-@media (max-width: 768px) {
-  .storyboard-avatar {
-    font-size: 18px;
-  }
-}
-
-.storyboard-card-byline {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.storyboard-card-name {
-  font-size: 24px;
-  font-weight: 550;
-  line-height: 1.2;
-  letter-spacing: -0.03em;
-  /* #454545 is the frame's name color -- the dark palette's --border. */
-  color: var(--border);
-  overflow-wrap: anywhere;
-}
-
-@media (max-width: 768px) {
-  .storyboard-card-name {
-    font-size: 18px;
-  }
-}
-
-.storyboard-card-location {
-  font-size: 14px;
-  line-height: 1.3;
-  letter-spacing: -0.03em;
-  color: var(--text-muted);
+  height: 309px;
+  padding: 20.9px 20px 19.4px;
+  background: var(--panel);
 }
 
 .storyboard-card-text {
-  font-size: 24px;
-  font-weight: 550;
-  line-height: 1;
-  letter-spacing: -0.03em;
-  color: var(--text-muted);
-  white-space: pre-line;
-  overflow-wrap: anywhere;
-  /* Long stories are clipped to the card's height; "Read more" lifts it. */
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 8;
-  line-clamp: 8;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
   overflow: hidden;
+  font-size: var(--text-36);
+  letter-spacing: var(--track-36);
+  line-height: 38px;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
-/* An expanded story takes the whole row, so the grid reflows around it. */
-.storyboard-card--expanded {
-  grid-column: 1 / -1;
+.storyboard-card-byline {
+  margin-top: auto;
 }
 
-.storyboard-card--expanded .storyboard-card-text {
-  display: block;
-  -webkit-line-clamp: unset;
-  line-clamp: none;
-  overflow: visible;
-}
-
-.storyboard-card-more {
-  margin-top: 12px;
-  font-size: 14px;
-  color: var(--text-muted);
+.storyboard-card-status {
+  color: var(--text-grey);
 }
 
 .storyboard-card-remove {
-  font-size: 14px;
-  color: var(--text-muted);
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-grey);
+  font: inherit;
+  text-transform: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
-/* Shown in place of the form once the visitor has shared a story. */
-.storyboard-compose {
-  grid-column: 1 / -1;
+.storyboard-card-foot {
   display: flex;
-  align-items: center;
-  gap: clamp(12px, 1.0417vw, 20px);
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 39px;
+  color: var(--text-grey);
 }
 
-.storyboard-link-btn--quiet {
-  color: var(--text-muted);
+.storyboard-card-more {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  cursor: pointer;
 }
 
-@media (max-width: 768px) {
-  .storyboard-card-text {
-    font-size: 18px;
-  }
+/* The whole card opens the story. */
+.storyboard-card {
+  position: relative;
 }
 
-/* Loading, error, empty and not-yet-revealed all take the first card's slot:
-   quiet text, no card chrome to stand in for stories that aren't there. */
-.storyboard-note {
-  align-self: end;
-  font-size: 20px;
-  font-weight: 550;
-  line-height: 1.2;
-  letter-spacing: -0.03em;
-  color: var(--text-muted);
+.storyboard-card-more::after {
+  content: '';
+  position: absolute;
+  inset: 0;
 }
 
-@media (max-width: 768px) {
-  .storyboard-note {
-    font-size: 16px;
-  }
+.storyboard-card-remove {
+  position: relative;
+  z-index: 1;
 }
 
-.storyboard-note p + p {
-  margin-top: 0.6em;
+.storyboard-card:hover .storyboard-card-more {
+  color: var(--primary);
 }
 
-.storyboard-note-quiet {
-  color: var(--border);
+.storyboard-card:has(.storyboard-card-more:focus-visible) {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
-/* ------------------------------------------------------------ the form */
+.storyboard-card-more:focus-visible {
+  outline: none;
+}
 
-/* Optional photo + first name + city, above the story. Shown once the visitor
-   has agreed to the terms. */
-.storyboard-identity {
+/* ---------------------------------------------------------------- reader */
+
+/* A 639px #EDEDED panel down the right of the window; the page behind
+   blurred. Inside: 40px either side. */
+.storyboard-reader {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(639px, 100vw);
+  height: 100vh;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: var(--panel);
+  color: var(--primary);
+  overflow-y: auto;
+}
+
+.storyboard-reader::backdrop {
+  background: rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.storyboard-reader-inner {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 24px;
-  margin-bottom: 16px;
+  flex-direction: column;
+  min-height: 100%;
+  padding: 33.2px 40px 34px;
 }
 
-.storyboard-photo {
+/* "< Next" at the left, "Previous >" 178px in, "[x]" at the right. */
+.storyboard-reader-nav {
   display: flex;
-  align-items: center;
-  gap: 14px;
+  gap: 24px;
 }
 
-.storyboard-photo-actions {
+.storyboard-reader-nav .lgn-link:nth-child(2) {
+  margin-left: 98px;
+}
+
+.storyboard-reader-nav .lgn-link:disabled {
+  color: var(--text-grey);
+  cursor: default;
+  text-decoration: none;
+}
+
+.storyboard-reader-close {
+  margin-left: auto;
+}
+
+/* The photo: 558x285, 69px under the nav's line. */
+.storyboard-reader-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 558 / 285;
+  margin-top: 69px;
+  object-fit: cover;
+  background: var(--placeholder-box);
+}
+
+.storyboard-reader-tag {
+  margin-top: 10.6px;
+  color: var(--text-grey);
+}
+
+.storyboard-reader-text {
+  margin-top: 66.9px;
+  font-size: var(--text-36);
+  letter-spacing: var(--track-36);
+  line-height: 38px;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.storyboard-reader-byline {
+  margin-top: 30px;
+}
+
+/* "The film behind this story": pinned to the panel's foot. */
+.storyboard-reader-film {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
+  margin-top: auto;
+  padding-top: 60px;
+}
+
+.storyboard-reader-film-bar {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.storyboard-reader-watch {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-grey);
+  font: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.storyboard-reader-watch:hover {
+  color: var(--primary);
+}
+
+.storyboard-reader-film-title {
+  margin-top: 8px;
+  font-size: var(--text-36);
+  letter-spacing: var(--track-36);
+  line-height: 39.6px;
+}
+
+.storyboard-reader-add {
+  width: 251px;
+  height: 34px;
+  margin-top: 90px;
+}
+
+.storyboard-reader-report {
+  margin-top: 14px;
+  color: var(--text-grey);
+  text-decoration: none;
+}
+
+.storyboard-reader-report:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+/* ---------------------------------------------------------------- form */
+
+/* A 640px panel, 30px in from each side. The label slot holds the 48px
+   title, and the close mark is 20px here. */
+.storyboard-form-dialog {
+  width: 640px;
+}
+
+.storyboard-form-dialog .lgn-dialog-inner {
+  padding: 29.15px 30px 30px 30.5px;
+}
+
+.storyboard-form-dialog .lgn-dialog-label {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.storyboard-form-title {
+  font-size: var(--text-48);
+  letter-spacing: var(--track-48);
+  line-height: 52.8px;
+}
+
+.storyboard-form-dialog .lgn-dialog-close {
+  font-size: var(--text-20);
+  line-height: 22px;
+  text-transform: none;
+  margin-top: 6.7px;
+}
+
+.storyboard-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.storyboard-form-films {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 50px;
+  margin-top: 46.6px;
+}
+
+.storyboard-chip {
+  display: inline-flex;
+  gap: 10px;
+}
+
+.storyboard-chip button,
+.storyboard-film-choices button,
+.storyboard-quiet {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.storyboard-film-choices {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+
+.storyboard-film-choices button {
+  text-decoration: underline;
+}
+
+.storyboard-quiet {
+  color: var(--text-grey);
+}
+
+.storyboard-quiet:hover,
+.storyboard-chip button:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.storyboard-form-prompt {
+  margin-top: 57.1px;
+}
+
+/* The story box: 581x242, black, the hint 17px in; the word count inside
+   at the bottom right. */
+.storyboard-form-story {
+  position: relative;
+  width: 100%;
+  margin-top: 15.3px;
+}
+
+.storyboard-form-story textarea {
+  height: 242px;
+  padding: 17px 17px 36px;
+  resize: none;
+}
+
+.storyboard-form-story textarea::placeholder {
+  color: var(--text-grey);
+}
+
+.storyboard-form-count {
+  position: absolute;
+  right: 22px;
+  bottom: 16.4px;
+  color: var(--text-grey);
+  pointer-events: none;
+}
+
+.storyboard-form-count.over {
+  color: #b3261e;
+}
+
+.storyboard-form-extras {
+  display: flex;
+  align-items: center;
+  gap: 50px;
+  margin-top: 14.6px;
+}
+
+.storyboard-form-thumb {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
 }
 
 .storyboard-file {
   display: none;
 }
 
-.storyboard-fields {
-  display: flex;
-  flex: 1 1 320px;
-  gap: 12px;
-  min-width: 0;
+.storyboard-form-error {
+  margin-top: 8px;
+  color: #b3261e;
+  font-size: 14px;
 }
 
-.storyboard-input {
-  flex: 1 1 0;
-  min-width: 0;
-  height: 44px;
-  padding: 0 14px;
-  background: transparent;
-  border: 1px solid var(--bg-darker);
-  border-radius: var(--border-radius);
-  font: inherit;
-  font-size: 16px;
-  letter-spacing: -0.03em;
-  color: var(--primary);
+.storyboard-form-section {
+  width: 100%;
+  margin-top: 56px;
+  padding-bottom: 7.6px;
+  border-bottom: 1px solid var(--rule);
 }
 
-.storyboard-input::placeholder {
-  color: var(--border);
-  opacity: 1;
+.storyboard-form-field {
+  height: 49px;
+  padding: 0 17px;
+  margin-top: 15px;
 }
 
-/* Text-style buttons: photo actions in the panel, "Not now" in the dialog. */
-.storyboard-link-btn {
-  background: none;
-  border: 0;
-  padding: 0;
-  font: inherit;
-  font-size: 16px;
-  letter-spacing: -0.03em;
-  color: var(--primary);
-  text-decoration: underline;
-  text-underline-offset: 2px;
+.storyboard-form-field + .storyboard-form-field {
+  margin-top: 14px;
+}
+
+/* 14px boxes, the label 30px in from the box's left. */
+.storyboard-check {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  column-gap: 16px;
+  align-items: start;
+  margin-top: 34px;
   cursor: pointer;
 }
 
-.storyboard-link-btn--muted {
-  font-size: 14px;
-  color: var(--text-dark);
+.storyboard-check + .storyboard-check {
+  margin-top: 30px;
 }
 
-.storyboard-optional {
-  font-size: 12px;
-  letter-spacing: -0.03em;
-  color: var(--text-muted);
-}
-
-.storyboard-photo-error {
-  flex-basis: 100%;
-  font-size: 14px;
-  color: #e5807a; /* readable on the dark panel; no error token exists */
-}
-
-.storyboard-textarea:disabled {
-  cursor: not-allowed;
-}
-
-.storyboard-save:disabled {
-  cursor: progress;
-  opacity: 0.7;
-}
-
-/* The visitor's own story: the frame's card, with its review status. */
-.storyboard-card--mine {
-  outline: 1px solid var(--border);
-}
-
-.storyboard-card-status {
-  margin-top: -12px;
-  font-size: 14px;
-  letter-spacing: -0.03em;
-  color: var(--text-muted);
-}
-
-/* ---------------------------------------------------------- the dialog */
-
-/* A native <dialog> opened with showModal(): centred on screen, page behind
-   inert. The backdrop is the frame's white-at-90% wash. */
-.storyboard-dialog {
-  width: min(440px, calc(100% - 32px));
-  max-height: calc(100dvh - 32px);
-  margin: auto;
-  border: 0;
-  border-radius: var(--border-radius);
-  padding: 16.5px 17px 16px;
-  background: var(--bg-darker);
-  color: var(--primary);
-  text-align: left;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-}
-
-.storyboard-dialog::backdrop {
-  background: color-mix(in srgb, var(--bg-card) 90%, transparent);
-}
-
-.storyboard-modal-label {
+.storyboard-check input {
+  width: 14px;
+  height: 14px;
   margin: 0;
-  font-size: 12px;
-  font-weight: 550;
-  line-height: 1.2;
-  letter-spacing: -0.03em;
-  text-transform: uppercase;
-  color: var(--text-dark);
+  accent-color: var(--primary);
 }
 
-.storyboard-modal-body {
-  margin: 17px 0 0;
-  font-size: 20px;
-  font-weight: 550;
-  line-height: 1;
-  letter-spacing: -0.03em;
-  color: var(--primary);
+.storyboard-terms-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.storyboard-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 55px;
+}
+
+.storyboard-form-actions .lgn-btn {
+  min-width: 191px;
+}
+
+.storyboard-form-hint {
+  color: var(--text-grey);
+  font-size: 16px;
+}
+
+.storyboard-terms-dialog {
+  width: 560px;
 }
 
 .storyboard-terms {
-  margin: 14px 0 0;
-  padding-left: 16px;
-  font-size: 13px;
-  line-height: 1.35;
-  letter-spacing: -0.02em;
-  color: var(--text-dark);
+  margin: 24px 0 0;
+  padding-left: 20px;
 }
 
 .storyboard-terms li + li {
-  margin-top: 6px;
+  margin-top: 12px;
 }
 
-.storyboard-dialog-actions {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  margin-top: 18px;
-}
+/* ---------------------------------------------------------------- narrow */
 
-.storyboard-modal-submit {
-  height: 35px;
-  padding: 0 16px;
-  background: var(--border);
-  color: var(--primary);
-  border: 0;
-  border-radius: var(--border-radius);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 550;
-  line-height: 1;
-  letter-spacing: -0.03em;
-  cursor: pointer;
-}
-
-.storyboard-modal-submit:hover {
-  background: var(--header-btn-hover);
-}
-
-/* ------------------------------------------------------------- responsive */
-
-@media (max-width: 1100px) {
-  .storyboard-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 700px) {
-  .storyboard-grid {
-    grid-template-columns: minmax(0, 1fr);
+@media (max-width: 1024px) {
+  .storyboard-bar {
+    grid-template-columns: 1fr auto;
+    row-gap: 16px;
   }
 
-  .storyboard-form {
-    grid-column: 1;
+  .storyboard-tagline,
+  .storyboard-filters,
+  .storyboard-thanks {
+    grid-column: 1 / -1;
   }
 
-  .storyboard-fields {
-    flex-direction: column;
+  .storyboard-cards {
+    grid-template-columns: 1fr;
   }
 }

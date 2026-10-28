@@ -86,14 +86,13 @@ export function WatchMode({ capsule, onExit }: Props) {
 
   return (
     <div className="watch-mode">
-      {/* Not in the frame: a chrome-free page still needs a way out. It sits in
-          the top page margin, in the card's small-label style, so the framed
-          composition itself is untouched. */}
-      <button type="button" className="watch-mode-back" onClick={onExit}>
-        <span aria-hidden="true">&larr;</span> Back
-      </button>
-
       {watching && film ? (
+        <>
+        {/* Not in the frame: once the card is gone, the page still needs a way
+            out. It sits in the top page margin, in the card label's style. */}
+        <button type="button" className="watch-mode-back lgn-label" onClick={onExit}>
+          &lt; Back
+        </button>
         <div
           ref={stageRef}
           className="watch-mode-frame watch-mode-stage"
@@ -104,6 +103,7 @@ export function WatchMode({ capsule, onExit }: Props) {
         >
           <VideoPlayer film={film} className="watch-mode-player" autoStart />
         </div>
+        </>
       ) : (
         <section className="watch-mode-frame" aria-labelledby="watch-mode-prompt">
           {still && (
@@ -116,17 +116,22 @@ export function WatchMode({ capsule, onExit }: Props) {
             />
           )}
           <div className="watch-mode-card">
-            <p className="watch-mode-label">{capsule.title}</p>
+            <div className="watch-mode-bar lgn-label">
+              <p>{capsule.title}</p>
+              <button type="button" className="watch-mode-close" aria-label="Close" onClick={onExit}>
+                [x]
+              </button>
+            </div>
             <h1 id="watch-mode-prompt" className="watch-mode-prompt">{prompt}</h1>
             {supporting && <p className="watch-mode-supporting">{supporting}</p>}
             {film && (
               <button
                 ref={watchButtonRef}
                 type="button"
-                className="watch-mode-watch"
+                className="lgn-btn watch-mode-watch"
                 onClick={() => setWatching(true)}
               >
-                Watch
+                Ready to watch
               </button>
             )}
           </div>

@@ -445,6 +445,9 @@
 .admin-portal .admin-sidebar {
   position: sticky;
   top: 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
 .admin-portal .admin-main {
@@ -464,8 +467,27 @@
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--admin-radius);
-  max-height: calc(100vh - 120px);
+  /* Leaves room under it for the Storyboard card. */
+  max-height: calc(100vh - 260px);
   overflow: auto;
+}
+
+/* The Storyboard card under Stories: one row, sized to its content. */
+.admin-portal .admin-sb-nav {
+  max-height: none;
+  overflow: visible;
+}
+
+.admin-portal .admin-sb-nav-title {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.admin-portal .admin-sb-nav-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
 }
 
 .admin-portal .admin-picker-head {

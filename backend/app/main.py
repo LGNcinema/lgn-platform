@@ -2,7 +2,10 @@ import base64
 import binascii
 import json
 import os
+import re
 import secrets
+from collections import Counter
+from datetime import timedelta
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -179,7 +182,6 @@ def _capsule_detail(capsule: models.Capsule) -> schemas.CapsuleDetail:
     """
     film = None
     reflections = []
-    discussion_circles = []
     practices = []
 
     try:
@@ -193,14 +195,15 @@ def _capsule_detail(capsule: models.Capsule) -> schemas.CapsuleDetail:
         print(f"Error fetching reflections relation: {e}")
 
     try:
-        discussion_circles = capsule.discussion_circles or []
-    except Exception as e:
-        print(f"Error fetching discussion_circles relation: {e}")
-
-    try:
         practices = capsule.practices or []
     except Exception as e:
         print(f"Error fetching practices relation: {e}")
+
+    bts_photos = []
+    try:
+        bts_photos = capsule.bts_photos
+    except Exception as e:
+        print(f"Error fetching photos relation: {e}")
 
     return schemas.CapsuleDetail(
         id=capsule.id,
@@ -212,11 +215,14 @@ def _capsule_detail(capsule: models.Capsule) -> schemas.CapsuleDetail:
         is_published=_is_published(capsule),
         pre_watch_prompt=capsule.pre_watch_prompt,
         pre_watch_supporting_text=capsule.pre_watch_supporting_text,
+        reflect_intro=capsule.reflect_intro,
+        practice_title=capsule.practice_title,
+        spark_url=capsule.spark_url,
         created_at=capsule.created_at,
         film=film,
         reflections=reflections,
-        discussion_circles=discussion_circles,
         practices=practices,
+        bts_photos=bts_photos,
     )
 
 
@@ -431,26 +437,6 @@ def add_reflection(
     db.refresh(db_reflection)
     return db_reflection
 
-@app.post("/api/capsules/{capsule_id}/discussion_circles", response_model=schemas.DiscussionCircle, status_code=status.HTTP_201_CREATED)
-def add_discussion_circle(
-    capsule_id: int,
-    circle: schemas.DiscussionCircleCreate,
-    db: Session = Depends(get_db),
-    _: bool = Depends(require_admin),
-):
-    """
-    Add a discussion circle to a specific capsule. Admin only.
-    """
-    capsule = db.query(models.Capsule).filter(models.Capsule.id == capsule_id).first()
-    if not capsule:
-        raise HTTPException(status_code=404, detail="Capsule not found")
-        
-    db_circle = models.DiscussionCircle(**circle.model_dump(), capsule_id=capsule_id)
-    db.add(db_circle)
-    db.commit()
-    db.refresh(db_circle)
-    return db_circle
-
 @app.post("/api/capsules/{capsule_id}/practices", response_model=schemas.Practice, status_code=status.HTTP_201_CREATED)
 def add_practice(
     capsule_id: int,
@@ -563,11 +549,15 @@ def submit_storyboard(submission: schemas.StoryboardSubmissionCreate, db: Sessio
         raise _capsule_not_found(submission.capsule_id)
 
     name = _clean(submission.author_name)
+    email = _clean(submission.author_email)
+    if email and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+        raise HTTPException(status_code=422, detail="That email address doesn't look right.")
     db_submission = models.StoryboardSubmission(
         capsule_id=capsule.id,
         content=submission.content.strip(),
         author_name=name,
         author_location=_clean(submission.author_location),
+        author_email=email,
         is_anonymous=name is None,
         consent_to_share=True,
         photo=_decode_photo(submission.photo),
@@ -642,6 +632,7 @@ def get_storyboard(capsule_id: int, db: Session = Depends(get_db)):
             author_location=None if row.is_anonymous else row.author_location,
             photo_url=f"/api/storyboard/photos/{row.id}" if has_photo else None,
             created_at=row.created_at,
+            dimension=row.dimension,
         )
         for row, has_photo in rows
     ]
@@ -667,6 +658,21 @@ def storyboard_photo(item_id: int, db: Session = Depends(get_db)):
         media_type=_photo_media_type(row.photo),
         headers={"Cache-Control": "public, max-age=3600"},
     )
+
+
+@app.get("/api/capsule-photos/{photo_id}")
+def capsule_photo(photo_id: int, db: Session = Depends(get_db)):
+    """A published story's behind-the-scenes photo. Drafts' photos are a 404,
+    like the drafts themselves."""
+    row = (
+        db.query(models.CapsulePhoto.image)
+        .join(models.Capsule, models.Capsule.id == models.CapsulePhoto.capsule_id)
+        .filter(models.CapsulePhoto.id == photo_id, _published_filter())
+        .first()
+    )
+    if not row or not row.image:
+        raise HTTPException(status_code=404, detail="Photo not found.")
+    return Response(content=row.image, media_type=_photo_media_type(row.image), headers={"Cache-Control": "public, max-age=3600"})
 
 
 # ===========================================================================
@@ -843,6 +849,81 @@ def admin_upsert_film(
     return db_film
 
 
+# --- Behind-the-scenes photos ----------------------------------------------
+
+# The admin's browser shrinks a photo to ~1600px JPEG before upload; this caps
+# what an upload may weigh once decoded.
+MAX_CAPSULE_PHOTO_BYTES = 2_000_000
+
+
+def _photo_out(photo: models.CapsulePhoto) -> schemas.CapsulePhoto:
+    return schemas.CapsulePhoto(id=photo.id, url=f"/api/capsule-photos/{photo.id}", caption=photo.caption, position=photo.position)
+
+
+@app.post(
+    "/api/admin/capsules/{capsule_id}/photos",
+    response_model=schemas.CapsulePhoto,
+    status_code=status.HTTP_201_CREATED,
+)
+def admin_add_capsule_photo(
+    capsule_id: int,
+    payload: schemas.CapsulePhotoCreate,
+    db: Session = Depends(get_db),
+    _: bool = Depends(require_admin),
+):
+    _get_or_404(db, models.Capsule, capsule_id, "Capsule")
+    raw = _decode_photo(payload.image)
+    if len(raw) > MAX_CAPSULE_PHOTO_BYTES:
+        raise HTTPException(status_code=413, detail="That photo is too large. Please use a smaller one.")
+    last = (
+        db.query(func.max(models.CapsulePhoto.position))
+        .filter(models.CapsulePhoto.capsule_id == capsule_id)
+        .scalar()
+    )
+    photo = models.CapsulePhoto(
+        capsule_id=capsule_id, kind="bts", image=raw,
+        caption=_clean(payload.caption), position=(last or 0) + 1,
+    )
+    db.add(photo)
+    db.commit()
+    db.refresh(photo)
+    return _photo_out(photo)
+
+
+@app.get("/api/admin/capsule-photos/{photo_id}")
+def admin_capsule_photo(photo_id: int, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    """Any story's photo, published or not -- the editor shows drafts too."""
+    row = db.query(models.CapsulePhoto.image).filter(models.CapsulePhoto.id == photo_id).first()
+    if not row or not row.image:
+        raise HTTPException(status_code=404, detail="Photo not found.")
+    return Response(content=row.image, media_type=_photo_media_type(row.image), headers={"Cache-Control": "private, no-store"})
+
+
+@app.patch("/api/admin/capsule-photos/{photo_id}", response_model=schemas.CapsulePhoto)
+def admin_update_capsule_photo(
+    photo_id: int,
+    updates: schemas.CapsulePhotoUpdate,
+    db: Session = Depends(get_db),
+    _: bool = Depends(require_admin),
+):
+    photo = _get_or_404(db, models.CapsulePhoto, photo_id, "Photo")
+    changes = updates.model_dump(exclude_unset=True)
+    if "caption" in changes:
+        photo.caption = _clean(changes["caption"])
+    if changes.get("position") is not None:
+        photo.position = changes["position"]
+    db.commit()
+    db.refresh(photo)
+    return _photo_out(photo)
+
+
+@app.delete("/api/admin/capsule-photos/{photo_id}", status_code=status.HTTP_204_NO_CONTENT)
+def admin_delete_capsule_photo(photo_id: int, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    db.delete(_get_or_404(db, models.CapsulePhoto, photo_id, "Photo"))
+    db.commit()
+    return None
+
+
 # --- Reflections -----------------------------------------------------------
 
 @app.post(
@@ -859,7 +940,53 @@ def admin_create_reflection(
     return add_reflection(capsule_id=capsule_id, reflection=reflection, db=db, _=True)
 
 
-def _admin_item(row: models.StoryboardSubmission, has_photo: bool) -> schemas.StoryboardAdminItem:
+_LINK = re.compile(r"(https?://|www\.|\b[a-z0-9-]+\.(com|net|org|io|ru|xyz|info|biz|top|link)\b)", re.I)
+_REPEATED_CHARS = re.compile(r"(.)\1{6,}")
+
+
+def _normalise(text: Optional[str]) -> str:
+    return re.sub(r"\s+", " ", (text or "").strip().lower())
+
+
+class _SpamContext:
+    """What the spam hints compare each submission against: how often each
+    text and each email occurs across all storyboard submissions. Built once
+    per admin list request from a light query (no photos)."""
+
+    def __init__(self, db: Session):
+        Sub = models.StoryboardSubmission
+        rows = db.query(Sub.id, Sub.content, Sub.author_email, Sub.created_at).all()
+        self.texts = Counter(_normalise(r.content) for r in rows if r.content)
+        self.emails = {}
+        for r in rows:
+            if r.author_email:
+                self.emails.setdefault(r.author_email.lower(), []).append(r.created_at)
+
+    def reasons(self, row: models.StoryboardSubmission) -> List[str]:
+        out = []
+        text = row.content or ""
+        if _LINK.search(text):
+            out.append("Contains a link")
+        if text and self.texts.get(_normalise(text), 0) > 1:
+            out.append("Same text as another submission")
+        letters = [c for c in text if c.isalpha()]
+        if len(letters) >= 20 and sum(c.isupper() for c in letters) / len(letters) > 0.7:
+            out.append("Mostly capital letters")
+        if _REPEATED_CHARS.search(text):
+            out.append("Long run of one character")
+        if len(text.strip()) < 8:
+            out.append("Very short")
+        if row.author_email and row.created_at:
+            times = self.emails.get(row.author_email.lower(), [])
+            near = [t for t in times if t and abs(t - row.created_at) <= timedelta(hours=24)]
+            if len(near) >= 3:
+                out.append(f"{len(near)} submissions from this email within a day")
+        return out
+
+
+def _admin_item(
+    row: models.StoryboardSubmission, has_photo: bool, spam: Optional[_SpamContext] = None
+) -> schemas.StoryboardAdminItem:
     return schemas.StoryboardAdminItem(
         id=row.id,
         capsule_id=row.capsule_id,
@@ -872,6 +999,9 @@ def _admin_item(row: models.StoryboardSubmission, has_photo: bool) -> schemas.St
         has_photo=bool(has_photo),
         created_at=row.created_at,
         reviewed_at=row.reviewed_at,
+        dimension=row.dimension,
+        author_email=row.author_email,
+        spam_reasons=spam.reasons(row) if spam else [],
     )
 
 
@@ -882,8 +1012,10 @@ def admin_list_storyboard(
     db: Session = Depends(get_db),
     _: bool = Depends(require_admin),
 ):
-    """The review queue. Pending submissions oldest first (first in, first
-    reviewed); approved and declined newest first. Never loads photo bytes."""
+    """The review queue, for one story or (no capsule_id) all of them.
+    Pending submissions oldest first (first in, first reviewed); approved and
+    declined newest first. Never loads photo bytes. Each item carries spam
+    hints for the reviewer."""
     Sub = models.StoryboardSubmission
     query = db.query(Sub, Sub.photo.isnot(None).label("has_photo")).options(defer(Sub.photo))
     if capsule_id is not None:
@@ -897,7 +1029,8 @@ def admin_list_storyboard(
         elif status_filter == "declined":
             query = query.filter(Sub.reviewed_at.isnot(None), Sub.is_approved.is_(False))
         query = query.order_by(Sub.created_at.desc(), Sub.id.desc())
-    return [_admin_item(row, has_photo) for row, has_photo in query.all()]
+    spam = _SpamContext(db)
+    return [_admin_item(row, has_photo, spam) for row, has_photo in query.all()]
 
 
 @app.get("/api/admin/storyboard/pending-counts", response_model=dict[int, int])
@@ -930,21 +1063,61 @@ def admin_moderate_storyboard(
     db: Session = Depends(get_db),
     _: bool = Depends(require_admin),
 ):
-    """Approve or decline one submission. Either way it leaves the pending
-    queue. Approving a declined one, or hiding an approved one, also works.
-    Consent is not editable here -- it belongs to the author."""
+    """Approve or decline one submission, and/or tag it Self / Neighbor /
+    World. A decision either way takes it out of the pending queue;
+    approving a declined one, or hiding an approved one, also works. Consent
+    is not editable here -- it belongs to the author."""
     Sub = models.StoryboardSubmission
     item = (
         db.query(Sub).options(defer(Sub.photo)).filter(Sub.id == item_id).first()
     )
     if not item:
         raise HTTPException(status_code=404, detail="Storyboard submission not found.")
-    item.is_approved = moderation.is_approved
-    item.reviewed_at = datetime.utcnow()
+    changes = moderation.model_dump(exclude_unset=True)
+    if "is_approved" in changes and changes["is_approved"] is not None:
+        item.is_approved = changes["is_approved"]
+        item.reviewed_at = datetime.utcnow()
+    if "dimension" in changes:
+        item.dimension = changes["dimension"]
     db.commit()
     db.refresh(item)
     has_photo = db.query(Sub.photo.isnot(None)).filter(Sub.id == item_id).scalar()
-    return _admin_item(item, has_photo)
+    return _admin_item(item, has_photo, _SpamContext(db))
+
+
+def _declined(db: Session):
+    Sub = models.StoryboardSubmission
+    return db.query(Sub).filter(Sub.reviewed_at.isnot(None), Sub.is_approved.is_(False))
+
+
+# Declared before /{item_id} so "declined" is not read as an item id.
+@app.delete("/api/admin/storyboard/declined", response_model=dict[str, int])
+def admin_delete_declined_storyboard(
+    capsule_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    _: bool = Depends(require_admin),
+):
+    """Permanently delete every declined submission, for one story or (no
+    capsule_id) all of them. Returns {"deleted": n}."""
+    query = _declined(db)
+    if capsule_id is not None:
+        query = query.filter(models.StoryboardSubmission.capsule_id == capsule_id)
+    deleted = query.delete(synchronize_session=False)
+    db.commit()
+    return {"deleted": deleted}
+
+
+@app.delete("/api/admin/storyboard/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def admin_delete_storyboard(item_id: int, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    """Permanently delete one submission. Only declined ones: anything pending
+    or on the storyboard has to be declined first, so nothing live disappears
+    by a stray click."""
+    item = _declined(db).filter(models.StoryboardSubmission.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="No declined submission with that id. Decline it first.")
+    db.delete(item)
+    db.commit()
+    return None
 
 
 @app.patch("/api/admin/reflections/{item_id}", response_model=schemas.Reflection)
@@ -969,48 +1142,6 @@ def admin_delete_reflection(
     _: bool = Depends(require_admin),
 ):
     db.delete(_get_or_404(db, models.Reflection, item_id, "Reflection"))
-    db.commit()
-    return None
-
-
-# --- Discussion circles ----------------------------------------------------
-
-@app.post(
-    "/api/admin/capsules/{capsule_id}/discussion_circles",
-    response_model=schemas.DiscussionCircle,
-    status_code=status.HTTP_201_CREATED,
-)
-def admin_create_discussion_circle(
-    capsule_id: int,
-    circle: schemas.DiscussionCircleCreate,
-    db: Session = Depends(get_db),
-    _: bool = Depends(require_admin),
-):
-    return add_discussion_circle(capsule_id=capsule_id, circle=circle, db=db, _=True)
-
-
-@app.patch("/api/admin/discussion_circles/{item_id}", response_model=schemas.DiscussionCircle)
-def admin_update_discussion_circle(
-    item_id: int,
-    updates: schemas.DiscussionCircleUpdate,
-    db: Session = Depends(get_db),
-    _: bool = Depends(require_admin),
-):
-    item = _get_or_404(db, models.DiscussionCircle, item_id, "Discussion circle")
-    for field, value in updates.model_dump(exclude_unset=True).items():
-        setattr(item, field, value)
-    db.commit()
-    db.refresh(item)
-    return item
-
-
-@app.delete("/api/admin/discussion_circles/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
-def admin_delete_discussion_circle(
-    item_id: int,
-    db: Session = Depends(get_db),
-    _: bool = Depends(require_admin),
-):
-    db.delete(_get_or_404(db, models.DiscussionCircle, item_id, "Discussion circle"))
     db.commit()
     return None
 

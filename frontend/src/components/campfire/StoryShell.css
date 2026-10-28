@@ -1,227 +1,157 @@
-/* StoryShell -- the story page frame (Figma: [CAMPFIRE]-LIGHTPOLES, -REFLECT,
-   -PRACTICE). All numbers are measured from the 1920 frames.
-
-   Vertical rhythm: the frames are set in Helvetica Neue, the site in Inter, so
-   line boxes here are sized to put each line's CAP HEIGHT where the frame puts
-   it (Inter's cap top sits at line-height/2 - 0.363em from the top of its line
-   box). That is why several margins below are odd-looking whole numbers
-   rather than Figma's auto-layout gaps. */
+/* StoryShell -- the film page frame. Figma v3 "Campfire—lightpoles",
+   "—reflect", "—practice", at 1920:
+   - "< Campfire", 36px, baseline y=218;
+   - the #EDEDED panel: x 40..1880, top y=274 (49px under the back link's
+     line), 877 tall;
+   - labels (12px caps) baseline 28px under the panel's top, at x = 61 / 660
+     / 1280;
+   - the title (48px) baseline y=420 and the section's content top y=377 --
+     both ~72px under the labels' line;
+   - the credit's first baseline 63px under the title's; the section links'
+     first baseline y=614, then every 44px;
+   - Geme, 66x67, at x=61, 31px above the panel's bottom.
+   Line tops sit this far above a baseline: 12/14 -> 11.4, 20/22 -> 18.3,
+   36/39.6 -> 32.9, 48/52.8 -> 43.85. Layout scales (--dp across, --vdp
+   down); text, buttons and Geme stay at their px. */
 
 .story-shell {
-  width: 100%;
-  max-width: var(--grid-max-width);
-  margin: 0 auto;
-  box-sizing: border-box;
-  /* Crumb line box at y=191 (its cap top at 195.5). The header floats over the
-     page, so below 1920 never let the crumb ride up under it. */
-  padding: max(calc(var(--header-bottom) + 32px), calc(191 * var(--vdp)))
-    var(--grid-margin) calc(37 * var(--vdp));
-  /* Bottom 37, not the 40 margin: the white card ends at y=1043, so this puts
-     the page's end -- and the footer -- exactly at the 1080 fold. */
-}
-
-/* ---------------------------------------------------------------- crumb */
-
-.story-shell-crumb {
-  display: block;
-  background: none;
-  border: 0;
-  padding: 0;
-  font: inherit;
-  font-size: 20px;
-  line-height: 1.2;
-  color: var(--text-dark);
-  cursor: pointer;
-  /* Card top at y=274: 215 + 59. */
-  margin-bottom: calc(59 * var(--vdp));
-}
-
-.story-shell-crumb:hover {
+  padding: calc(185 * var(--vdp)) var(--grid-margin) calc(37.5 * var(--vdp));
   color: var(--primary);
 }
 
-/* ---------------------------------------------------------------- card */
-
-.story-shell-card {
-  display: grid;
-  /* 600 | 1196 inside 20px / 24px padding = the frame's 1840 at 1920, so the
-     right column runs x=660..1856. The frames disagree on its right edge:
-     PRACTICE's three cards end at 1856, LIGHTPOLES' film still at 1847. One
-     column serves every section, so it takes the wider (PRACTICE) edge and
-     StoryWatch narrows the still to its own measured width instead. x=660 is
-     4px left of grid column 3 (664); every section frame agrees on 660. */
-  grid-template-columns: minmax(0, 600fr) minmax(0, 1196fr);
-  background: var(--bg-card);
-  border-radius: var(--border-radius);
-  padding: calc(17 * var(--vdp)) calc(24 * var(--dp)) calc(31 * var(--vdp)) calc(20 * var(--dp));
-  /* 769 tall in every frame. A minimum, so long section content (a
-     screenplay, a long reflection) grows the card instead of clipping. */
-  min-height: calc(769 * var(--vdp));
-  box-sizing: border-box;
+.story-shell-back {
+  display: block;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--primary);
+  font-size: var(--text-36);
+  letter-spacing: var(--track-36);
+  line-height: 39.6px;
+  cursor: pointer;
 }
+
+.story-shell-back:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 5px;
+}
+
+.story-shell-back:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.story-shell-panel {
+  display: grid;
+  grid-template-columns: calc(599 * var(--dp)) minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  row-gap: calc(72 * var(--vdp));
+  min-height: calc(877 * var(--vdp));
+  margin-top: calc(49.3 * var(--vdp));
+  padding: 16.6px calc(40 * var(--dp)) 31px calc(21 * var(--dp));
+  background: var(--panel);
+}
+
+/* Labels at the panel's left, and at the two column lines (x = 660, 1280). */
+.story-shell-labels {
+  grid-column: 1 / -1;
+  display: grid;
+  /* The last label keeps its own width when the panel is narrow (the admin
+     preview), the first two giving way instead. */
+  grid-template-columns: minmax(0, calc(599 * var(--dp))) minmax(0, calc(620 * var(--dp))) minmax(max-content, 1fr);
+}
+
+/* ---------------------------------------------------------------- left */
 
 .story-shell-left {
   display: flex;
   flex-direction: column;
-  /* Keeps the credit and title off the right column at narrow widths. */
-  padding-right: var(--grid-gutter);
+  align-items: flex-start;
   min-width: 0;
 }
 
-.story-shell-right {
-  min-width: 0;
-}
-
-/* "STORY NO. 1" and the month label: 12px caps, cap tops at y=293. */
-.story-shell-label {
-  font-size: 12px;
-  font-weight: 550;
-  line-height: 1.1667;
-  text-transform: uppercase;
-  color: var(--text-dark);
-}
-
-/* Section content starts at y=342 (the film still's top edge). Children
-   start flush with the top of their box; this gap is the shell's. */
-.story-shell-month {
-  margin-bottom: calc(37 * var(--vdp));
-}
-
-/* ---------------------------------------------------------------- left column */
-
-/* Nav line box at y=592: the intro (from y=291) plus the nav's margin. */
+/* Title top to the section links' first line top: 219.55. */
 .story-shell-intro {
-  min-height: calc(261 * var(--vdp));
+  min-height: calc(219.55 * var(--vdp));
+  padding-right: calc(40 * var(--dp));
 }
 
 .story-shell-title {
-  font-size: 64px;
-  font-weight: 550;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  /* The -0.045em pulls Inter's wide left side-bearing at display size back so
-     the title's stem lines up with "STORY NO." as it does in the frame. */
-  margin: calc(30 * var(--vdp)) 0 0 -0.045em;
-  color: var(--primary);
-  overflow-wrap: break-word;
+  font-size: var(--text-48);
+  letter-spacing: var(--track-48);
+  font-weight: 400;
+  line-height: 52.8px;
 }
 
-@media (max-width: 768px) {
-  .story-shell-title {
-    font-size: 44px;
-  }
+/* 20px, wrapping at ~420px as the frame's two lines do. */
+.story-shell-credit,
+.story-shell-intro > p {
+  max-width: 425px;
+  margin-top: 35.75px;
 }
 
-/* Credit: 12px on a 14px pitch, cap top of line 1 at y=433. */
-.story-shell-credit {
-  font-size: 12px;
-  font-weight: 550;
-  line-height: 1.1667;
-  color: var(--text-dark);
-  max-width: calc(440 * var(--dp));
-  margin: calc(32 * var(--vdp)) 0 0;
-}
-
-.story-shell-more,
-.story-shell-storyboard {
-  align-self: flex-start;
-  display: block;
-  background: none;
-  border: 0;
-  padding: 0;
-  font: inherit;
-  color: var(--text-dark);
-  cursor: pointer;
-  text-align: left;
-}
-
-/* Only the words are underlined in the frame, not the arrow. */
-.story-shell-underline {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 2px;
-}
-
-.story-shell-more:hover,
-.story-shell-storyboard:hover,
-.story-shell-more[aria-current='page'] {
-  color: var(--primary);
-}
-
-.story-shell-more {
-  font-size: 12px;
-  font-weight: 550;
-  line-height: 1.1667;
-  margin-top: calc(14 * var(--vdp));
+.story-shell-credit .film-credit-name {
+  font-weight: 400;
+  text-transform: none;
 }
 
 .story-shell-nav {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  /* 43.5px pitch between Watch / Reflect / Practice. */
-  gap: calc(19.5 * var(--vdp));
-  margin-top: calc(40 * var(--vdp));
+  gap: 22px;
 }
 
-.story-shell-nav-btn {
-  background: none;
-  border: 0;
+.story-shell-geme {
+  margin-top: auto;
   padding: 0;
-  font: inherit;
-  font-size: 20px;
-  line-height: 1.2;
-  color: var(--text-dark);
+  border: none;
+  background: none;
   cursor: pointer;
 }
 
-.story-shell-nav-btn:hover {
-  color: var(--primary);
+.story-shell-geme img {
+  display: block;
+  width: 66px;
+  height: 67px;
 }
 
-.story-shell-nav-btn.active {
-  color: var(--primary);
-  font-weight: 700;
+.story-shell-geme:hover img {
+  transform: translateY(-2px);
 }
 
-/* Pinned to the bottom of the card: baseline 35px above the card's edge. */
-.story-shell-storyboard {
-  margin-top: auto;
-  padding-top: calc(40 * var(--vdp));
-  font-size: 16px;
-  line-height: 1.25;
-}
-
-.story-shell-crumb:focus-visible,
-.story-shell-more:focus-visible,
-.story-shell-nav-btn:focus-visible,
-.story-shell-storyboard:focus-visible {
+.story-shell-geme:focus-visible {
   outline: 2px solid var(--primary);
-  outline-offset: 3px;
-  border-radius: 2px;
+  outline-offset: 4px;
 }
 
-/* ---------------------------------------------------------------- narrow */
+/* ---------------------------------------------------------------- right */
 
-/* One column: the left column's content, then the section, then "Add to
-   Storyboard" stays last in the left column's flow above the section. */
-@media (max-width: 900px) {
-  .story-shell-card {
-    grid-template-columns: minmax(0, 1fr);
-    row-gap: 48px;
-    padding: 17px 20px 31px;
-    min-height: 0;
+.story-shell-right {
+  min-width: 0;
+}
+
+/* Below desktop: one column, the section under the links. */
+@media (max-width: 1024px) {
+  .story-shell-panel {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    row-gap: 40px;
+    padding: 16px 20px 24px;
   }
 
-  .story-shell-left {
-    padding-right: 0;
+  .story-shell-labels {
+    grid-template-columns: repeat(3, auto);
+    justify-content: space-between;
   }
 
   .story-shell-intro {
     min-height: 0;
+    margin-bottom: 32px;
   }
 
-  .story-shell-storyboard {
-    margin-top: 0;
+  .story-shell-geme {
+    margin-top: 32px;
   }
 }

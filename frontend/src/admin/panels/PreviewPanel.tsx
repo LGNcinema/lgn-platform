@@ -1,44 +1,39 @@
 /**
  * PreviewPanel -- the story as the public site will render it.
  *
- * This mounts the *real* public Campfire components (`StoryShell` with
- * `StoryWatch`, `StoryReflect`, `StoryPractice`, `StoryMaking`, and the
- * immersive `WatchMode`) with the draft the admin already fetched, so what is on
- * screen is the site's own markup and the site's own stylesheet -- not a second,
- * drifting copy of it. It used to mount the pre-Campfire capsule components, and
- * went on showing staff that old design after the public site had moved on; the
- * point of mounting the real components is that this cannot happen, so it has
- * to follow the site whenever the site's components change.
+ * The page itself is `PreviewFrame`, which mounts the *real* public components
+ * (header, `StoryShell` and its sections, the immersive `WatchMode`, footer), so
+ * what is on screen is the site's own markup and stylesheet -- not a second,
+ * drifting copy of it.
  *
- * The shell's own Watch / Reflect / Practice nav drives the preview, exactly as
- * it does for visitors. Its "The Campfire" crumb and "Add to Storyboard" link
- * lead to pages that don't exist inside a single-story preview, so they do
- * nothing here.
+ * It runs in an iframe exactly 1920 x 1080, scaled down to fit. The public
+ * layout is measured against the window (`--dp` is 100vw / 1920, columns are
+ * placed from the page centre), so mounted straight into the admin column it
+ * was laid out for the admin's whole window while squeezed into part of it,
+ * and came out wrong. In its own 1920-wide window it lays out exactly as on a
+ * 1920 x 1080 screen; the scale only shrinks the picture. Expand fills the
+ * screen with it for a closer look.
  *
- * It lives behind the admin token on purpose. An unpublished capsule's film
- * carries a Vimeo id and private hash, so a public preview URL would hand out an
- * unreleased film to anyone holding the link. There is deliberately no public
- * preview route.
+ * The story is posted into the frame rather than fetched there, so it is the
+ * draft this tab already holds. Nothing here is a public route: the frame shows
+ * nothing unless this tab sends it a story, so an unpublished film (Vimeo id
+ * and private hash) is never reachable by link.
  *
  * Pressing the film still opens the real immersive player, and it really plays
  * -- that is how the editor confirms the right film is attached.
  */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { API_URL } from '../../api';
-import { StoryMaking } from '../../components/campfire/StoryMaking';
-import { StoryPractice } from '../../components/campfire/StoryPractice';
-import { StoryReflect } from '../../components/campfire/StoryReflect';
-import { StoryShell } from '../../components/campfire/StoryShell';
-import { StoryWatch } from '../../components/campfire/StoryWatch';
-import { WatchMode } from '../../components/campfire/WatchMode';
-import type { StorySection } from '../../components/campfire/campfire';
 import type { CapsuleSummary } from '../../types';
+import { PREVIEW_READY, type PreviewMessage } from '../PreviewFrame';
 import { formatLocal, localTimeLabel, parseNaiveUtc, publicationState } from '../publishing';
 import { StatusPill } from '../StatusPill';
 import { Note, PanelHead } from './Fields';
 import type { PanelProps } from './Fields';
 
-const noop = () => {};
+/** The screen the preview reproduces: the size the Figma frames are drawn at. */
+const FRAME_W = 1920;
+const FRAME_H = 1080;
 
 /**
  * The "Story No." this capsule will carry on the public site.
@@ -70,9 +65,56 @@ function useStoryNumber(capsuleId: number, month: string): number {
 }
 
 export function PreviewPanel({ capsule }: PanelProps) {
-  const [section, setSection] = useState<StorySection>('watch');
-  const [watching, setWatching] = useState(false);
   const storyNumber = useStoryNumber(capsule.id, capsule.month);
+  const [expanded, setExpanded] = useState(false);
+  const [scale, setScale] = useState(0);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLIFrameElement>(null);
+
+  // Send the story to the frame. Again whenever it is saved, and whenever the
+  // frame says it is (re)loaded and listening.
+  const post = useCallback(() => {
+    const message: PreviewMessage = { type: 'lgn-preview', capsule, storyNumber };
+    frameRef.current?.contentWindow?.postMessage(message, window.location.origin);
+  }, [capsule, storyNumber]);
+
+  useEffect(post, [post]);
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.source !== frameRef.current?.contentWindow) return;
+      if ((event.data as { type?: string } | undefined)?.type === PREVIEW_READY) post();
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [post]);
+
+  // Fit the 1920 x 1080 frame to the space it has: the column's width inline,
+  // the whole screen when expanded.
+  useLayoutEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    const fit = () => {
+      const cs = getComputedStyle(el);
+      const width = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      const height = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      setScale(expanded ? Math.min(width / FRAME_W, height / FRAME_H) : width / FRAME_W);
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [expanded]);
+
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setExpanded(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [expanded]);
 
   const state = publicationState(capsule);
   const scheduledAt = parseNaiveUtc(capsule.publish_at);
@@ -110,47 +152,43 @@ export function PreviewPanel({ capsule }: PanelProps) {
       {!capsule.film ? (
         <Note>
           No film is attached yet, so the Watch section shows the site's own placeholder. Add one on
-          the <strong>Film &amp; Video</strong> tab.
+          the <strong>Watch</strong> tab.
         </Note>
       ) : null}
 
-      {capsule.discussion_circles.length > 0 ? (
-        <Note>
-          This story has discussion circles. They are kept here for reference, but the public site no
-          longer shows a Discuss section, so they don't appear in the preview.
-        </Note>
-      ) : null}
-
-      <figure className="apnl-preview-frame" aria-label="Preview of this story's public page">
+      {/* The same element inline and expanded, so the frame is never reloaded
+          and keeps whichever section and scroll position the editor is on. */}
+      <figure
+        className={`apnl-preview-frame${expanded ? ' is-expanded' : ''}`}
+        aria-label="Preview of this story's public page"
+      >
         <figcaption className="apnl-preview-chrome">
           <span className="apnl-preview-badge">Preview</span>
           <StatusPill state={state} />
-          <span className="apnl-preview-chrome-text">{stateLine}</span>
+          <span className="apnl-preview-chrome-text">
+            {stateLine} Shown as on a {FRAME_W} &times; {FRAME_H} screen
+            {scale > 0 ? `, at ${Math.round(scale * 100)}%` : ''}.
+          </span>
+          <button type="button" className="admin-btn-ghost" onClick={() => setExpanded((v) => !v)}>
+            {expanded ? 'Close (Esc)' : 'Expand'}
+          </button>
         </figcaption>
 
-        {/* Everything below this element is public markup under public classes.
-            `apnl-preview-stage` resets what the portal's own typography would
-            otherwise inherit into it -- see the scoping note in panels.css. */}
-        <div className="apnl-preview-stage">
-          {watching ? (
-            <WatchMode capsule={capsule} onExit={() => setWatching(false)} />
-          ) : (
-            <StoryShell
-              capsule={capsule}
-              storyNumber={storyNumber}
-              section={section}
-              onSelectSection={setSection}
-              onBackToCampfire={noop}
-              onAddToStoryboard={noop}
-            >
-              {section === 'watch' && <StoryWatch capsule={capsule} onEnterWatch={() => setWatching(true)} />}
-              {section === 'reflect' && <StoryReflect capsule={capsule} />}
-              {section === 'practice' && (
-                <StoryPractice capsule={capsule} gemeTuning={null} gemeTuningVersion={0} />
-              )}
-              {section === 'making' && <StoryMaking capsule={capsule} />}
-            </StoryShell>
-          )}
+        <div ref={viewportRef} className="apnl-preview-viewport">
+          <div
+            className="apnl-preview-scaler"
+            style={{ width: FRAME_W * scale, height: FRAME_H * scale }}
+          >
+            <iframe
+              ref={frameRef}
+              className="apnl-preview-iframe"
+              src="/admin/preview-frame"
+              title="Public page preview"
+              width={FRAME_W}
+              height={FRAME_H}
+              style={{ transform: `scale(${scale})` }}
+            />
+          </div>
         </div>
       </figure>
     </div>

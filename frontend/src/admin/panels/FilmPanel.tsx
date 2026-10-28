@@ -239,8 +239,8 @@ export function FilmPanel({ capsule, onSaved }: PanelProps) {
         title="Film"
         description={
           hasFilm
-            ? 'The film shown on this capsule, and the video source the player uses.'
-            : 'This capsule has no film yet. Fill this in and save to create one.'
+            ? 'The film shown on this story, and the video source the player uses.'
+            : 'This story has no film yet. Fill this in and save to create one.'
         }
       />
 
@@ -280,7 +280,7 @@ export function FilmPanel({ capsule, onSaved }: PanelProps) {
           ) : (
             <p className="apnl-help">
               Nothing recognizable yet -- paste an embed snippet or a link above, or set the provider
-              fields manually. The capsule page will show its fallback card until this resolves.
+              fields manually. The story page will show its fallback card until this resolves.
             </p>
           )}
           {linkChanged ? (
@@ -421,7 +421,7 @@ export function FilmPanel({ capsule, onSaved }: PanelProps) {
           rows={5}
           disabled={save.saving}
           onChange={(value) => set('description', value)}
-          help="The synopsis on the capsule page."
+          help="The synopsis on the story page."
         />
       </Section>
 

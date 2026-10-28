@@ -1,4 +1,5 @@
-/** DetailsPanel -- capsule-level metadata, publishing/scheduling, and the pre-watch framing. */
+/** DetailsPanel -- story-level metadata, publishing/scheduling, and the LGN Spark link.
+ *  ("Before the film" moved to the Watch tab: see StoryFieldsForm.) */
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { CapsuleDetail, CapsuleSummary } from '../../types';
 import { adminFetch, formatMonth } from '../adminClient';
@@ -39,8 +40,7 @@ type CapsuleFields = Pick<
   | 'description'
   | 'is_active'
   | 'publish_at'
-  | 'pre_watch_prompt'
-  | 'pre_watch_supporting_text'
+  | 'spark_url'
 >;
 
 type DetailsDraft = {
@@ -53,8 +53,7 @@ type DetailsDraft = {
    * The naive-UTC string the API wants is produced at save time, and only there.
    */
   publish_at: string;
-  pre_watch_prompt: string;
-  pre_watch_supporting_text: string;
+  spark_url: string;
 };
 
 const MONTH_PATTERN = /^\d{4}-(?:0[1-9]|1[0-2])$/;
@@ -66,8 +65,7 @@ function toDraft(capsule: CapsuleFields): DetailsDraft {
     description: str(capsule.description),
     is_active: capsule.is_active === true,
     publish_at: publishAtToInput(capsule.publish_at),
-    pre_watch_prompt: str(capsule.pre_watch_prompt),
-    pre_watch_supporting_text: str(capsule.pre_watch_supporting_text),
+    spark_url: str(capsule.spark_url),
   };
 }
 
@@ -86,8 +84,7 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
         description: capsule.description,
         is_active: capsule.is_active,
         publish_at: capsule.publish_at,
-        pre_watch_prompt: capsule.pre_watch_prompt,
-        pre_watch_supporting_text: capsule.pre_watch_supporting_text,
+        spark_url: capsule.spark_url,
       }),
     [
       capsule.month,
@@ -95,8 +92,7 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
       capsule.description,
       capsule.is_active,
       capsule.publish_at,
-      capsule.pre_watch_prompt,
-      capsule.pre_watch_supporting_text,
+      capsule.spark_url,
     ],
   );
   const { draft, dirty, set, setMany, reset, commit } = useEditState<DetailsDraft>(incoming);
@@ -215,7 +211,7 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
     // something that is not a date, which must never be saved as "no schedule".
     const publishAt = mode === 'scheduled' ? inputToPublishAt(draft.publish_at) : null;
     if (mode === 'scheduled' && (draft.publish_at === '' || publishAt === undefined)) {
-      save.fail('Pick the date and time this capsule should go live, or choose Publish now instead.');
+      save.fail('Pick the date and time this story should go live, or choose Publish now instead.');
       return;
     }
 
@@ -231,8 +227,7 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
           description: orNull(draft.description),
           is_active: mode === 'published',
           publish_at: publishAt,
-          pre_watch_prompt: orNull(draft.pre_watch_prompt),
-          pre_watch_supporting_text: orNull(draft.pre_watch_supporting_text),
+          spark_url: orNull(draft.spark_url.trim()),
         },
       });
       commit(toDraft(saved));
@@ -245,10 +240,10 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
     switch (serverState) {
       case 'published':
         if (isCurrent) {
-          return 'Live on the site, and the newest published capsule -- this is the one the site opens on.';
+          return 'Live on the site, and the newest published story -- this is the one the site opens on.';
         }
         return currentCapsule
-          ? `Live on the site. Visitors land on the newest published capsule, currently ${describeCapsule(currentCapsule)}; this one is reachable from the month tabs.`
+          ? `Live on the site. Visitors land on the newest published story, currently ${describeCapsule(currentCapsule)}; this one is reachable from the month tabs.`
           : 'Live on the site.';
       case 'scheduled':
         return serverScheduledAt
@@ -274,11 +269,11 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
         newestOtherPublishedMonth !== '' && newestOtherPublishedMonth > draft.month.trim();
       return (
         <Note>
-          <strong>Not saved yet.</strong> Saving publishes this capsule immediately.{' '}
+          <strong>Not saved yet.</strong> Saving publishes this story immediately.{' '}
           {overtaken
-            ? `${formatMonth(newestOtherPublishedMonth)} is a newer published month, so the site will still open on that one; this capsule joins the month tabs.`
-            : 'It becomes the newest published capsule, so the site will open on it.'}{' '}
-          No other capsule is unpublished by this.
+            ? `${formatMonth(newestOtherPublishedMonth)} is a newer published month, so the site will still open on that one; this story joins the month tabs.`
+            : 'It becomes the newest published story, so the site will open on it.'}{' '}
+          No other story is unpublished by this.
         </Note>
       );
     }
@@ -287,7 +282,7 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
       if (!scheduledDate) {
         return (
           <Note>
-            <strong>Not saved yet.</strong> Pick the date and time this capsule should go live.
+            <strong>Not saved yet.</strong> Pick the date and time this story should go live.
           </Note>
         );
       }
@@ -295,7 +290,7 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
         return (
           <Note>
             <strong>Not saved yet -- and that time has already passed.</strong> Saving will publish
-            this capsule straight away, because the server publishes anything whose scheduled time
+            this story straight away, because the server publishes anything whose scheduled time
             is in the past. Pick a future time, or use <em>Publish now</em>, if that is not what you
             want.
           </Note>
@@ -303,7 +298,7 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
       }
       return (
         <Note>
-          <strong>Not saved yet.</strong> Saving schedules this capsule to go live{' '}
+          <strong>Not saved yet.</strong> Saving schedules this story to go live{' '}
           <strong>{formatLocal(scheduledDate)}</strong> -- {localTimeLabel()},{' '}
           {formatRelative(scheduledDate)}. It stays invisible on the site until then.
         </Note>
@@ -314,8 +309,8 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
       <Note>
         <strong>Not saved yet.</strong>{' '}
         {incoming.is_active
-          ? 'Saving takes this capsule off the public site. Nothing is deleted, and no other capsule is affected.'
-          : 'Saving clears the scheduled go-live time, leaving this capsule as a draft.'}
+          ? 'Saving takes this story off the public site. Nothing is deleted, and no other story is affected.'
+          : 'Saving clears the scheduled go-live time, leaving this story as a draft.'}
       </Note>
     );
   })();
@@ -323,8 +318,8 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
   return (
     <div className="apnl">
       <PanelHead
-        title="Capsule details"
-        description="The month this capsule belongs to, how it is introduced, and when it appears on the public site."
+        title="Story details"
+        description="The month this story belongs to, how it is introduced, and when it appears on the public site."
       />
 
       <Section title="Identity">
@@ -339,7 +334,7 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
             invalid={invalid.month}
             errorId={errorId}
             onChange={(value) => set('month', value)}
-            help="Format YYYY-MM, e.g. 2026-09. One capsule per month: saving a month another capsule already uses will be rejected by the server."
+            help="Format YYYY-MM, e.g. 2026-09. One story per month: saving a month another story already uses will be rejected by the server."
           />
           <TextField
             label="Title"
@@ -352,11 +347,11 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
           />
         </FormRow>
         <div className="apnl-resolved-grid">
-          <ReadOnlyValue label="Capsule id" value={String(capsule.id)} />
+          <ReadOnlyValue label="Story id" value={String(capsule.id)} />
           <ReadOnlyValue label="Film" value={capsule.film ? str(capsule.film.title) : ''} />
           <ReadOnlyValue
             label="Pathway entries"
-            value={`${capsule.reflections.length} reflect / ${capsule.discussion_circles.length} discuss / ${capsule.practices.length} practice`}
+            value={`${capsule.reflections.length} reflect / ${capsule.practices.length} practice`}
           />
         </div>
         <TextArea
@@ -365,7 +360,7 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
           rows={5}
           disabled={save.saving}
           onChange={(value) => set('description', value)}
-          help="The capsule blurb. Line breaks are kept as typed."
+          help="The story blurb. Line breaks are kept as typed."
         />
       </Section>
 
@@ -433,29 +428,22 @@ export function DetailsPanel({ capsule, onSaved }: PanelProps) {
 
         {!publicationChanged && serverState === 'published' && capsule.publish_at ? (
           <Note>
-            This capsule is published outright, so the go-live time it still carries (
+            This story is published outright, so the go-live time it still carries (
             {serverScheduledAt ? formatLocal(serverScheduledAt) : str(capsule.publish_at)}) has no
             further effect. Choosing <em>Publish now</em> and saving clears it.
           </Note>
         ) : null}
       </Section>
 
-      <Section title="Before the film">
-        <TextArea
-          label="Pre-watch prompt"
-          value={draft.pre_watch_prompt}
-          rows={4}
+      <Section title="LGN Spark">
+        <TextField
+          label="Spark link (YouTube)"
+          value={draft.spark_url}
+          mono
           disabled={save.saving}
-          onChange={(value) => set('pre_watch_prompt', value)}
-          help={"Optional. Leave blank to show the universal line, “Before you press play, take a breath—”. Anything written here replaces it for this film."}
-        />
-        <TextArea
-          label="Pre-watch supporting text"
-          value={draft.pre_watch_supporting_text}
-          rows={6}
-          disabled={save.saving}
-          onChange={(value) => set('pre_watch_supporting_text', value)}
-          help="Optional smaller line under the prompt -- context, an instruction, a note on how long to sit with it. Usually only needed with a custom prompt."
+          placeholder="https://www.youtube.com/watch?v=..."
+          onChange={(value) => set('spark_url', value)}
+          help="The YouTube interview that goes with this story. Saved now; where it shows on the public story page is still being decided."
         />
       </Section>
 

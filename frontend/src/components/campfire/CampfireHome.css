@@ -1,196 +1,340 @@
-/* CampfireHome -- the story hub. Figma: [CAMPFIRE]-HOME (1920 x 1460),
-   cards from "Capsule Menu".
-
-   Vertical positions are measured from the frame's SVG and solved for Inter's
-   metrics (ascent 0.969em, cap height 0.727em), so cap tops land where
-   Helvetica's do in the frame:
-     heading cap top y=196, cards y=274..1043 (600 x 769), footer y=1083.
-   Every length is clamp(min, px/1920*100 vw, px) per the house style. */
+/* The Campfire hub. Figma v3 "Campfire—home", at 1920:
+   - "Take it beyond the screen": 36px, baseline y=218, a 1px rule 10.5px
+     under it (x 40..1880);
+   - under the rule (47px): the two-line intro at x=40, the 912px search
+     field at x=659 and the 202px "Go beyond" 18px after it;
+   - "Gather with us": 36px, baseline y=502, its rule 16.5px under it;
+   - 44.5px under that: the featured card, #EDEDED 642x825 at x=649, a 48px
+     ">" 24px past it, and the 512x656 coming-soon card at x=1369, centred on
+     the featured card's height;
+   - 47px from the cards to the footer's rule.
+   Sizes of panels and gaps scale with --dp (vertical ones with --vdp); text
+   and buttons stay at their px. Line tops sit (leading - baseline) above:
+   20/22 -> 18.3, 36/39.6 -> 32.9, 48/52.8 -> 43.85, 12/14 -> 11.4. */
 
 .campfire-home {
-  width: 100%;
-  max-width: var(--grid-max-width);
-  margin: 0 auto;
-  box-sizing: border-box;
-  /* 192 / 1920 -- puts the heading's cap top at the frame's y=196. The max()
-     keeps the heading clear of the floating header at any width, including
-     when it wraps to two rows on phones (--header-bottom is measured by
-     SiteHeader). Same guard as the story shell. */
-  padding: max(calc(var(--header-bottom) + 32px), clamp(120px, 10vw, 192px))
-    var(--grid-margin) calc(37 * var(--dp));
-  /* Bottom 37, not the 40 margin: the white card ends at y=1043, so this puts
-     the page's end -- and the footer -- exactly at the 1080 fold. */
-  background-color: var(--bg-darker);
+  padding: calc(185 * var(--vdp)) var(--grid-margin) calc(47 * var(--vdp));
   color: var(--primary);
 }
 
-.campfire-home-heading {
-  margin: 0 0 clamp(32px, 3.0365vw, 58px);
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1.2;
-  color: var(--primary);
+.cf-heading {
+  font-size: var(--text-36);
+  letter-spacing: var(--track-36);
+  font-weight: 400;
+  line-height: 39.6px;
+  border-bottom: 1px solid var(--rule);
 }
 
-.campfire-home-grid {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.cf-heading--beyond {
+  padding-bottom: 3.9px;
+}
+
+.cf-heading--gather {
+  padding-bottom: 9.9px;
+}
+
+.cf-grey {
+  color: var(--text-grey);
+}
+
+/* ---------------------------------------------------------------- search */
+
+.cf-beyond {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  /* The frame's cards are 600 wide with ~20px between them (40 / 660 / 1280) --
-     NOT the page's 32px gutter; three 600s do not fit the 6-column grid. */
-  gap: clamp(12px, 1.0417vw, 20px);
+  /* The field starts on the 660 grid line under "Go Beyond": 300 design px
+     left of the page's centre, less the 18px gap -- measured from the centre
+     line like the header, so the space after the intro shrinks as the menu
+     moves in on narrower windows. */
+  grid-template-columns: max(200px, calc(50% - 318 * var(--dp))) minmax(0, calc(912 * var(--dp))) auto;
+  justify-content: start;
+  column-gap: calc(18 * var(--dp));
+  align-items: start;
+  margin-top: calc(46.5 * var(--vdp));
 }
 
-/* ------------------------------------------------------------------ card */
+.cf-beyond-intro {
+  margin-top: 0.7px;
+  line-height: 22px;
+}
 
-.campfire-card {
+/* "How it works." -- italic in the frame; a button, opening the explainer. */
+.cf-how {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font-style: italic;
+  cursor: pointer;
+}
+
+.cf-how:hover {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.cf-how:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* The field and its button form one row; the status line goes under them. */
+.cf-search {
+  display: contents;
+}
+
+.cf-search-field {
+  /* Placeholder inset 12px, as drawn. */
+  padding: 0 12px;
+}
+
+/* type=search adds a clear button and rounding in some browsers. */
+.cf-search-field::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+.cf-search-note {
+  grid-column: 2 / -1;
+  margin-top: 12px;
+  color: var(--text-grey);
+}
+
+.cf-search-note:empty {
+  display: none;
+}
+
+/* ---------------------------------------------------------------- gather */
+
+.cf-section--gather {
+  margin-top: calc(148.3 * var(--vdp));
+}
+
+/* Four tracks: the previous film (x 40..649), the featured card (642), the
+   arrow's gap (78) and the next card (512, to the margin). */
+.cf-gather {
+  display: grid;
+  grid-template-columns: calc(609 * var(--dp)) calc(642 * var(--dp)) minmax(0, 1fr);
+  align-items: start;
+  margin-top: calc(44.5 * var(--vdp));
+}
+
+/* The side cards sit 71px below the featured card's top (not quite centred
+   on it), the arrow centred on them. */
+.cf-gather-side {
+  display: flex;
+  align-items: center;
+  margin-top: calc(71 * var(--dp));
+}
+
+.cf-gather-side--prev {
+  justify-content: flex-start;
+}
+
+.cf-gather-side--prev .cf-card--side {
+  width: calc(512 * var(--dp));
+}
+
+.cf-gather-side--prev .cf-arrow {
+  margin: 0 auto;
+}
+
+.cf-gather-side--next .cf-arrow {
+  margin: 0 calc(26 * var(--dp)) 0 calc(24 * var(--dp));
+}
+
+.cf-gather-side--next .cf-card--side {
+  flex: 1;
+}
+
+/* The 48px chevron between cards. */
+.cf-arrow {
+  flex: none;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--primary);
+  font-size: var(--text-48);
+  font-weight: 700;
+  letter-spacing: var(--track-48);
+  line-height: 52.8px;
+  cursor: pointer;
+}
+
+span.cf-arrow {
+  cursor: default;
+}
+
+button.cf-arrow:hover {
+  opacity: 0.6;
+}
+
+button.cf-arrow:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.cf-card {
+  background: var(--panel);
+}
+
+/* The featured card: padding 22; the labels' baselines 30 from its top, the
+   title's 287, the credit's first 340; the still 595 wide, 22 from the
+   bottom. The card's height is fixed (it's the frame's), so the still is
+   pushed to its foot. */
+.cf-card--feature {
   position: relative;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
-  /* 769 / 1920. The still is pushed to the bottom (margin-top: auto below), so
-     a taller card only grows the space above it. */
-  min-height: clamp(460px, 40.0521vw, 769px);
-  /* 16 / 22 / 21 / 22 at 1920. The text and still sit 22px in from the sides
-     and the still 21px up from the bottom; the top is only 16px because the
-     frame's label box starts there (its cap top lands at y=19). */
-  padding:
-    clamp(12px, 0.8333vw, 16px)
-    clamp(16px, 1.1458vw, 22px)
-    clamp(15px, 1.0938vw, 21px);
-  border-radius: var(--border-radius);
-  background: var(--bg-card);
+  height: calc(825 * var(--dp));
+  min-height: 600px;
+  padding: 18.6px calc(24 * var(--dp)) calc(22 * var(--dp)) 22px;
 }
 
-/* Frame #EDEDED -- --bg-card-hover, which also gives a sensible dark-mode
-   grey. */
-.campfire-card--coming {
-  background: var(--bg-card-hover);
-}
-
-.campfire-card-body {
-  /* Takes the card's spare height, which pins the still to the bottom edge.
-     The padding is the floor on the text-to-still gap once content fills the
-     card (narrow viewports, long credit lines); at 1920 the spare height is
-     far larger, so it changes nothing there. */
-  flex: 1 0 auto;
-  padding-bottom: calc(24 * var(--dp));
-}
-
-.campfire-card-meta {
+.cf-card-labels {
   display: grid;
-  /* The month starts 312px into a 600px card: two columns over the 556px inner
-     width with a 24px gap put it at 22 + 266 + 24 = 312. */
-  grid-template-columns: 1fr 1fr;
-  column-gap: calc(24 * var(--dp));
-  font-size: 12px;
-  font-weight: 550;
-  line-height: 1.2;
-  text-transform: uppercase;
-  color: var(--text-dark);
+  grid-template-columns: calc(312 * var(--dp)) auto;
 }
 
-.campfire-card-title {
-  /* 198 / 1920 -- title cap top 235px below the card's top edge. */
-  margin: clamp(64px, 10.3125vw, 198px) 0 0;
-  font-size: 48px;
-  font-weight: 550;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  color: var(--primary);
+.cf-card-title {
+  margin-top: calc(210.6 * var(--dp));
+  font-size: var(--text-48);
+  letter-spacing: var(--track-48);
+  font-weight: 400;
+  line-height: 52.8px;
 }
 
-@media (max-width: 768px) {
-  .campfire-card-title {
-    font-size: 32px;
-  }
-}
-
-.campfire-card--coming .campfire-card-title {
-  color: var(--text-dark);
-}
-
-/* Reset the button to read as the heading's text. */
-.campfire-card-link {
+/* The whole card is the button's hit area. */
+.cf-card-link {
   padding: 0;
-  border: 0;
+  border: none;
   background: none;
-  font: inherit;
-  letter-spacing: inherit;
   color: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-/* Stretch the button's hit area over the whole card so the card is one click
-   target, while the button itself stays just the title. */
-.campfire-card-link::after {
+.cf-card-link::after {
   content: '';
   position: absolute;
   inset: 0;
-  /* Above the still: its hover opacity creates a stacking context that would
-     otherwise paint over this overlay and swallow clicks on the image. */
-  z-index: 1;
-  border-radius: var(--border-radius);
 }
 
-.campfire-card-link:focus-visible {
+.cf-card--feature:hover .cf-card-title {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 6px;
+}
+
+.cf-card-link:focus-visible {
   outline: none;
 }
 
-.campfire-card-link:focus-visible::after {
+.cf-card--feature:has(.cf-card-link:focus-visible) {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
-.campfire-card-credit {
-  /* 29 / 1920 -- credit cap top 308px below the card's top edge. */
-  margin: clamp(16px, 1.5104vw, 29px) 0 0;
-  font-size: 12px;
-  font-weight: 550;
-  line-height: 1.2;
-  color: var(--text-dark);
+.cf-card-credit {
+  max-width: 500px;
+  margin-top: calc(32.6 * var(--dp));
 }
 
-.campfire-card-still {
+/* The frame's credit is all one weight; FilmCredit's names are in caps
+   anyway here (the whole label is). */
+.cf-card-credit .film-credit-name {
+  font-weight: 400;
+}
+
+.cf-card-still {
   display: block;
-  width: 100%;
-  /* 555 x 312 in the frame, i.e. 16:9. */
-  aspect-ratio: 16 / 9;
+  width: calc(595 * var(--dp));
+  aspect-ratio: 595 / 335;
+  margin-top: auto;
+  margin-left: 1px;
   object-fit: cover;
-  border-radius: var(--border-radius);
-  /* Frame #D9D9D9 -- the same grey as --border. Shows while the still loads,
-     and on cards without one. */
-  background: var(--border);
+  background: var(--placeholder-box);
 }
 
-.campfire-card--story .campfire-card-still {
-  transition: opacity 0.2s ease;
+/* The side cards: 512x656, text centred in grey caps. */
+.cf-card--side {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(656 * var(--dp));
+  min-height: 480px;
+  padding: 24px;
+  border: none;
+  color: var(--text-grey);
+  text-align: center;
 }
 
-.campfire-card--story:hover .campfire-card-still {
-  opacity: 0.9;
+button.cf-card--side {
+  cursor: pointer;
 }
 
-/* ------------------------------------------------------------ responsive */
+button.cf-card--side:hover {
+  color: var(--primary);
+}
 
-/* Three 1fr columns get too narrow for a 32px title and a 12px credit line
-   below ~900px, so go straight to one column. Not two: the placeholders pad
-   the last row to THREE, so a two-column grid would leave a hole beside the
-   odd card out. */
-@media (max-width: 900px) {
-  .campfire-home-grid {
-    grid-template-columns: minmax(0, 1fr);
+button.cf-card--side:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Paragraphs one line (14px) apart. */
+.cf-side-text {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cf-side-title {
+  font-size: var(--text-20);
+  line-height: 22px;
+  letter-spacing: var(--track-20);
+  text-transform: none;
+}
+
+.cf-empty {
+  margin-top: 44px;
+}
+
+/* Below desktop the three tracks stack: featured card first. */
+@media (max-width: 1024px) {
+  .cf-beyond {
+    grid-template-columns: 1fr auto;
+    row-gap: 16px;
   }
 
-  /* Height from content once the card is a full-width strip. */
-  .campfire-card {
+  .cf-beyond-intro {
+    grid-column: 1 / -1;
+  }
+
+  .cf-search-note {
+    grid-column: 1 / -1;
+  }
+
+  .cf-gather {
+    grid-template-columns: 1fr;
+    row-gap: 24px;
+  }
+
+  .cf-card--feature {
+    order: -1;
+    height: auto;
     min-height: 0;
   }
 
-  .campfire-card-title {
-    margin-top: 48px;
+  .cf-card-title {
+    margin-top: 80px;
+  }
+
+  .cf-card-still {
+    width: 100%;
+    margin-top: 40px;
+  }
+
+  .cf-gather-side--prev:empty {
+    display: none;
   }
 }

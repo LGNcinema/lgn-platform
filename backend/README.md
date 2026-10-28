@@ -101,13 +101,13 @@ Responses: `401` for a wrong password or a missing/expired/tampered token,
 | `GET` | `/api/admin/capsules/{id}` | Full `CapsuleDetail` (film + all collections). |
 | `POST` | `/api/admin/capsules` | → 201 |
 | `PATCH` | `/api/admin/capsules/{id}` | Partial update. Accepts `is_active` and `publish_at`; publishing one capsule does **not** unpublish the others. |
-| `DELETE` | `/api/admin/capsules/{id}` | → 204. Cascades to film, reflections, circles, practices. |
+| `DELETE` | `/api/admin/capsules/{id}` | → 204. Cascades to film, reflections, practices, photos. |
 | `PUT` | `/api/admin/capsules/{id}/film` | **Upsert** — a capsule has at most one film. |
 | `POST` | `/api/admin/capsules/{id}/{collection}` | → 201 |
 | `PATCH` | `/api/admin/{collection}/{item_id}` | Partial update. |
 | `DELETE` | `/api/admin/{collection}/{item_id}` | → 204 |
 
-`{collection}` is one of `reflections`, `discussion_circles`, `practices`.
+`{collection}` is one of `reflections`, `practices`.
 
 **PATCH semantics.** Bodies are applied with `model_dump(exclude_unset=True)`:
 a field you omit is left unchanged, and a field you send explicitly as `null`
@@ -127,7 +127,6 @@ Admin-only (bearer token required): everything under `/api/admin/*`, plus the
 pre-existing content writes, which used to be open to the internet —
 `POST /api/capsules`, `POST /api/capsules/{id}/film`,
 `POST /api/capsules/{id}/reflections`,
-`POST /api/capsules/{id}/discussion_circles`,
 `POST /api/capsules/{id}/practices`.
 
 Intentionally public: **all** `GET` endpoints, and the visitor submission

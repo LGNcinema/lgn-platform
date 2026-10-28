@@ -79,12 +79,6 @@ INSERT INTO reflections (capsule_id, title, introduction, content) VALUES
 (1, 'Reflection 1', 'Something about reflections—', 'What moment in the film stayed with you the longest?'),
 (1, 'Reflection 2', NULL, 'Is there a grief or loss you’ve been walking with?');
 
--- Seed Discussion Circles
-INSERT INTO discussion_circles (capsule_id, title, opening_round, discuss_prompts, closing_question) VALUES
-(1, 'Circle 1: Light and Darkness', 'Each person shares the first word that comes to mind when they hear “light,” followed by the first word that comes to mind when they hear “darkness.”', E'What patterns or differences do you notice?\nWhen can light expose, overwhelm, or harm?\nWhen can darkness offer rest, privacy, mystery, or protection?', 'What kind of light do you want to bring into the lives around you?'),
-(1, 'Circle 2: Resilience and Mourning', 'Choose one: share a time when you had to endure, or a time when you allowed yourself to mourn.', E'What did the experience reveal about what mattered to you?\nWhen is resilience life-giving?\nWhen can resilience become a way of avoiding grief?\nWhat can mourning teach us that achievement cannot?', 'What does the way you respond to difficulty reveal about your values?'),
-(1, 'Circle 3: Purpose and Disconnection', 'Share a time when you felt purposeful—or a time when you felt disconnected from purpose.', E'What was present or absent in that season?\nConsider: Belonging, Responsibility, Challenge, Freedom, Hope, Contribution, Being needed.', 'Is purpose something we find, choose, receive, or practice?');
-
 -- Seed Practices
 INSERT INTO practices (capsule_id, title, description, steps) VALUES
 (1, 'Practice 1: Return', 'Choose one practice for the month, move through all three, or choose your own.', E'Revisit something you loved when you were younger—something that made you lose track of time: an instrument, game, sport, craft, place, collection, or curiosity.\nSpend at least twenty uninterrupted minutes with it.\nAfterward, ask yourself:\nWhat part of me returned?\nWhat did I value about this before anyone told me whether it was useful?\nIs there something here I want to carry into my life now?'),

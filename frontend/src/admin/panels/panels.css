@@ -579,37 +579,50 @@
   line-height: 1.45;
 }
 
-/*
- * The stage holds public markup under public classes. `index.css` must not be
- * touched, so rather than override anything public we re-establish here the few
- * inherited values the portal would otherwise impose on it: `.admin-portal` and
- * `.apnl` both set a tighter 1.55 line-height, and `.apnl` sets its own font
- * stack and colour. These restore what `body` in index.css gives the real page,
- * so the preview measures type exactly as the site does.
- */
-.admin-portal .apnl-preview-stage {
-  font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 1.6;
-  color: var(--text-main);
-  text-align: left;
-  background: var(--bg-darker);
-  /* Public layout is built for a full-width viewport; inside the admin column a
-     wide row scrolls here instead of stretching the portal. */
-  overflow-x: auto;
+/* Expanded: the same frame, lifted over the whole portal. */
+.admin-portal .apnl-preview-frame.is-expanded {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  border-radius: 0;
+  background: #111;
 }
 
 /*
- * The only public class this file touches, and only inside the preview stage:
- * `.story-shell` reserves ~120-191px at the top to clear the floating site
- * header, which the preview frame does not have, so the frame would otherwise
- * open on a band of empty grey. Scoped here rather than changed in the shell's
- * own stylesheet. (It targeted `.capsule-view-wrapper` until the Campfire
- * redesign replaced that markup.)
+ * The iframe is a real 1920 x 1080 window (see PreviewPanel), drawn at
+ * `scale`. The scaler takes the scaled size so the layout around it does too;
+ * the iframe inside keeps its full size and is shrunk from its top-left corner.
  */
-.admin-portal .apnl-preview-stage .story-shell {
-  padding-top: 28px;
-  padding-bottom: 48px;
+.admin-portal .apnl-preview-viewport {
+  width: 100%;
+}
+
+.admin-portal .apnl-preview-frame.is-expanded .apnl-preview-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.admin-portal .apnl-preview-scaler {
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-portal .apnl-preview-iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  border: 0;
+  background: #fff;
+  transform-origin: 0 0;
 }
 
 /* --------------------------------------------------------- Storyboard review */
@@ -618,6 +631,11 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* "Delete all declined": at the far end of the status row. */
+.admin-portal .apnl-sb-clear {
+  margin-left: auto;
 }
 
 .admin-portal .apnl-sb-filter {
@@ -735,4 +753,167 @@
   margin: 0;
   font-size: 0.8rem;
   color: var(--text-muted);
+}
+
+/* ---- V3 admin: grouped lists, nested lists, story review, BTS photos ---- */
+
+/* A list inside a panel's section (Reflect / Practice groups): no panel chrome. */
+.admin-portal .apnl-nested {
+  display: block;
+}
+
+.admin-portal .admin-watch-tab {
+  display: grid;
+  gap: var(--admin-gap);
+}
+
+/* Central storyboard review: one group per story. */
+.admin-portal .apnl-sb-group + .apnl-sb-group {
+  margin-top: 28px;
+}
+
+.admin-portal .apnl-sb-group-title {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* The card: the public preview on the left, the reviewer's tools on the right. */
+.admin-portal .apnl-sb-card--v3 {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.admin-portal .apnl-sb-review {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+/* The V3 Storyboard card (600x309, 36px text) at half size, in the site's
+   own type and colours rather than the portal's. */
+.admin-portal .apnl-sb-preview {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  height: 155px;
+  padding: 10px 10px 10px;
+  background: #e5e5e5;
+  color: #000;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.admin-portal .apnl-sb-preview-text {
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+  font-size: 18px;
+  line-height: 19px;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.admin-portal .apnl-sb-preview-byline,
+.admin-portal .apnl-sb-preview-foot {
+  margin: 0;
+  font-size: 7px;
+  line-height: 8px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.admin-portal .apnl-sb-preview-byline {
+  margin-top: auto;
+}
+
+.admin-portal .apnl-sb-preview-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 18px;
+  color: #888;
+}
+
+.admin-portal .apnl-sb-spam {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  color: var(--apnl-danger);
+  background: var(--apnl-danger-soft);
+  border-radius: var(--admin-radius-sm);
+}
+
+.admin-portal .apnl-sb-dims {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-portal .apnl-sb-dims-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.admin-portal .admin-btn-ghost.is-active {
+  background: var(--admin-tint);
+}
+
+/* Behind-the-scenes photos. */
+.admin-portal .apnl-bts-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.admin-portal .apnl-bts-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.admin-portal .apnl-bts-thumb {
+  flex: none;
+  width: 160px;
+  height: 100px;
+  overflow: hidden;
+  background: var(--border);
+  border-radius: var(--admin-radius-sm);
+}
+
+.admin-portal .apnl-bts-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.admin-portal .apnl-bts-fields {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.admin-portal .apnl-bts-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .admin-portal .apnl-sb-card--v3 {
+    flex-direction: column;
+  }
 }

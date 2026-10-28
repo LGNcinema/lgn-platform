@@ -1,0 +1,56 @@
+/* The V3 pop-up (see LgnDialog.tsx). Figma, at 1920: the panel is #EDEDED
+   with no border or shadow; the page behind is blurred and greyed. Label and
+   [x] are 12px caps ~21px in from the panel's corner. Each use sets its own
+   width (className). */
+
+.lgn-dialog {
+  /* <dialog> centres itself; only the look is ours. */
+  margin: auto;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: var(--panel);
+  color: var(--primary);
+  max-width: calc(100vw - 2 * var(--grid-margin));
+  max-height: calc(100vh - 2 * var(--grid-margin));
+  overflow: auto;
+}
+
+.lgn-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.lgn-dialog-inner {
+  padding: 21px 21px 25px 20px;
+}
+
+.lgn-dialog-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.lgn-dialog-label {
+  margin: 0;
+}
+
+.lgn-dialog-close {
+  flex: none;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+.lgn-dialog-close:hover {
+  text-decoration: underline;
+}
+
+.lgn-dialog-close:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

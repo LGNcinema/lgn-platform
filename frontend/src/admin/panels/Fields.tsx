@@ -610,7 +610,10 @@ function ItemCard<T extends { id: number }, D extends Record<string, string>>({
   const remove = useSaveState();
   const errorId = useId();
 
-  const heading = str(draft[nameKey]).trim() || `Untitled ${singular}`;
+  // The first line only, shortened: the name key may be a whole question or a
+  // practice's list of steps.
+  const firstLine = str(draft[nameKey]).trim().split('\n')[0] ?? '';
+  const heading = (firstLine.length > 90 ? `${firstLine.slice(0, 88)}…` : firstLine) || `Untitled ${singular}`;
   // Recomputed every render, so the red flag clears as soon as the user types.
   const invalidKeys = save.error ? missingRequiredKeys(fields, draft) : [];
 
@@ -680,6 +683,9 @@ interface NewItemProps<D extends Record<string, string>> {
   singular: string;
   collection: string;
   onSaved: PanelProps['onSaved'];
+  /** Sent with every new item but not edited: e.g. its Self / Neighbor /
+   *  World group, or a title the form doesn't ask for. */
+  fixedBody?: Record<string, unknown>;
 }
 
 function NewItem<D extends Record<string, string>>({
@@ -689,6 +695,7 @@ function NewItem<D extends Record<string, string>>({
   singular,
   collection,
   onSaved,
+  fixedBody,
 }: NewItemProps<D>) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<D>(blank);
@@ -715,7 +722,7 @@ function NewItem<D extends Record<string, string>>({
     void save.run(async () => {
       await adminFetch(`/api/admin/capsules/${capsuleId}/${collection}`, {
         method: 'POST',
-        body: toBody(fields, draft),
+        body: { ...fixedBody, ...toBody(fields, draft) },
       });
       // Stay open, cleared and ready: adding several in a row is the normal
       // case, and closing after each one meant re-finding this form every time.
@@ -785,7 +792,8 @@ function NewItem<D extends Record<string, string>>({
 }
 
 export interface ListPanelProps<T extends { id: number }, D extends Record<string, string>> {
-  title: string;
+  /** Omit for a list nested inside another panel (no heading of its own). */
+  title?: string;
   description?: ReactNode;
   capsuleId: number;
   items: T[];
@@ -799,6 +807,12 @@ export interface ListPanelProps<T extends { id: number }, D extends Record<strin
   /** Which draft key to show as the card heading. */
   nameKey: Extract<keyof D, string>;
   onSaved: PanelProps['onSaved'];
+  /** See NewItemProps.fixedBody. */
+  fixedBody?: Record<string, unknown>;
+  /** Hide "+ Add" once the list holds this many. */
+  maxItems?: number;
+  /** Replaces the default "No X entries" line. */
+  emptyText?: ReactNode;
 }
 
 /**
@@ -818,22 +832,29 @@ export function ListPanel<T extends { id: number }, D extends Record<string, str
   blank,
   nameKey,
   onSaved,
+  fixedBody,
+  maxItems,
+  emptyText,
 }: ListPanelProps<T, D>) {
+  const canAdd = maxItems === undefined || items.length < maxItems;
   return (
-    <div className="apnl">
-      <PanelHead title={title} description={description} />
+    <div className={title ? 'apnl' : 'apnl-nested'}>
+      {title ? <PanelHead title={title} description={description} /> : null}
       <div className="apnl-list">
-        <NewItem
-          capsuleId={capsuleId}
-          fields={fields}
-          blank={blank}
-          singular={singular}
-          collection={collection}
-          onSaved={onSaved}
-        />
+        {canAdd ? (
+          <NewItem
+            capsuleId={capsuleId}
+            fields={fields}
+            blank={blank}
+            singular={singular}
+            collection={collection}
+            onSaved={onSaved}
+            fixedBody={fixedBody}
+          />
+        ) : null}
         {items.length === 0 ? (
           <p className="apnl-empty">
-            No {singular} entries for this capsule yet. Add the first one above.
+            {emptyText ?? <>No {singular} entries for this story yet. Add the first one above.</>}
           </p>
         ) : (
           items.map((item, index) => (

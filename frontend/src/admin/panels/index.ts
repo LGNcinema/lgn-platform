@@ -6,8 +6,9 @@ export type { PanelProps } from './Fields';
 
 export { FilmPanel } from './FilmPanel';
 export { ReflectPanel } from './ReflectPanel';
-export { DiscussPanel } from './DiscussPanel';
 export { PracticePanel } from './PracticePanel';
 export { DetailsPanel } from './DetailsPanel';
 export { PreviewPanel } from './PreviewPanel';
 export { StoryboardPanel } from './StoryboardPanel';
+export { StoryFieldsForm } from './StoryFieldsForm';
+export { BtsPhotos } from './BtsPhotos';

@@ -1,0 +1,93 @@
+/* Self / Neighbor / World. Figma v3 "Campfire—reflect" / "—practice", at
+   1920 (the right column starts at x=660, y=377):
+   - intro copy, 20px, up to ~900px wide;
+   - the first rule 156.5px under the column's top, x 660..1837;
+   - each name 48px, its line 2.65px under its rule; a closed row is 115px
+     rule to rule;
+   - the chevron, 24px, at the row's top right;
+   - an open row's body starts 42.7px (Reflect) / 48.7px (Practice) under
+     the name's line, and leaves 47.5 / 80.8 before the next rule. */
+
+.dim {
+  padding-right: 3px;
+}
+
+.dim-intro {
+  min-height: calc(156.5 * var(--vdp));
+  max-width: 905px;
+  line-height: 22px;
+}
+
+.dim-intro > p + p {
+  margin-top: 22px;
+}
+
+.dim-row {
+  border-top: 1px solid var(--rule);
+}
+
+.dim-heading {
+  font-size: var(--text-48);
+  letter-spacing: var(--track-48);
+  font-weight: 400;
+  line-height: 52.8px;
+}
+
+.dim-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  padding: 2.65px 0 calc(59.55 * var(--vdp));
+  border: none;
+  background: none;
+  color: var(--primary);
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dim-row.open .dim-toggle {
+  padding-bottom: 0;
+}
+
+.dim-toggle:hover > span:first-child {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 6px;
+}
+
+.dim-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.dim-chevron {
+  font-size: 24px;
+  line-height: 24px;
+  margin-top: 1px;
+}
+
+.dim-body {
+  padding-bottom: calc(47.5 * var(--vdp));
+}
+
+.dim--reflect .dim-body {
+  padding-top: calc(42.7 * var(--vdp));
+}
+
+.dim--practice .dim-body {
+  padding-top: calc(48.7 * var(--vdp));
+  padding-bottom: calc(80.8 * var(--vdp));
+}
+
+.dim-body[hidden] {
+  display: none;
+}
+
+/* The last row, closed, ends with the panel's own 31px rather than a row's
+   space (the frame: World's line ends 62px above the panel's bottom). */
+.dim-row:last-child:not(.open) .dim-toggle {
+  padding-bottom: 0;
+}

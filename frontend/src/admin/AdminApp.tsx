@@ -13,20 +13,23 @@ import {
 } from './adminClient';
 import { AdminLogin } from './AdminLogin';
 import { CapsulePicker } from './CapsulePicker';
+import { StoryboardNav } from './StoryboardNav';
 import {
+  BtsPhotos,
   DetailsPanel,
-  DiscussPanel,
   FilmPanel,
   PracticePanel,
   PreviewPanel,
   ReflectPanel,
   StoryboardPanel,
+  StoryFieldsForm,
 } from './panels';
 import { publicationState } from './publishing';
 import { StatusPill } from './StatusPill';
 import './admin.css';
 
-type TabId = 'film' | 'reflect' | 'discuss' | 'practice' | 'storyboard' | 'details' | 'preview';
+/** `film` is the Watch tab (its id predates the rename; kept so links work). */
+type TabId = 'film' | 'reflect' | 'practice' | 'storyboard' | 'details' | 'preview';
 
 /**
  * `checking`     -- restoring a stored token
@@ -44,13 +47,12 @@ interface PendingNav {
 }
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: 'film', label: 'Film & Video' },
+  { id: 'film', label: 'Watch' },
   { id: 'reflect', label: 'Reflect' },
-  { id: 'discuss', label: 'Discuss' },
   { id: 'practice', label: 'Practice' },
-  { id: 'storyboard', label: 'Storyboard' },
   { id: 'details', label: 'Details' },
   { id: 'preview', label: 'Preview' },
+  { id: 'storyboard', label: 'Storyboard' },
 ];
 
 const isTabId = (value: string | undefined): value is TabId =>
@@ -125,6 +127,8 @@ export function AdminApp() {
   /* ---- routing ---- */
   const tabMatch = useMatch('/admin/capsules/:capsuleId/:tab');
   const capsuleOnlyMatch = useMatch('/admin/capsules/:capsuleId');
+  /** Every story's storyboard submissions in one place. */
+  const reviewAll = useMatch('/admin/storyboard') !== null;
 
   const routeCapsuleId = tabMatch?.params.capsuleId ?? capsuleOnlyMatch?.params.capsuleId;
   const parsedId = routeCapsuleId ? Number(routeCapsuleId) : NaN;
@@ -270,7 +274,7 @@ export function AdminApp() {
             return;
           }
         }
-        setCapsuleError(err instanceof Error ? err.message : 'Could not load that capsule.');
+        setCapsuleError(err instanceof Error ? err.message : 'Could not load that story.');
       } finally {
         if (loadSeq.current === seq) setCapsuleLoading(false);
       }
@@ -304,12 +308,12 @@ export function AdminApp() {
 
   const handleSelectCapsule = useCallback(
     (id: number) => {
-      if (id === capsuleId) return;
-      runGuarded('Opening another capsule will discard them.', () => {
+      if (id === capsuleId && !reviewAll) return;
+      runGuarded('Opening another story will discard them.', () => {
         navigate(`/admin/capsules/${id}/film`);
       });
     },
-    [capsuleId, navigate, runGuarded],
+    [capsuleId, reviewAll, navigate, runGuarded],
   );
 
   /* ---- tabs ---- */
@@ -345,8 +349,6 @@ export function AdminApp() {
     switch (activeTab) {
       case 'reflect':
         return <ReflectPanel key={capsule.id} {...props} />;
-      case 'discuss':
-        return <DiscussPanel key={capsule.id} {...props} />;
       case 'practice':
         return <PracticePanel key={capsule.id} {...props} />;
       case 'details':
@@ -354,10 +356,37 @@ export function AdminApp() {
       case 'preview':
         return <PreviewPanel key={capsule.id} {...props} />;
       case 'storyboard':
-        return <StoryboardPanel key={capsule.id} {...props} onReviewed={() => void refreshCounts()} />;
+        return <StoryboardPanel key={capsule.id} capsuleId={capsule.id} onReviewed={() => void refreshCounts()} />;
       case 'film':
       default:
-        return <FilmPanel key={capsule.id} {...props} />;
+        // Watch: the film and its video, what visitors see before pressing
+        // play, and the behind-the-scenes photos.
+        return (
+          <div key={capsule.id} className="admin-watch-tab">
+            <FilmPanel {...props} />
+            <div className="apnl">
+              <StoryFieldsForm
+                {...props}
+                title="Before the film"
+                fields={[
+                  {
+                    key: 'pre_watch_prompt',
+                    label: 'Pre-watch prompt',
+                    rows: 3,
+                    help: 'Optional. Leave blank to show the universal line, "Before you press play, take a breath—". Anything written here replaces it for this film.',
+                  },
+                  {
+                    key: 'pre_watch_supporting_text',
+                    label: 'Pre-watch supporting text',
+                    rows: 4,
+                    help: 'Optional smaller line under the prompt -- context, an instruction, a note on how long to sit with it. Usually only needed with a custom prompt.',
+                  },
+                ]}
+              />
+              <BtsPhotos {...props} />
+            </div>
+          </div>
+        );
     }
   };
 
@@ -447,24 +476,6 @@ export function AdminApp() {
               <span className="admin-brand-sub">Life is Greater than Numbers</span>
             </div>
             <div className="admin-header-actions">
-              {totalPending > 0 && (
-                <button
-                  type="button"
-                  className="admin-btn-ghost"
-                  title="Open the story with the most storyboard submissions waiting for review"
-                  onClick={() => {
-                    const [busiest] = Object.entries(pendingCounts).sort((a, b) => b[1] - a[1]);
-                    const id = Number(busiest[0]);
-                    if (id === capsuleId && activeTab === 'storyboard') return;
-                    runGuarded('Opening the review queue will discard them.', () => {
-                      navigate(`/admin/capsules/${id}/storyboard`);
-                    });
-                  }}
-                >
-                  Review queue
-                  <span className="admin-count" aria-label={`${totalPending} waiting`}>{totalPending}</span>
-                </button>
-              )}
               <button
                 type="button"
                 className="admin-btn-ghost"
@@ -519,15 +530,27 @@ export function AdminApp() {
               refreshKey={refreshKey}
               onUnauthorized={handleUnauthorized}
             />
+            <StoryboardNav
+              active={reviewAll}
+              waiting={totalPending}
+              onOpen={() => {
+                if (reviewAll) return;
+                runGuarded('Opening the Storyboard will discard them.', () => {
+                  navigate('/admin/storyboard');
+                });
+              }}
+            />
           </aside>
 
           <main className="admin-main">
-            {capsuleId === null ? (
+            {reviewAll ? (
+              <StoryboardPanel capsuleId={null} pendingCounts={pendingCounts} onReviewed={() => void refreshCounts()} />
+            ) : capsuleId === null ? (
               <div className="admin-card admin-empty">
-                <h2 className="admin-section-title">No capsule selected</h2>
+                <h2 className="admin-section-title">No story selected</h2>
                 <p className="admin-muted">
-                  Pick a capsule from the list, or create a new one, to start editing its film,
-                  reflection, discussion circle, practice and details.
+                  Pick a story from the list, or create a new one, to start editing its film,
+                  Reflect, Practice and details.
                 </p>
               </div>
             ) : (
@@ -535,20 +558,20 @@ export function AdminApp() {
                 <div className="admin-capsule-head">
                   <p className="admin-eyebrow">{capsule ? formatMonth(capsule.month) : ' '}</p>
                   <h2 className="admin-capsule-heading">
-                    {capsule ? capsule.title || 'Untitled capsule' : 'Loading...'}
+                    {capsule ? capsule.title || 'Untitled story' : 'Loading...'}
                   </h2>
                   {capsule && (
                     <>
                       <StatusPill state={publicationState(capsule)} />
                       <a
                         className="admin-btn-ghost admin-btn-sm"
-                        href="/?view=capsule"
+                        href={`/?view=capsule&story=${capsule.id}`}
                         target="_blank"
                         rel="noreferrer"
                         title={
                           publicationState(capsule) === 'published'
-                            ? 'Open the public site in a new tab. It opens on the newest published capsule; every published capsule is reachable from the month tabs.'
-                            : 'This capsule is not published, so the public site will not show it. Use the Preview tab to see it, or publish it from Details.'
+                            ? 'Open the public site in a new tab, on this story.'
+                            : 'This story is not published, so the public site will not show it. Use the Preview tab to see it, or publish it from Details.'
                         }
                       >
                         {publicationState(capsule) === 'published' ? 'View on site' : 'View live site'}
@@ -558,7 +581,7 @@ export function AdminApp() {
                   )}
                 </div>
 
-                <div className="admin-tabs" role="tablist" aria-label="Capsule sections">
+                <div className="admin-tabs" role="tablist" aria-label="Story sections">
                   {TABS.map((tab, index) => (
                     <button
                       key={tab.id}
@@ -595,7 +618,7 @@ export function AdminApp() {
                   {capsuleLoading && !capsule && (
                     <div className="admin-card admin-empty">
                       <span className="admin-spinner" aria-hidden="true" />
-                      <p className="admin-muted">Loading capsule...</p>
+                      <p className="admin-muted">Loading story...</p>
                     </div>
                   )}
                   {capsuleError && (
