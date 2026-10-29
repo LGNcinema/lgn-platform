@@ -15,7 +15,7 @@ import { AdminLogin } from './AdminLogin';
 import { CapsulePicker } from './CapsulePicker';
 import { StoryboardNav } from './StoryboardNav';
 import {
-  BtsPhotos,
+  BtsPanel,
   DetailsPanel,
   FilmPanel,
   PracticePanel,
@@ -29,7 +29,7 @@ import { StatusPill } from './StatusPill';
 import './admin.css';
 
 /** `film` is the Watch tab (its id predates the rename; kept so links work). */
-type TabId = 'film' | 'reflect' | 'practice' | 'storyboard' | 'details' | 'preview';
+type TabId = 'film' | 'reflect' | 'practice' | 'bts' | 'storyboard' | 'details' | 'preview';
 
 /**
  * `checking`     -- restoring a stored token
@@ -50,6 +50,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'film', label: 'Watch' },
   { id: 'reflect', label: 'Reflect' },
   { id: 'practice', label: 'Practice' },
+  { id: 'bts', label: 'Behind the Film' },
   { id: 'details', label: 'Details' },
   { id: 'preview', label: 'Preview' },
   { id: 'storyboard', label: 'Storyboard' },
@@ -351,6 +352,8 @@ export function AdminApp() {
         return <ReflectPanel key={capsule.id} {...props} />;
       case 'practice':
         return <PracticePanel key={capsule.id} {...props} />;
+      case 'bts':
+        return <BtsPanel key={capsule.id} {...props} />;
       case 'details':
         return <DetailsPanel key={capsule.id} {...props} />;
       case 'preview':
@@ -359,8 +362,8 @@ export function AdminApp() {
         return <StoryboardPanel key={capsule.id} capsuleId={capsule.id} onReviewed={() => void refreshCounts()} />;
       case 'film':
       default:
-        // Watch: the film and its video, what visitors see before pressing
-        // play, and the behind-the-scenes photos.
+        // Watch: the film and its video, and what visitors see before
+        // pressing play.
         return (
           <div key={capsule.id} className="admin-watch-tab">
             <FilmPanel {...props} />
@@ -383,7 +386,6 @@ export function AdminApp() {
                   },
                 ]}
               />
-              <BtsPhotos {...props} />
             </div>
           </div>
         );

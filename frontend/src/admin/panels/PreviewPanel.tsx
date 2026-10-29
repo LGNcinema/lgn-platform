@@ -12,7 +12,8 @@
  * was laid out for the admin's whole window while squeezed into part of it,
  * and came out wrong. In its own 1920-wide window it lays out exactly as on a
  * 1920 x 1080 screen; the scale only shrinks the picture. Expand fills the
- * screen with it for a closer look.
+ * screen with it for a closer look. Below it, a second window opens on the
+ * story's Behind the Film page.
  *
  * The story is posted into the frame rather than fetched there, so it is the
  * draft this tab already holds. Nothing here is a public route: the frame shows
@@ -24,7 +25,8 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { API_URL } from '../../api';
-import type { CapsuleSummary } from '../../types';
+import { hasBehindTheScenes } from '../../components/campfire/StoryBehind';
+import type { CapsuleDetail, CapsuleSummary } from '../../types';
 import { PREVIEW_READY, type PreviewMessage } from '../PreviewFrame';
 import { formatLocal, localTimeLabel, parseNaiveUtc, publicationState } from '../publishing';
 import { StatusPill } from '../StatusPill';
@@ -64,8 +66,21 @@ function useStoryNumber(capsuleId: number, month: string): number {
   return number;
 }
 
-export function PreviewPanel({ capsule }: PanelProps) {
-  const storyNumber = useStoryNumber(capsule.id, capsule.month);
+interface WindowProps {
+  capsule: CapsuleDetail;
+  storyNumber: number;
+  /** Which page the frame opens on: the story page, or Behind the Film. */
+  page: 'story' | 'behind';
+  label: string;
+  stateLine: string;
+}
+
+/**
+ * One scaled 1920 x 1080 window onto the site (see the note at the top).
+ * The same element inline and expanded, so the frame is never reloaded and
+ * keeps whichever section and scroll position the editor is on.
+ */
+function PreviewWindow({ capsule, storyNumber, page, label, stateLine }: WindowProps) {
   const [expanded, setExpanded] = useState(false);
   const [scale, setScale] = useState(0);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -116,6 +131,39 @@ export function PreviewPanel({ capsule }: PanelProps) {
     return () => window.removeEventListener('keydown', onKey);
   }, [expanded]);
 
+  return (
+    <figure className={`apnl-preview-frame${expanded ? ' is-expanded' : ''}`} aria-label={`Preview: ${label}`}>
+      <figcaption className="apnl-preview-chrome">
+        <span className="apnl-preview-badge">{label}</span>
+        <StatusPill state={publicationState(capsule)} />
+        <span className="apnl-preview-chrome-text">
+          {stateLine} Shown as on a {FRAME_W} &times; {FRAME_H} screen
+          {scale > 0 ? `, at ${Math.round(scale * 100)}%` : ''}.
+        </span>
+        <button type="button" className="admin-btn-ghost" onClick={() => setExpanded((v) => !v)}>
+          {expanded ? 'Close (Esc)' : 'Expand'}
+        </button>
+      </figcaption>
+
+      <div ref={viewportRef} className="apnl-preview-viewport">
+        <div className="apnl-preview-scaler" style={{ width: FRAME_W * scale, height: FRAME_H * scale }}>
+          <iframe
+            ref={frameRef}
+            className="apnl-preview-iframe"
+            src={page === 'behind' ? '/admin/preview-frame?section=making' : '/admin/preview-frame'}
+            title={`Public page preview: ${label}`}
+            width={FRAME_W}
+            height={FRAME_H}
+            style={{ transform: `scale(${scale})` }}
+          />
+        </div>
+      </div>
+    </figure>
+  );
+}
+
+export function PreviewPanel({ capsule }: PanelProps) {
+  const storyNumber = useStoryNumber(capsule.id, capsule.month);
   const state = publicationState(capsule);
   const scheduledAt = parseNaiveUtc(capsule.publish_at);
 
@@ -141,7 +189,7 @@ export function PreviewPanel({ capsule }: PanelProps) {
     <div className="apnl apnl--wide">
       <PanelHead
         title="Preview"
-        description="How this story will look on the public site, rendered with the site's own components. Nothing here is visible to anyone else until the story is published."
+        description="How this story will look on the public site, rendered with the site's own components: the story page, then its Behind the Film page. Nothing here is visible to anyone else until the story is published."
       />
 
       <Note>
@@ -156,41 +204,16 @@ export function PreviewPanel({ capsule }: PanelProps) {
         </Note>
       ) : null}
 
-      {/* The same element inline and expanded, so the frame is never reloaded
-          and keeps whichever section and scroll position the editor is on. */}
-      <figure
-        className={`apnl-preview-frame${expanded ? ' is-expanded' : ''}`}
-        aria-label="Preview of this story's public page"
-      >
-        <figcaption className="apnl-preview-chrome">
-          <span className="apnl-preview-badge">Preview</span>
-          <StatusPill state={state} />
-          <span className="apnl-preview-chrome-text">
-            {stateLine} Shown as on a {FRAME_W} &times; {FRAME_H} screen
-            {scale > 0 ? `, at ${Math.round(scale * 100)}%` : ''}.
-          </span>
-          <button type="button" className="admin-btn-ghost" onClick={() => setExpanded((v) => !v)}>
-            {expanded ? 'Close (Esc)' : 'Expand'}
-          </button>
-        </figcaption>
+      <PreviewWindow capsule={capsule} storyNumber={storyNumber} page="story" label="Story page" stateLine={stateLine} />
 
-        <div ref={viewportRef} className="apnl-preview-viewport">
-          <div
-            className="apnl-preview-scaler"
-            style={{ width: FRAME_W * scale, height: FRAME_H * scale }}
-          >
-            <iframe
-              ref={frameRef}
-              className="apnl-preview-iframe"
-              src="/admin/preview-frame"
-              title="Public page preview"
-              width={FRAME_W}
-              height={FRAME_H}
-              style={{ transform: `scale(${scale})` }}
-            />
-          </div>
-        </div>
-      </figure>
+      {hasBehindTheScenes(capsule) ? (
+        <PreviewWindow capsule={capsule} storyNumber={storyNumber} page="behind" label="Behind the Film" stateLine={stateLine} />
+      ) : (
+        <Note>
+          This story has no Behind the Film page yet, so Watch shows no &ldquo;How this film was made&rdquo;
+          button. Add content on the <strong>Behind the Film</strong> tab.
+        </Note>
+      )}
     </div>
   );
 }

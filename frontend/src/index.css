@@ -125,10 +125,9 @@
      1px black rules, and outlined boxes for buttons and fields. Type is
      regular weight throughout, at four sizes: 12 (labels, set in caps), 20
      (body and UI), 36 (section headings) and 48 (titles), on ~1.1 leading. */
-  /* The frames' panel is #EDEDED. Deepened two steps (Justin, 2026-10-26):
-     8 levels off the #F5F5F5 page washed out to white on some screens (HDR,
-     high brightness), hiding the panels entirely. */
-  --panel: #e5e5e5;
+  /* The frames' panel. (Briefly deepened to #E5E5E5 for an OLED screen where
+     it washed out; back to the design's value, Justin 2026-10-28.) */
+  --panel: #ededed;
   --rule: var(--primary);
   --text-grey: #888888;
   --placeholder-box: #d9d9d9;  /* an image that hasn't loaded / isn't set */

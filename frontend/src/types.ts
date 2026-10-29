@@ -11,8 +11,6 @@ export interface Film {
   thumbnail_url?: string;
   description?: string;
   theme?: string;
-  bts_text?: string;
-  screenplay_text?: string;
 
   /** Raw source field. May hold a bare URL or a full `<iframe>` embed snippet. */
   video_url?: string;
@@ -47,6 +45,14 @@ export interface CapsulePhoto {
   position: number;
 }
 
+/** A written section of the behind-the-scenes page. */
+export interface BtsSection {
+  id: number;
+  capsule_id: number;
+  heading?: string | null;
+  body: string;
+}
+
 export interface Practice {
   id: number;
   capsule_id: number;
@@ -77,8 +83,15 @@ export interface CapsuleDetail {
   practice_title?: string | null;
   /** The story's LGN Spark: its YouTube interview. Public placement TBD. */
   spark_url?: string | null;
-  /** Behind-the-scenes photos; `url` is API-relative. Not shown publicly yet. */
+  /** The behind-the-scenes page ("How this film was made"). Photo `url`s are
+   *  API-relative. */
   bts_photos?: CapsulePhoto[];
+  bts_hero?: CapsulePhoto | null;
+  bts_logo?: CapsulePhoto | null;
+  bts_copyright?: string | null;
+  /** One "Role: Name, Name" per line; a blank line starts a new group. */
+  bts_credits?: string | null;
+  bts_sections?: BtsSection[];
   film?: Film;
   reflections: Reflection[];
   practices: Practice[];

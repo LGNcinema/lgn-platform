@@ -14,7 +14,13 @@ import { SaveBar, Section, TextArea, TextField } from './Fields';
 import type { PanelProps } from './Fields';
 import { orNull, str, useEditState, useSaveState } from './formState';
 
-export type StoryTextKey = 'pre_watch_prompt' | 'pre_watch_supporting_text' | 'reflect_intro' | 'practice_title';
+export type StoryTextKey =
+  | 'pre_watch_prompt'
+  | 'pre_watch_supporting_text'
+  | 'reflect_intro'
+  | 'practice_title'
+  | 'bts_copyright'
+  | 'bts_credits';
 
 export interface StoryFieldSpec {
   key: StoryTextKey;

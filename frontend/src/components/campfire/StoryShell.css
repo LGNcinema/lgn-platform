@@ -103,6 +103,23 @@
   gap: 22px;
 }
 
+/* Watch's "How this film was made": at the foot of the column (its bottom
+   13px above Geme's top, y = 1040 at 1920). */
+.story-shell-foot {
+  margin-top: auto;
+}
+
+/* Without Geme under it: the frame's y = 1040, 111px above the panel's
+   bottom (80 + the panel's 31px padding). */
+.story-shell-foot:last-child {
+  margin-bottom: calc(80 * var(--vdp));
+}
+
+.story-shell-foot .lgn-btn {
+  min-width: 290px;
+  height: 35px;
+}
+
 .story-shell-geme {
   margin-top: auto;
   padding: 0;
@@ -124,6 +141,10 @@
 .story-shell-geme:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 4px;
+}
+
+.story-shell-foot + .story-shell-geme {
+  margin-top: 13px;
 }
 
 /* ---------------------------------------------------------------- right */

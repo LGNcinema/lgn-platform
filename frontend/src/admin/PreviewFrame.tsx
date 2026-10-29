@@ -14,7 +14,8 @@
  * film is never exposed by this route.
  */
 import { useEffect, useState } from 'react';
-import { StoryMaking } from '../components/campfire/StoryMaking';
+import { hasBehindTheScenes, StoryBehind } from '../components/campfire/StoryBehind';
+import { PhotoLoaderContext } from '../components/campfire/StoryPhoto';
 import { StoryPractice } from '../components/campfire/StoryPractice';
 import { StoryReflect } from '../components/campfire/StoryReflect';
 import { StoryShell } from '../components/campfire/StoryShell';
@@ -23,7 +24,8 @@ import { WatchMode } from '../components/campfire/WatchMode';
 import { formatStoryMonth, type StorySection } from '../components/campfire/campfire';
 import { SiteFooter } from '../components/chrome/SiteFooter';
 import { SiteHeader } from '../components/chrome/SiteHeader';
-import type { CapsuleDetail } from '../types';
+import type { CapsuleDetail, CapsulePhoto } from '../types';
+import { API_URL, getToken } from './adminClient';
 
 /** What the Preview tab sends. */
 export interface PreviewMessage {
@@ -37,9 +39,20 @@ export const PREVIEW_READY = 'lgn-preview-ready';
 
 const noop = () => {};
 
+async function loadAdminPhoto(photo: CapsulePhoto): Promise<Blob | null> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/admin/capsule-photos/${photo.id}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  return res.ok ? res.blob() : null;
+}
+
 export function PreviewFrame() {
   const [data, setData] = useState<PreviewMessage | null>(null);
-  const [section, setSection] = useState<StorySection>('watch');
+  // The Preview tab's second window opens on Behind the Film (?section=making).
+  const [section, setSection] = useState<StorySection>(() =>
+    new URLSearchParams(window.location.search).get('section') === 'making' ? 'making' : 'watch',
+  );
   const [watching, setWatching] = useState(false);
 
   useEffect(() => {
@@ -63,25 +76,40 @@ export function PreviewFrame() {
   // Watch is immersive on the site too: no header or footer.
   if (watching) return <WatchMode capsule={capsule} onExit={() => setWatching(false)} />;
 
+  const page =
+    section === 'making' ? (
+      <StoryBehind capsule={capsule} onBack={() => setSection('watch')} />
+    ) : (
+      <StoryShell
+        capsule={capsule}
+        labels={['LGN', `Story No. ${storyNumber}`, formatStoryMonth(capsule.month)]}
+        section={section}
+        onSelectSection={setSection}
+        onBackToCampfire={noop}
+        gemeTuning={null}
+        gemeTuningVersion={0}
+        leftFoot={
+          section === 'watch' && hasBehindTheScenes(capsule) ? (
+            <button type="button" className="lgn-btn" onClick={() => setSection('making')}>
+              How this film was made
+            </button>
+          ) : undefined
+        }
+      >
+        {section === 'watch' && <StoryWatch capsule={capsule} onEnterWatch={() => setWatching(true)} />}
+        {section === 'reflect' && <StoryReflect capsule={capsule} />}
+        {section === 'practice' && <StoryPractice capsule={capsule} />}
+      </StoryShell>
+    );
+
   return (
     <>
       <SiteHeader currentView="capsule" theme="light" onNavigate={noop} />
       <div className="page-body" style={{ position: 'relative', flexGrow: 1 }}>
         <main>
-          <StoryShell
-            capsule={capsule}
-            labels={['LGN', `Story No. ${storyNumber}`, formatStoryMonth(capsule.month)]}
-            section={section}
-            onSelectSection={setSection}
-            onBackToCampfire={noop}
-            gemeTuning={null}
-            gemeTuningVersion={0}
-          >
-            {section === 'watch' && <StoryWatch capsule={capsule} onEnterWatch={() => setWatching(true)} />}
-            {section === 'reflect' && <StoryReflect capsule={capsule} />}
-            {section === 'practice' && <StoryPractice capsule={capsule} />}
-            {section === 'making' && <StoryMaking capsule={capsule} />}
-          </StoryShell>
+          {/* An unpublished story's photos aren't public: fetch them with the
+              admin token instead. */}
+          <PhotoLoaderContext.Provider value={loadAdminPhoto}>{page}</PhotoLoaderContext.Provider>
         </main>
         <SiteFooter theme="light" onNavigate={noop} />
       </div>

@@ -2,7 +2,7 @@
  * ReflectPanel -- the story's Reflect tab, in V3's shape: one introduction for
  * the whole tab, then Self / Neighbor / World, each holding as many questions
  * as you add. The first question in each is the featured one. Visitors write
- * their answers privately on the site; Geme is there automatically.
+ * their answers privately on the site.
  */
 import type { Dimension, Reflection } from '../../types';
 import { DIMENSIONS } from '../../components/campfire/campfire';
@@ -37,7 +37,7 @@ export function ReflectPanel({ capsule, onSaved }: PanelProps) {
     <div className="apnl">
       <PanelHead
         title="Reflect"
-        description="What visitors are asked after the film. Their answers stay private, on their own device. Geme, the reflection guide, appears on every story automatically."
+        description="What visitors are asked after the film. Their answers stay private, on their own device."
       />
 
       <StoryFieldsForm
