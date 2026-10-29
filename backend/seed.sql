@@ -31,7 +31,7 @@ INSERT INTO films (
     capsule_id, title, director, duration,
     video_url, video_provider, video_id, video_hash,
     video_aspect_ratio, video_duration_seconds, captions_url,
-    thumbnail_url, description, theme, bts_text, screenplay_text
+    thumbnail_url, description, theme
 ) VALUES (
     1,
     'For the Love of God!',
@@ -49,9 +49,7 @@ INSERT INTO films (
     -- with:  curl 'https://vimeo.com/api/oembed.json?url=https://vimeo.com/1052574030/53c90178cb&width=1280'
     'https://i.vimeocdn.com/video/2092323335-5ccbfc251feefb8e6eda1aa87165cd5a842456682cba26398f8925dd3f5ae655-d_1280?region=us',
     'A short film exploring purpose and light in the darkness.',
-    'Purpose',
-    'True story of Jon, the filmmaking process, and Cast/Crew',
-    'Script text goes here.'
+    'Purpose'
 ) ON CONFLICT (capsule_id) DO UPDATE SET
     title = EXCLUDED.title,
     director = EXCLUDED.director,
@@ -65,9 +63,7 @@ INSERT INTO films (
     captions_url = EXCLUDED.captions_url,
     thumbnail_url = EXCLUDED.thumbnail_url,
     description = EXCLUDED.description,
-    theme = EXCLUDED.theme,
-    bts_text = EXCLUDED.bts_text,
-    screenplay_text = EXCLUDED.screenplay_text;
+    theme = EXCLUDED.theme;
 
 -- Seed Reflections
 -- Copy follows the Campfire REFLECT frame (design/exports/2026-09-28). The page
