@@ -1,0 +1,175 @@
+/* StoryBehind -- "How this film was made". Figma v3 "Campfire—bts", at 1920:
+   - "< [film]" as the film page's "< Go Beyond" (36px, baseline y=218);
+   - the large picture x 40..1881, top y=274 (as the film page's panel), 1036
+     tall;
+   - the title (48px), its line top 88px under the picture;
+   - 82px lower, a row: the copyright line, then the logo ~110px down, at the
+     left margin; "Credits" at x=660, the roles from x=660 and names from
+     x=970, 104px under its line; groups one blank line apart;
+   - the gallery 145px under the credits: 3 x 3, 599 x 337, gaps 21 across and
+     33 down;
+   - the written sections under it: heading at the left margin, paragraphs
+     from x=660, 900 wide.
+   Text is 20px on 22px throughout except the title. Layout scales (--dp
+   across, --vdp down); text stays at its px. */
+
+.story-behind {
+  padding: calc(185 * var(--vdp)) var(--grid-margin) calc(160 * var(--vdp));
+  color: var(--primary);
+}
+
+.story-behind-hero {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1841 / 1036;
+  margin-top: calc(49.3 * var(--vdp));
+  object-fit: cover;
+  background: var(--panel);
+}
+
+.story-behind-title {
+  margin-top: calc(88 * var(--vdp));
+  font-size: var(--text-48);
+  letter-spacing: var(--track-48);
+  font-weight: 400;
+  line-height: 52.8px;
+}
+
+/* Back link straight above the title when there is no picture. */
+.story-shell-back + .story-behind-title {
+  margin-top: calc(49.3 * var(--vdp));
+}
+
+.story-behind-info {
+  display: grid;
+  grid-template-columns: calc(620 * var(--dp)) minmax(0, 1fr);
+  margin-top: calc(82 * var(--vdp));
+  font-size: var(--text-20);
+  letter-spacing: var(--track-20);
+  line-height: 22px;
+}
+
+.story-behind-rights {
+  padding-right: calc(40 * var(--dp));
+}
+
+.story-behind-copyright {
+  max-width: 420px;
+  white-space: pre-line;
+}
+
+.story-behind-logo {
+  display: block;
+  max-width: min(100%, 320px);
+  max-height: 120px;
+  margin-top: 66px;
+  object-fit: contain;
+  object-position: left top;
+}
+
+.story-behind-copyright:empty + .story-behind-logo,
+.story-behind-rights > .story-behind-logo:first-child {
+  margin-top: 0;
+}
+
+.story-behind-credits-label {
+  margin-bottom: 82px;
+  font-size: inherit;
+  font-weight: 400;
+}
+
+.story-behind-credit-group + .story-behind-credit-group {
+  margin-top: 22px;
+}
+
+/* Roles from x=660, names from x=970. */
+.story-behind-credit {
+  display: grid;
+  grid-template-columns: calc(310 * var(--dp)) minmax(0, 1fr);
+}
+
+.story-behind-credit dt {
+  padding-right: 16px;
+}
+
+.story-behind-credit dd {
+  margin: 0;
+}
+
+.story-behind-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: calc(33 * var(--vdp)) calc(21 * var(--dp));
+  margin: calc(145 * var(--vdp)) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.story-behind-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 599 / 337;
+  object-fit: cover;
+  background: var(--panel);
+}
+
+.story-behind-section {
+  display: grid;
+  grid-template-columns: calc(620 * var(--dp)) minmax(0, 900px);
+  margin-top: calc(110 * var(--vdp));
+  font-size: var(--text-20);
+  letter-spacing: var(--track-20);
+  line-height: 22px;
+}
+
+.story-behind-gallery + .story-behind-section {
+  margin-top: calc(145 * var(--vdp));
+}
+
+.story-behind-section-heading {
+  max-width: 300px;
+  padding-right: calc(40 * var(--dp));
+  font-size: inherit;
+  font-weight: 400;
+  line-height: inherit;
+}
+
+.story-behind-section-body p + p {
+  margin-top: 22px;
+}
+
+/* Below desktop: one column; the gallery two across. */
+@media (max-width: 1024px) {
+  .story-behind-info,
+  .story-behind-section {
+    grid-template-columns: 1fr;
+    row-gap: 32px;
+  }
+
+  .story-behind-section-heading:empty {
+    display: none;
+  }
+
+  .story-behind-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  .story-behind-credit {
+    grid-template-columns: 1fr;
+  }
+
+  .story-behind-credit dt {
+    color: var(--text-grey);
+  }
+
+  .story-behind-credit + .story-behind-credit {
+    margin-top: 8px;
+  }
+
+  .story-behind-gallery {
+    grid-template-columns: 1fr;
+  }
+}

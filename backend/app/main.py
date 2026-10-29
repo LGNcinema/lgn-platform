@@ -199,11 +199,17 @@ def _capsule_detail(capsule: models.Capsule) -> schemas.CapsuleDetail:
     except Exception as e:
         print(f"Error fetching practices relation: {e}")
 
-    bts_photos = []
+    bts_photos, bts_hero, bts_logo = [], None, None
     try:
-        bts_photos = capsule.bts_photos
+        bts_photos, bts_hero, bts_logo = capsule.bts_photos, capsule.bts_hero, capsule.bts_logo
     except Exception as e:
         print(f"Error fetching photos relation: {e}")
+
+    bts_sections = []
+    try:
+        bts_sections = capsule.bts_sections or []
+    except Exception as e:
+        print(f"Error fetching bts_sections relation: {e}")
 
     return schemas.CapsuleDetail(
         id=capsule.id,
@@ -218,11 +224,16 @@ def _capsule_detail(capsule: models.Capsule) -> schemas.CapsuleDetail:
         reflect_intro=capsule.reflect_intro,
         practice_title=capsule.practice_title,
         spark_url=capsule.spark_url,
+        bts_copyright=capsule.bts_copyright,
+        bts_credits=capsule.bts_credits,
         created_at=capsule.created_at,
         film=film,
         reflections=reflections,
         practices=practices,
         bts_photos=bts_photos,
+        bts_hero=bts_hero,
+        bts_logo=bts_logo,
+        bts_sections=bts_sections,
     )
 
 
@@ -639,11 +650,26 @@ def get_storyboard(capsule_id: int, db: Session = Depends(get_db)):
     return schemas.StoryboardResponse(capsule_id=capsule.id, month=capsule.month, stories=stories)
 
 
+# Public photos are cached by Vercel's CDN (s-maxage) as well as by browsers
+# (max-age). Without the CDN copy every view of a photo is read out of Neon,
+# whose free plan suspends the database after 5 GB of transfer a month; with
+# it, each photo leaves Neon about once a day per CDN region. Photo URLs are
+# never reused (a replaced photo gets a new id), so a long CDN life is safe.
+#
+# Storyboard photos: an hour everywhere, so hiding a story takes its photo
+# down within the hour.
+STORYBOARD_PHOTO_CACHE = "public, max-age=3600, s-maxage=3600"
+# Story photos (Behind the Film): a day at the CDN. Unpublishing a story
+# leaves its photos reachable by URL for up to that long.
+STORY_PHOTO_CACHE = "public, max-age=3600, s-maxage=86400"
+
+
 @app.get("/api/storyboard/photos/{item_id}")
 def storyboard_photo(item_id: int, db: Session = Depends(get_db)):
     """An approved story's photo. Anything not publicly visible is a 404, the
-    same as a story with no photo. Cached for an hour: short enough that
-    un-approving a story takes its photo down the same day."""
+    same as a story with no photo. Cached for an hour (browser and CDN):
+    short enough that un-approving a story takes its photo down the same
+    day."""
     Sub = models.StoryboardSubmission
     row = (
         db.query(Sub.photo)
@@ -656,7 +682,7 @@ def storyboard_photo(item_id: int, db: Session = Depends(get_db)):
     return Response(
         content=row.photo,
         media_type=_photo_media_type(row.photo),
-        headers={"Cache-Control": "public, max-age=3600"},
+        headers={"Cache-Control": STORYBOARD_PHOTO_CACHE},
     )
 
 
@@ -672,7 +698,7 @@ def capsule_photo(photo_id: int, db: Session = Depends(get_db)):
     )
     if not row or not row.image:
         raise HTTPException(status_code=404, detail="Photo not found.")
-    return Response(content=row.image, media_type=_photo_media_type(row.image), headers={"Cache-Control": "public, max-age=3600"})
+    return Response(content=row.image, media_type=_photo_media_type(row.image), headers={"Cache-Control": STORY_PHOTO_CACHE})
 
 
 # ===========================================================================
@@ -854,6 +880,8 @@ def admin_upsert_film(
 # The admin's browser shrinks a photo to ~1600px JPEG before upload; this caps
 # what an upload may weigh once decoded.
 MAX_CAPSULE_PHOTO_BYTES = 2_000_000
+# The page's gallery is a 3 x 3 grid.
+MAX_GALLERY_PHOTOS = 9
 
 
 def _photo_out(photo: models.CapsulePhoto) -> schemas.CapsulePhoto:
@@ -871,17 +899,26 @@ def admin_add_capsule_photo(
     db: Session = Depends(get_db),
     _: bool = Depends(require_admin),
 ):
+    """Add a gallery photo, or set the story's large picture or logo (which
+    replaces the one before)."""
     _get_or_404(db, models.Capsule, capsule_id, "Capsule")
     raw = _decode_photo(payload.image)
     if len(raw) > MAX_CAPSULE_PHOTO_BYTES:
         raise HTTPException(status_code=413, detail="That photo is too large. Please use a smaller one.")
+    Photo = models.CapsulePhoto
+    same_kind = db.query(Photo).filter(Photo.capsule_id == capsule_id, Photo.kind == payload.kind)
+    if payload.kind == "bts":
+        if same_kind.count() >= MAX_GALLERY_PHOTOS:
+            raise HTTPException(status_code=409, detail=f"The gallery holds {MAX_GALLERY_PHOTOS} photos. Delete one first.")
+    else:
+        same_kind.delete(synchronize_session=False)
     last = (
-        db.query(func.max(models.CapsulePhoto.position))
-        .filter(models.CapsulePhoto.capsule_id == capsule_id)
+        db.query(func.max(Photo.position))
+        .filter(Photo.capsule_id == capsule_id, Photo.kind == payload.kind)
         .scalar()
     )
     photo = models.CapsulePhoto(
-        capsule_id=capsule_id, kind="bts", image=raw,
+        capsule_id=capsule_id, kind=payload.kind, image=raw,
         caption=_clean(payload.caption), position=(last or 0) + 1,
     )
     db.add(photo)
@@ -920,6 +957,54 @@ def admin_update_capsule_photo(
 @app.delete("/api/admin/capsule-photos/{photo_id}", status_code=status.HTTP_204_NO_CONTENT)
 def admin_delete_capsule_photo(photo_id: int, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
     db.delete(_get_or_404(db, models.CapsulePhoto, photo_id, "Photo"))
+    db.commit()
+    return None
+
+
+# --- Behind-the-scenes sections -------------------------------------------
+
+@app.post(
+    "/api/admin/capsules/{capsule_id}/bts_sections",
+    response_model=schemas.BtsSection,
+    status_code=status.HTTP_201_CREATED,
+)
+def admin_create_bts_section(
+    capsule_id: int,
+    section: schemas.BtsSectionCreate,
+    db: Session = Depends(get_db),
+    _: bool = Depends(require_admin),
+):
+    _get_or_404(db, models.Capsule, capsule_id, "Capsule")
+    last = db.query(func.max(models.BtsSection.position)).filter(models.BtsSection.capsule_id == capsule_id).scalar()
+    item = models.BtsSection(**section.model_dump(), capsule_id=capsule_id, position=(last or 0) + 1)
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@app.patch("/api/admin/bts_sections/{item_id}", response_model=schemas.BtsSection)
+def admin_update_bts_section(
+    item_id: int,
+    updates: schemas.BtsSectionUpdate,
+    db: Session = Depends(get_db),
+    _: bool = Depends(require_admin),
+):
+    item = _get_or_404(db, models.BtsSection, item_id, "Section")
+    for field, value in updates.model_dump(exclude_unset=True).items():
+        setattr(item, field, value)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@app.delete("/api/admin/bts_sections/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def admin_delete_bts_section(
+    item_id: int,
+    db: Session = Depends(get_db),
+    _: bool = Depends(require_admin),
+):
+    db.delete(_get_or_404(db, models.BtsSection, item_id, "Section"))
     db.commit()
     return None
 

@@ -11,4 +11,4 @@ export { DetailsPanel } from './DetailsPanel';
 export { PreviewPanel } from './PreviewPanel';
 export { StoryboardPanel } from './StoryboardPanel';
 export { StoryFieldsForm } from './StoryFieldsForm';
-export { BtsPhotos } from './BtsPhotos';
+export { BtsPanel } from './BtsPanel';

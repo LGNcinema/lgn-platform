@@ -20,8 +20,6 @@ class FilmBase(BaseModel):
     thumbnail_url: Optional[str] = None
     description: Optional[str] = None
     theme: Optional[str] = None
-    bts_text: Optional[str] = None
-    screenplay_text: Optional[str] = None
 
 class FilmCreate(FilmBase):
     pass
@@ -43,8 +41,6 @@ class FilmUpdate(BaseModel):
     thumbnail_url: Optional[str] = None
     description: Optional[str] = None
     theme: Optional[str] = None
-    bts_text: Optional[str] = None
-    screenplay_text: Optional[str] = None
 
 class Film(FilmBase):
     id: int
@@ -138,6 +134,8 @@ class CapsuleBase(BaseModel):
     practice_title: Optional[str] = None
     # The story's LGN Spark (YouTube interview). Public placement TBD.
     spark_url: Optional[str] = Field(None, max_length=500)
+    bts_copyright: Optional[str] = None
+    bts_credits: Optional[str] = None
 
 class CapsuleCreate(CapsuleBase):
     pass
@@ -155,6 +153,8 @@ class CapsuleUpdate(BaseModel):
     reflect_intro: Optional[str] = None
     practice_title: Optional[str] = None
     spark_url: Optional[str] = Field(None, max_length=500)
+    bts_copyright: Optional[str] = None
+    bts_credits: Optional[str] = None
 
 class Capsule(CapsuleBase):
     id: int
@@ -181,10 +181,36 @@ class CapsulePhotoUpdate(BaseModel):
     position: Optional[int] = None
 
 
+PhotoKind = Literal["bts", "hero", "logo"]
+
+
 class CapsulePhotoCreate(BaseModel):
     # data:image/jpeg;base64,... from the admin's browser (already shrunk).
     image: str = Field(..., max_length=3_000_000)
     caption: Optional[str] = None
+    # 'bts' adds to the gallery; 'hero' and 'logo' replace the story's one.
+    kind: PhotoKind = "bts"
+
+
+# A written section of the behind-the-scenes page.
+class BtsSectionBase(BaseModel):
+    heading: Optional[str] = None
+    body: str
+
+class BtsSectionCreate(BtsSectionBase):
+    pass
+
+class BtsSectionUpdate(BaseModel):
+    heading: Optional[str] = None
+    body: Optional[str] = None
+    position: Optional[int] = None
+
+class BtsSection(BtsSectionBase):
+    id: int
+    capsule_id: int
+    position: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CapsuleDetail(Capsule):
@@ -193,6 +219,9 @@ class CapsuleDetail(Capsule):
     practices: List[Practice] = []
     # Filled in by the endpoint (the rows' bytes are never serialised).
     bts_photos: List[CapsulePhoto] = []
+    bts_hero: Optional[CapsulePhoto] = None
+    bts_logo: Optional[CapsulePhoto] = None
+    bts_sections: List[BtsSection] = []
 
     model_config = ConfigDict(from_attributes=True)
 

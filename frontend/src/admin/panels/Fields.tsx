@@ -593,6 +593,11 @@ interface ItemCardProps<T extends { id: number }, D extends Record<string, strin
   singular: string;
   collection: string;
   onSaved: PanelProps['onSaved'];
+  /** Set when the list can be reordered: move this item one place. */
+  onMove?: (dir: -1 | 1) => void;
+  first?: boolean;
+  last?: boolean;
+  moving?: boolean;
 }
 
 function ItemCard<T extends { id: number }, D extends Record<string, string>>({
@@ -604,6 +609,10 @@ function ItemCard<T extends { id: number }, D extends Record<string, string>>({
   singular,
   collection,
   onSaved,
+  onMove,
+  first,
+  last,
+  moving,
 }: ItemCardProps<T, D>) {
   const { draft, dirty, set, reset, commit } = useEditState<D>(toDraft(item));
   const save = useSaveState();
@@ -646,6 +655,16 @@ function ItemCard<T extends { id: number }, D extends Record<string, string>>({
         <h3 className="apnl-item-name">
           {index + 1}. {heading}
         </h3>
+        {onMove && (
+          <span className="apnl-item-move">
+            <button type="button" className="apnl-btn apnl-btn--ghost" disabled={moving || first} onClick={() => onMove(-1)} aria-label="Move earlier">
+              ↑
+            </button>
+            <button type="button" className="apnl-btn apnl-btn--ghost" disabled={moving || last} onClick={() => onMove(1)} aria-label="Move later">
+              ↓
+            </button>
+          </span>
+        )}
         <span className="apnl-item-id">id {item.id}</span>
       </div>
       <DraftFields
@@ -813,6 +832,8 @@ export interface ListPanelProps<T extends { id: number }, D extends Record<strin
   maxItems?: number;
   /** Replaces the default "No X entries" line. */
   emptyText?: ReactNode;
+  /** Show up / down buttons; the order is saved as each item's `position`. */
+  reorderable?: boolean;
 }
 
 /**
@@ -835,8 +856,30 @@ export function ListPanel<T extends { id: number }, D extends Record<string, str
   fixedBody,
   maxItems,
   emptyText,
+  reorderable,
 }: ListPanelProps<T, D>) {
   const canAdd = maxItems === undefined || items.length < maxItems;
+  const [moving, setMoving] = useState(false);
+  const [moveError, setMoveError] = useState<string | null>(null);
+
+  // Swap with the neighbour, then renumber every item 1..n, so equal or
+  // missing positions from older rows sort out too.
+  const move = async (index: number, dir: -1 | 1) => {
+    const order = items.map((i) => i.id);
+    [order[index], order[index + dir]] = [order[index + dir], order[index]];
+    setMoving(true);
+    setMoveError(null);
+    try {
+      await Promise.all(
+        order.map((id, i) => adminFetch(`/api/admin/${collection}/${id}`, { method: 'PATCH', body: { position: i + 1 } })),
+      );
+    } catch (err) {
+      setMoveError(err instanceof Error ? err.message : 'The new order could not be saved.');
+    }
+    await onSaved();
+    setMoving(false);
+  };
+
   return (
     <div className={title ? 'apnl' : 'apnl-nested'}>
       {title ? <PanelHead title={title} description={description} /> : null}
@@ -852,6 +895,7 @@ export function ListPanel<T extends { id: number }, D extends Record<string, str
             fixedBody={fixedBody}
           />
         ) : null}
+        {moveError ? <Alert>{moveError}</Alert> : null}
         {items.length === 0 ? (
           <p className="apnl-empty">
             {emptyText ?? <>No {singular} entries for this story yet. Add the first one above.</>}
@@ -868,6 +912,10 @@ export function ListPanel<T extends { id: number }, D extends Record<string, str
               singular={singular}
               collection={collection}
               onSaved={onSaved}
+              onMove={reorderable ? (dir) => void move(index, dir) : undefined}
+              first={index === 0}
+              last={index === items.length - 1}
+              moving={moving}
             />
           ))
         )}

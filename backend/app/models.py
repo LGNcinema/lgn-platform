@@ -42,6 +42,10 @@ class Capsule(Base):
     reflect_intro = Column(Text, nullable=True)
     practice_title = Column(Text, nullable=True)
     spark_url = Column(Text, nullable=True)
+    # Behind-the-scenes page (migrations/20261028130000_bts_page.sql). Credits
+    # are one "Role: Name, Name" per line; a blank line starts a new group.
+    bts_copyright = Column(Text, nullable=True)
+    bts_credits = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     @hybrid_property
@@ -73,16 +77,30 @@ class Capsule(Base):
         "CapsulePhoto", back_populates="capsule", cascade="all, delete-orphan",
         order_by="(CapsulePhoto.position, CapsulePhoto.id)",
     )
+    bts_sections = relationship("BtsSection", back_populates="capsule", cascade="all, delete-orphan", order_by="(BtsSection.position, BtsSection.id)")
 
-    @property
-    def bts_photos(self):
-        """Behind-the-scenes photos by reference, for CapsuleDetail. The
-        image bytes are deferred on the rows, so this never loads them."""
+    def _photo_refs(self, kind):
         return [
             {"id": p.id, "url": f"/api/capsule-photos/{p.id}", "caption": p.caption, "position": p.position}
             for p in self.photos
-            if p.kind == "bts"
+            if p.kind == kind
         ]
+
+    @property
+    def bts_photos(self):
+        """The behind-the-scenes gallery by reference, for CapsuleDetail. The
+        image bytes are deferred on the rows, so this never loads them."""
+        return self._photo_refs("bts")
+
+    @property
+    def bts_hero(self):
+        """The large picture at the top of the behind-the-scenes page."""
+        return next(iter(self._photo_refs("hero")), None)
+
+    @property
+    def bts_logo(self):
+        """The distributor / production company logo on that page."""
+        return next(iter(self._photo_refs("logo")), None)
 
 class Film(Base):
     __tablename__ = "films"
@@ -106,8 +124,8 @@ class Film(Base):
     thumbnail_url = Column(String, nullable=True)
     description = Column(Text, nullable=True)
     theme = Column(String, nullable=True)
-    bts_text = Column(Text, nullable=True)
-    screenplay_text = Column(Text, nullable=True)
+    # films.bts_text and films.screenplay_text are retired (the text moved to
+    # bts_sections in 20261028130000); the columns remain until dropped.
 
     capsule = relationship("Capsule", back_populates="film")
 
@@ -211,6 +229,21 @@ class StoryboardSubmission(Base):
             return "approved"
         return "pending" if self.reviewed_at is None else "declined"
 
+
+
+class BtsSection(Base):
+    """A written section of the behind-the-scenes page: an optional heading
+    and its paragraphs."""
+    __tablename__ = "bts_sections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    capsule_id = Column(Integer, ForeignKey("capsules.id", ondelete="CASCADE"), nullable=False)
+    heading = Column(Text, nullable=True)
+    body = Column(Text, nullable=False)
+    position = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    capsule = relationship("Capsule", back_populates="bts_sections")
 
 
 class CapsulePhoto(Base):

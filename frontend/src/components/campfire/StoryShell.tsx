@@ -6,6 +6,13 @@ import { GemeChat } from '../GemeChat';
 import { FilmCredit } from './FilmCredit';
 import { STORY_NAV_SECTIONS, type StorySection } from './campfire';
 
+/**
+ * Geme's entry point, the icon in the panel's bottom-left corner. Off for the
+ * first version of the site: the chat (GemeChat), its API and the dev tuning
+ * panel all remain, so turning this back on is the whole change.
+ */
+const SHOW_GEME = false;
+
 interface Props {
   capsule: CapsuleDetail;
   /** The three small caps labels across the top of the panel, at the left
@@ -20,6 +27,9 @@ interface Props {
   gemeTuningVersion: number;
   /** Replaces the film credit under the title (the search page's own copy). */
   intro?: ReactNode;
+  /** At the foot of the left column (above Geme, when shown): Watch's "How this film was
+   *  made" button. */
+  leftFoot?: ReactNode;
   /** The active section's content, rendered in the right column. */
   children: ReactNode;
 }
@@ -44,6 +54,7 @@ export function StoryShell({
   gemeTuning,
   gemeTuningVersion,
   intro,
+  leftFoot,
   children,
 }: Props) {
   const film = capsule.film;
@@ -52,6 +63,7 @@ export function StoryShell({
   const [gemeEnabled, setGemeEnabled] = useState<boolean | null>(null);
 
   useEffect(() => {
+    if (!SHOW_GEME) return;
     let cancelled = false;
     fetch(`${API_URL}/api/geme/status`)
       .then((res) => (res.ok ? res.json() : { enabled: false }))
@@ -102,7 +114,9 @@ export function StoryShell({
             ))}
           </nav>
 
-          {gemeEnabled && (
+          {leftFoot && <div className="story-shell-foot">{leftFoot}</div>}
+
+          {SHOW_GEME && gemeEnabled && (
             <button type="button" className="story-shell-geme" onClick={() => setChatOpen(true)}>
               <img src="/images/geme.png" alt="Talk with Geme" />
             </button>

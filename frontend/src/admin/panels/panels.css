@@ -464,6 +464,13 @@
   color: var(--primary);
 }
 
+/* Up / down on reorderable lists, beside the id. */
+.admin-portal .apnl-item-move {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
 .admin-portal .apnl-item-id {
   font-family: var(--font-mono);
   font-size: 0.75rem;
@@ -803,7 +810,7 @@
   width: 300px;
   height: 155px;
   padding: 10px 10px 10px;
-  background: #e5e5e5;
+  background: #ededed;
   color: #000;
   font-family: 'Inter', sans-serif;
   letter-spacing: -0.02em;
@@ -897,6 +904,11 @@
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+/* The large picture and the logo: shown whole, not cropped. */
+.admin-portal .apnl-bts-thumb--contain img {
+  object-fit: contain;
 }
 
 .admin-portal .apnl-bts-fields {

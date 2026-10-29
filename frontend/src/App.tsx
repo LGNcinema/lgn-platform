@@ -6,7 +6,7 @@ import { SiteFooter } from './components/chrome/SiteFooter';
 import { CampfireHome } from './components/campfire/CampfireHome';
 import { StoryShell } from './components/campfire/StoryShell';
 import { StoryWatch } from './components/campfire/StoryWatch';
-import { StoryMaking } from './components/campfire/StoryMaking';
+import { hasBehindTheScenes, StoryBehind } from './components/campfire/StoryBehind';
 import { WatchMode } from './components/campfire/WatchMode';
 import { StoryReflect } from './components/campfire/StoryReflect';
 import { StoryPractice } from './components/campfire/StoryPractice';
@@ -529,6 +529,9 @@ function App() {
         return <CampfireHome stories={allCapsules} onOpenStory={(id) => openStory(id)} />;
 
       case 'capsule': {
+        if (storySection === 'making') {
+          return <StoryBehind capsule={activeCapsule} onBack={() => setStorySection('watch')} />;
+        }
         const number = storyNumber(activeCapsule.id, allCapsules);
         return (
           <StoryShell
@@ -539,13 +542,19 @@ function App() {
             onBackToCampfire={() => setCurrentView('campfire')}
             gemeTuning={gemeTuning}
             gemeTuningVersion={gemeTuningVersion}
+            leftFoot={
+              storySection === 'watch' && hasBehindTheScenes(activeCapsule) ? (
+                <button type="button" className="lgn-btn" onClick={() => setStorySection('making')}>
+                  How this film was made
+                </button>
+              ) : undefined
+            }
           >
             {storySection === 'watch' && (
               <StoryWatch capsule={activeCapsule} onEnterWatch={() => setCurrentView('watch')} />
             )}
             {storySection === 'reflect' && <StoryReflect capsule={activeCapsule} />}
             {storySection === 'practice' && <StoryPractice capsule={activeCapsule} />}
-            {storySection === 'making' && <StoryMaking capsule={activeCapsule} />}
           </StoryShell>
         );
       }

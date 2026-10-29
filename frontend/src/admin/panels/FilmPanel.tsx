@@ -44,8 +44,6 @@ type FilmDraft = {
   duration: string;
   description: string;
   theme: string;
-  bts_text: string;
-  screenplay_text: string;
   thumbnail_url: string;
   captions_url: string;
   video_url: string;
@@ -90,8 +88,6 @@ function toDraft(film: Film | undefined): FilmDraft {
     duration: str(film?.duration),
     description: str(film?.description),
     theme: str(film?.theme),
-    bts_text: str(film?.bts_text),
-    screenplay_text: str(film?.screenplay_text),
     thumbnail_url: str(film?.thumbnail_url),
     captions_url: str(film?.captions_url),
     video_url: str(film?.video_url),
@@ -213,8 +209,6 @@ export function FilmPanel({ capsule, onSaved }: PanelProps) {
           duration: orNull(draft.duration),
           description: orNull(draft.description),
           theme: orNull(draft.theme),
-          bts_text: orNull(draft.bts_text),
-          screenplay_text: orNull(draft.screenplay_text),
           thumbnail_url: orNull(draft.thumbnail_url),
           captions_url: orNull(draft.captions_url),
           video_url: orNull(draft.video_url),
@@ -422,26 +416,6 @@ export function FilmPanel({ capsule, onSaved }: PanelProps) {
           disabled={save.saving}
           onChange={(value) => set('description', value)}
           help="The synopsis on the story page."
-        />
-      </Section>
-
-      <Section title="Extended material">
-        <TextArea
-          label="Behind the scenes"
-          value={draft.bts_text}
-          rows={8}
-          disabled={save.saving}
-          onChange={(value) => set('bts_text', value)}
-          help="Long-form notes from the filmmaker. Line breaks are kept exactly as typed."
-        />
-        <TextArea
-          label="Screenplay excerpt"
-          value={draft.screenplay_text}
-          rows={10}
-          mono
-          disabled={save.saving}
-          onChange={(value) => set('screenplay_text', value)}
-          help="Screenplay formatting (indentation, blank lines) is preserved verbatim."
         />
       </Section>
 
