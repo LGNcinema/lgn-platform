@@ -124,8 +124,8 @@ class Film(Base):
     thumbnail_url = Column(String, nullable=True)
     description = Column(Text, nullable=True)
     theme = Column(String, nullable=True)
-    # films.bts_text and films.screenplay_text are retired (the text moved to
-    # bts_sections in 20261028130000); the columns remain until dropped.
+    # films.bts_text and films.screenplay_text were dropped in
+    # 20261028140000 (the text moved to bts_sections in 20261028130000).
 
     capsule = relationship("Capsule", back_populates="film")
 
