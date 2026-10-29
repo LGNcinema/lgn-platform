@@ -54,7 +54,7 @@
 }
 
 .story-behind-copyright {
-  max-width: 420px;
+  max-width: 480px; /* the frame's first line, in Inter */
   white-space: pre-line;
 }
 
