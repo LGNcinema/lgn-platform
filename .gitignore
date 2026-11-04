@@ -52,3 +52,9 @@ supabase/
 # and the template files carry no secrets and must stay committable.
 !.env.example
 !.env.sample
+
+# Licensed webfonts (MyFonts). Not in this public repo: they live in the
+# private "lgn-fonts" Vercel Blob store; frontend/scripts/fetch-fonts.mjs
+# downloads them at build time. fonts.css (with the licence notice) is kept.
+frontend/public/fonts/helvetica-now-text/*.woff
+frontend/public/fonts/helvetica-now-text/*.woff2

@@ -1,4 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Courier+Prime&family=Inter:wght@400..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap');
+
+/* Helvetica Now Text, the site's typeface, is declared in
+   /fonts/helvetica-now-text/fonts.css (linked from index.html), with its
+   MyFonts licence notice. */
 
 @font-face {
   font-family: 'Courier Prime';
@@ -38,11 +42,11 @@
   --hero-btn-text: #000000;
   --hero-btn-hover: #c4c4c4;
 
-  /* Inter loads as one variable font (wght 400..700, see the @import), so any
-     weight renders as itself. The frames use Helvetica Neue Regular, Medium
-     and Bold; measured stroke-for-stroke, those match Inter 400, 550 and 700.
-     Use 550 wherever the frame is Medium. */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Helvetica Now Text, LGN's licensed webfont (the @font-face rules
+     above): Regular for 400, Medium for anything from 450. The frames are
+     set in Helvetica, Regular and Medium. (Courier Prime, below, is the one
+     other face: "A Witness through Time" and a few mono labels.) */
+  --font-sans: "Helvetica Now Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-primary: var(--font-sans);
   --font-secondary: var(--font-sans);
   --font-serif: "Courier Prime", monospace;
@@ -136,15 +140,18 @@
   --text-36: 36px;
   --text-48: 48px;
   --leading: 1.1;
-  /* Tracking per size. The frames (Helvetica Neue) track 12px at -0.03em,
-     20 and 36 at -0.02em and 48 at -0.04em. Inter is wider, so these are
-     what bring Inter's line lengths to the frames' (measured against the
-     text-SVG export, 2026-10-26): 12 and 36 exact, 48 ~1% long, 20 ~2%
-     long (-0.05em would be exact but reads too tight at body size). */
+  /* Tracking per size, as the frames set it (from the text-SVG export):
+     12px at -0.03em, 20 and 36 at -0.02em, 48 at -0.04em. */
   --track-12: -0.03em;
-  --track-20: -0.04em;
+  --track-20: -0.02em;
   --track-36: -0.02em;
   --track-48: -0.04em;
+  /* Weight for the 36 and 48px sizes. The frames set them in Helvetica Neue
+     Regular, but Helvetica Now Text is drawn for reading sizes and its
+     Regular comes out ~17% lighter there; its Medium matches the frames'
+     ink within ~3% (measured against the @2x exports, 2026-11-03). At 20
+     and 12px, Now Text Regular already matches. */
+  --weight-display: 500;
 }
 
 [data-theme="dark"] {
@@ -952,7 +959,7 @@ textarea.lgn-field {
 .about-title {
   font-size: var(--text-48);
   letter-spacing: var(--track-48);
-  font-weight: 400;
+  font-weight: var(--weight-display);
   line-height: 52.8px;
 }
 
@@ -989,7 +996,7 @@ textarea.lgn-field {
   border-bottom: 1px solid var(--rule);
   font-size: var(--text-36);
   letter-spacing: var(--track-36);
-  font-weight: 400;
+  font-weight: var(--weight-display);
   line-height: 39.6px;
 }
 
@@ -1004,7 +1011,7 @@ textarea.lgn-field {
 .team-list-item .person-name {
   font-size: var(--text-48);
   letter-spacing: var(--track-48);
-  font-weight: 400;
+  font-weight: var(--weight-display);
   line-height: 52.8px;
 }
 
@@ -1023,7 +1030,7 @@ textarea.lgn-field {
 .invest-title {
   font-size: var(--text-36);
   letter-spacing: var(--track-36);
-  font-weight: 400;
+  font-weight: var(--weight-display);
   line-height: 38px;
   margin-top: 8.9px;
 }
@@ -1076,6 +1083,7 @@ textarea.lgn-field {
 .invest-row-title {
   padding-top: 2.65px;
   font-size: var(--text-48);
+  font-weight: var(--weight-display);
   letter-spacing: var(--track-48);
   line-height: 52.8px;
 }

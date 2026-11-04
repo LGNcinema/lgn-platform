@@ -29,7 +29,7 @@
 .dim-heading {
   font-size: var(--text-48);
   letter-spacing: var(--track-48);
-  font-weight: 400;
+  font-weight: var(--weight-display);
   line-height: 52.8px;
 }
 

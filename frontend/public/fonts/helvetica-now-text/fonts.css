@@ -1,0 +1,40 @@
+/**
+ * @license
+ * MyFonts Webfont Build ID 3867246, 2020-12-16T11:57:38-0500
+ *
+ * The fonts listed in this notice are subject to the End User License
+ * Agreement(s) entered into by the website owner. All other parties are
+ * explicitly restricted from using the Licensed Webfonts(s).
+ *
+ * You may obtain a valid license at the URLs below.
+ *
+ * Webfont: Helvetica Now Pro Text Regular by Monotype
+ * URL: https://www.myfonts.com/collections/monotype-imaging-foundry
+ * Copyright: Copyright © 2026 Monotype Imaging Inc. All rights reserved.
+ *
+ * Webfont: Helvetica Now Pro Text Medium by Monotype
+ * URL: https://www.myfonts.com/collections/monotype-imaging-foundry
+ * Copyright: Copyright © 2026 Monotype Imaging Inc. All rights reserved.
+ *
+ * © 2026 MyFonts Inc. */
+
+/* LGN's MyFonts kit (the kit's LGN.css, with one family name). Served as-is
+   from /public, so this notice reaches the live site unminified. Two
+   weights; each face claims a range so every weight the site asks for maps
+   to a real one and the browser never fakes a bold: up to 449 is Regular,
+   450 and above is Medium. */
+@font-face {
+  font-family: 'Helvetica Now Text';
+  src: url('regular.woff2') format('woff2'), url('regular.woff') format('woff');
+  font-weight: 1 449;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Now Text';
+  src: url('medium.woff2') format('woff2'), url('medium.woff') format('woff');
+  font-weight: 450 1000;
+  font-style: normal;
+  font-display: swap;
+}

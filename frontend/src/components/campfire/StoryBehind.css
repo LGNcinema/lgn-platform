@@ -31,7 +31,7 @@
   margin-top: calc(88 * var(--vdp));
   font-size: var(--text-48);
   letter-spacing: var(--track-48);
-  font-weight: 400;
+  font-weight: var(--weight-display);
   line-height: 52.8px;
 }
 
@@ -54,7 +54,7 @@
 }
 
 .story-behind-copyright {
-  max-width: 480px; /* the frame's first line, in Inter */
+  max-width: 480px; /* the frame's first line, with room to spare */
   white-space: pre-line;
 }
 
