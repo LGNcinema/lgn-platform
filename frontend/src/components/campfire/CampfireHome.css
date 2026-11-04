@@ -20,7 +20,7 @@
 .cf-heading {
   font-size: var(--text-36);
   letter-spacing: var(--track-36);
-  font-weight: 400;
+  font-weight: var(--weight-display);
   line-height: 39.6px;
   border-bottom: 1px solid var(--rule);
 }
@@ -154,7 +154,7 @@
   background: none;
   color: var(--primary);
   font-size: var(--text-48);
-  font-weight: 700;
+  font-weight: var(--weight-display);
   letter-spacing: var(--track-48);
   line-height: 52.8px;
   cursor: pointer;
@@ -199,7 +199,7 @@ button.cf-arrow:focus-visible {
   margin-top: calc(210.6 * var(--dp));
   font-size: var(--text-48);
   letter-spacing: var(--track-48);
-  font-weight: 400;
+  font-weight: var(--weight-display);
   line-height: 52.8px;
 }
 

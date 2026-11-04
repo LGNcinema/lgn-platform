@@ -44,9 +44,9 @@
 
 .site-header-link {
   position: absolute;
-  /* A 20px/22px line box puts Inter's baseline 18.3px below its top; the
-     frame's baseline is 15px below the logo's top. */
-  top: -3.3px;
+  /* A 20px/22px line box puts Helvetica Now Text's baseline 18.5px below its
+     top; the frame's baseline is 15px below the logo's top. */
+  top: -3.5px;
   font-size: var(--text-20);
   line-height: 22px;
   white-space: nowrap;
@@ -59,7 +59,7 @@
    on the page, so its 50% is the page's centre line. */
 .site-header-main {
   position: absolute;
-  top: -3.3px;
+  top: -3.5px;
   left: calc(50% - 300 * var(--dp));
   width: calc(310 * var(--dp));
   display: flex;
@@ -75,7 +75,7 @@
 
 .site-header-main .site-header-link--invest {
   position: absolute;
-  /* The box already carries the links' -3.3px nudge. */
+  /* The box already carries the links' -3.5px nudge. */
   top: 0;
   left: 100%;
 }
