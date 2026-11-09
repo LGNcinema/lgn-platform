@@ -14,6 +14,9 @@ import {
 import { AdminLogin } from './AdminLogin';
 import { CapsulePicker } from './CapsulePicker';
 import { StoryboardNav } from './StoryboardNav';
+import { FilmsAdmin } from './films/FilmsAdmin';
+import { FilmsNav } from './FilmsNav';
+import { useBeyondFlag } from './films/useBeyondFlag';
 import {
   BtsPanel,
   DetailsPanel,
@@ -115,6 +118,9 @@ export function AdminApp() {
   const [pendingNav, setPendingNav] = useState<PendingNav | null>(null);
   /** Storyboard submissions waiting for review, by capsule id. */
   const [pendingCounts, setPendingCounts] = useState<Record<number, number>>({});
+  /** Visitor notes about films that nobody has looked at yet. */
+  const [filmInboxNew, setFilmInboxNew] = useState(0);
+  const beyondFlag = useBeyondFlag(authState === 'in');
 
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const stayRef = useRef<HTMLButtonElement | null>(null);
@@ -130,6 +136,14 @@ export function AdminApp() {
   const capsuleOnlyMatch = useMatch('/admin/capsules/:capsuleId');
   /** Every story's storyboard submissions in one place. */
   const reviewAll = useMatch('/admin/storyboard') !== null;
+  /** Go Beyond films: any film outside the monthly stories. */
+  const filmsArea = useMatch('/admin/films/*') !== null;
+  const filmsPage = useMatch('/admin/films/:which')?.params.which;
+  const filmsActive: 'list' | 'universal' | 'inbox' | null = !filmsArea
+    ? null
+    : filmsPage === 'inbox' || filmsPage === 'universal'
+      ? filmsPage
+      : 'list';
 
   const routeCapsuleId = tabMatch?.params.capsuleId ?? capsuleOnlyMatch?.params.capsuleId;
   const parsedId = routeCapsuleId ? Number(routeCapsuleId) : NaN;
@@ -210,6 +224,23 @@ export function AdminApp() {
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
   }, [authState, capsuleId, refreshCounts]);
+
+  const refreshFilmInbox = useCallback(async () => {
+    try {
+      const rows = await adminFetch<unknown[]>('/api/admin/film-feedback?status_filter=new');
+      setFilmInboxNew(rows.length);
+    } catch {
+      // A badge is a convenience.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (authState !== 'in') return;
+    void refreshFilmInbox();
+    const onFocus = () => void refreshFilmInbox();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [authState, refreshFilmInbox]);
 
   const totalPending = Object.values(pendingCounts).reduce((sum, n) => sum + n, 0);
 
@@ -309,12 +340,12 @@ export function AdminApp() {
 
   const handleSelectCapsule = useCallback(
     (id: number) => {
-      if (id === capsuleId && !reviewAll) return;
+      if (id === capsuleId && !reviewAll && !filmsArea) return;
       runGuarded('Opening another story will discard them.', () => {
         navigate(`/admin/capsules/${id}/film`);
       });
     },
-    [capsuleId, reviewAll, navigate, runGuarded],
+    [capsuleId, reviewAll, filmsArea, navigate, runGuarded],
   );
 
   /* ---- tabs ---- */
@@ -542,10 +573,20 @@ export function AdminApp() {
                 });
               }}
             />
+            <FilmsNav
+              active={filmsActive}
+              inboxNew={filmInboxNew}
+              live={beyondFlag.state ? beyondFlag.state.enabled : null}
+              onOpen={(path) => {
+                runGuarded('Opening another page will discard them.', () => navigate(path));
+              }}
+            />
           </aside>
 
           <main className="admin-main">
-            {reviewAll ? (
+            {filmsArea ? (
+              <FilmsAdmin onInboxChanged={() => void refreshFilmInbox()} flag={beyondFlag} />
+            ) : reviewAll ? (
               <StoryboardPanel capsuleId={null} pendingCounts={pendingCounts} onReviewed={() => void refreshCounts()} />
             ) : capsuleId === null ? (
               <div className="admin-card admin-empty">

@@ -19,6 +19,25 @@
   color: var(--primary);
 }
 
+/* Under a page heading of its own (a film beneath the search bar): the heading
+   supplies the space above, and the panel follows it closely. */
+.story-shell--embedded {
+  padding-top: calc(48 * var(--vdp));
+}
+
+.story-shell--embedded .story-shell-panel {
+  margin-top: 0;
+}
+
+/* "Not the right film?": in the gap above the title, as in the frame. Out of
+   the flow, so it takes none of the title's space and the section links stay
+   exactly where they are on every page. */
+.story-shell-eyebrow {
+  position: absolute;
+  top: -26px;
+  left: 0;
+}
+
 .story-shell-back {
   display: block;
   padding: 0;
@@ -72,10 +91,18 @@
   min-width: 0;
 }
 
-/* Title top to the section links' first line top: 219.55. */
+/* Title top to the section links' first line top: 219.55. That minimum is the
+   design's, and it shrinks with the window's height while the text does not, so
+   on a laptop (or with a long title and cast) the content can fill it and the
+   links would touch the last line of the credit. The bottom padding keeps a
+   clear space there. It counts inside the minimum, so wherever the design
+   already leaves room (a full-size window, a short title) nothing moves. */
 .story-shell-intro {
+  position: relative;
+  box-sizing: border-box;
   min-height: calc(219.55 * var(--vdp));
   padding-right: calc(40 * var(--dp));
+  padding-bottom: 36px;
 }
 
 .story-shell-title {

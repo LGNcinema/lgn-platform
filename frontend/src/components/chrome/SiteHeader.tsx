@@ -3,7 +3,7 @@ import './SiteHeader.css';
 
 export type SiteView =
   | 'home' | 'campfire' | 'capsule' | 'watch' | 'storyboard'
-  | 'timeline' | 'about' | 'invest' | 'contact' | 'submit-film';
+  | 'timeline' | 'about' | 'invest' | 'contact' | 'submit-film' | 'film';
 
 export type AboutSubView = 'purpose' | 'mission-vision' | 'board-staff';
 
@@ -14,7 +14,7 @@ interface Props {
 }
 
 /** The views that belong to the Campfire, so its link reads as current on all of them. */
-const CAMPFIRE_VIEWS: SiteView[] = ['campfire', 'capsule'];
+const CAMPFIRE_VIEWS: SiteView[] = ['campfire', 'capsule', 'film'];
 
 /**
  * Global header. Figma v3: the top of every frame.

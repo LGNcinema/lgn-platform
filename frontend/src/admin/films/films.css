@@ -1,0 +1,147 @@
+.fa-search {
+  display: flex;
+  gap: 8px;
+}
+
+.fa-search .apnl-input {
+  flex: 1;
+}
+
+.fa-hits,
+.fa-rows {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.fa-hits li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.fa-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 4px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fa-row:hover {
+  background: var(--bg-card-hover);
+}
+
+.fa-row-title {
+  font-weight: 600;
+}
+
+.fa-row-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.fa-pill {
+  display: inline-block;
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.fa-pill--on {
+  color: var(--text-main);
+  border-color: var(--text-main);
+}
+
+.fa-pill--warn {
+  color: var(--text-main);
+  background: var(--bg-card-hover);
+}
+
+.fa-kind {
+  margin-top: 24px;
+}
+
+.fa-dim {
+  margin-top: 16px;
+}
+
+.fa-dim-title {
+  margin-bottom: 8px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.fa-conflict {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--text-main);
+}
+
+.fa-filters {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.fa-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+
+.fa-quote {
+  margin: 8px 0;
+  padding-left: 12px;
+  border-left: 3px solid var(--border);
+  white-space: pre-wrap;
+}
+
+.fa-text {
+  white-space: pre-wrap;
+}
+
+.fa-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.fa-switch-state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.fa-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--muted, #8a8a8a);
+  flex: none;
+}
+
+.fa-dot.is-on {
+  background: #2f9e5b;
+}
