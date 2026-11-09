@@ -10,7 +10,7 @@ interface Props {
 /** The frame's play mark: a 91px circle of 25% white with a solid white
  *  triangle, drawn at the frame's own coordinates. The triangle is centred on
  *  its centroid rather than its bounding box, so it looks centred. */
-function PlayMark() {
+export function PlayMark() {
   return (
     <svg className="story-watch-play" viewBox="0 0 91 91" aria-hidden="true" focusable="false">
       <circle cx="45.5" cy="45.5" r="45.5" fill="#fff" fillOpacity="0.25" />

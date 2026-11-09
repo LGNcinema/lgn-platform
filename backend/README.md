@@ -106,6 +106,11 @@ Responses: `401` for a wrong password or a missing/expired/tampered token,
 | `POST` | `/api/admin/capsules/{id}/{collection}` | → 201 |
 | `PATCH` | `/api/admin/{collection}/{item_id}` | Partial update. |
 | `DELETE` | `/api/admin/{collection}/{item_id}` | → 204 |
+| `GET` / `PUT` | `/api/admin/features/beyond-the-screen` | The visitor on/off switch for *Beyond the Screen* (below). `PUT {"enabled": true}` or `false` saves the choice; `null` goes back to the `BEYOND_THE_SCREEN_ENABLED` default. |
+| `GET` / `POST` | `/api/admin/films` | The outside films LGN has touched; `POST {"tmdb_id"}` adds one. `GET /api/admin/films/search?q=` searches TMDB to find it. |
+| `GET` / `PATCH` / `DELETE` | `/api/admin/films/{tmdb_id}` | One film's settings (handling, care note, logline), LGN's questions and the AI set. `POST …/promote` copies the AI set into LGN's; `DELETE …/ai` discards it so it can be regenerated. |
+| `GET` / `POST` / `PATCH` / `DELETE` | `/api/admin/film-prompts[/{id}]` | LGN's per-film questions and the universal set (`GET …/film-prompts/universal`). |
+| `GET` / `PATCH` / `DELETE` | `/api/admin/film-feedback[/{id}]` | The visitor inbox: suggestions, "something's off" and "can't find it". |
 
 `{collection}` is one of `reflections`, `practices`.
 
@@ -131,8 +136,13 @@ pre-existing content writes, which used to be open to the internet —
 
 Intentionally public: **all** `GET` endpoints, and the visitor submission
 routes `/api/submissions/contact`, `/api/submissions/film`,
-`/api/submissions/reflection`, `/api/submissions/storyboard` — the public
-website posts to these anonymously and must keep working.
+`/api/submissions/reflection`, `/api/submissions/storyboard`,
+`/api/submissions/film-feedback` — the public website posts to these
+anonymously and must keep working.
+
+The *Beyond the Screen* routes (`/api/films/*` and `film-feedback`) are public
+but answer `404` while the feature switch is off. `GET /api/features` (what the
+site should show) is always public and never cached.
 
 Public and open are not the same thing, though: the public capsule `GET`s serve
 **only published capsules**. See *Capsule publication* below.
@@ -252,6 +262,10 @@ Settings live in `app/config.py` and are read from `backend/.env` (gitignored) o
 the environment. `DATABASE_URL` defaults to local SQLite; `ANTHROPIC_API_KEY`
 enables the Geme chat (`/api/geme/*`) and leaves it disabled when unset. See the
 [Geme section of the root README](../README.md#geme-practice--keep-exploring--take-it-inward).
+*Beyond the Screen* adds `TMDB_READ_ACCESS_TOKEN` (or `TMDB_API_KEY`),
+`BEYOND_THE_SCREEN_ENABLED`, `FILM_AI_ENABLED`, `FILM_AI_ALLOW_WITH_TMDB`,
+`FILM_AI_DAILY_CAP` and `FILM_AI_MODEL`; each is explained in `.env.example` and
+under *Beyond the Screen* below.
 
 Try a turn without the UI:
 ```bash
@@ -259,3 +273,36 @@ curl -s -X POST http://localhost:8000/api/geme/chat \
   -H "Content-Type: application/json" \
   -d '{"capsule_id": 1, "messages": []}'
 ```
+
+
+## Beyond the Screen (proof of concept)
+
+Search any film and Reflect / Practice on it, without the film embedded.
+
+- **On/off switch.** Admin portal -> Go Beyond films -> *Visitor access*. Off hides the film search,
+  every film page and the About page's Credits tab (where TMDB is credited), and the public film
+  endpoints answer 404; the admin keeps working. The saved choice lives in the `site_settings` table, so each database (staging, production)
+  has its own. If nothing is saved it follows `BEYOND_THE_SCREEN_ENABLED` (default **off**).
+- **Database.** Locally the dev bootstrap's `create_all` makes the tables and seeds the universal
+  prompts. Anything migration-driven (`DB_BOOTSTRAP=false`, i.e. Neon) needs
+  `migrations/20261105120000_beyond_the_screen.sql` first (`migrate.py up --neon <branch>`); it is
+  additive and idempotent. It has not been applied anywhere yet.
+- **Watch tab (non-LGN films).** The picture is a still from TMDB (its "backdrops": the best-voted
+  one with no text on it, else the poster, else a title card). Play opens **Where to watch**
+  (`GET /api/films/{id}/watch?region=US`): TMDB's watch-provider data, which TMDB sources from
+  **JustWatch and requires be credited** (the panel's footer and the About -> Credits tab; TMDB
+  revokes the key otherwise). TMDB gives one link per country, not per service, so every button opens
+  TMDB's page for the film. Stills are TMDB publicity art: TMDB does not own them, so ask TMDB about
+  them in the approval email. "How this film was made" is hidden for these films until it has content.
+- **TMDB.** With no credentials and `ENV=development`, search answers from a built-in sample of films
+  (`app/tmdb.py`). Put `TMDB_READ_ACCESS_TOKEN` (or `TMDB_API_KEY`) in the git-ignored `.env` for real
+  data, and check it with `python -m app.tmdb "the godfather"` (prints results, never the key).
+- **AI questions** (the "AI-generated questions" toggle on a film page, written once per film and
+  stored). `FILM_AI_ENABLED` unset means **on in development, off everywhere else**; set it to
+  override. In development it writes clearly-marked `[Sample]` questions and calls no model.
+  **While a TMDB credential is set, no real model is ever called** (TMDB's terms forbid it without
+  written approval): development keeps writing samples, anywhere else the AI set isn't offered.
+  `FILM_AI_ALLOW_WITH_TMDB=true` lifts that, and only after the approval is in hand.
+- **Launch is blocked** until TMDB approves in writing (their terms forbid use with AI). Don't turn
+  the switch on for the public site before then.
+- Tests: `uv run pytest` (from `backend/`).

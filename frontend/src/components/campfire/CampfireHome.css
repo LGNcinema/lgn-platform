@@ -338,3 +338,9 @@ button.cf-card--side:focus-visible {
     display: none;
   }
 }
+
+/* With the film search switched off, "Gather with us" is the first thing on the
+   page, so it does not need the gap that separated it from the search. */
+.cf-section--first {
+  margin-top: 0;
+}

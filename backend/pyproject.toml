@@ -28,3 +28,10 @@ dev = [
 # itself and fail. (The Dockerfile passes `--no-install-project` for the same
 # reason; this makes it the default everywhere.)
 package = false
+
+[tool.pytest.ini_options]
+# The app is a bare `app/` package run from backend/ (see [tool.uv] above), not
+# an installed distribution, so the tests need backend/ on the import path for
+# `from app import ...`. Without this only `python -m pytest` finds it.
+pythonpath = ["."]
+testpaths = ["tests"]

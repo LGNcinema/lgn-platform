@@ -435,3 +435,214 @@ class AdminLoginResponse(BaseModel):
 class AdminSessionResponse(BaseModel):
     valid: bool
 
+
+
+# ---------------------------------------------------------------------------
+# Beyond the Screen: any film
+# ---------------------------------------------------------------------------
+FilmHandling = Literal["normal", "universal_only", "held"]
+PromptKind = Literal["reflect", "practice"]
+PromptSource = Literal["universal", "lgn", "ai"]
+AiStatus = Literal["none", "pending", "ready", "unavailable", "failed"]
+FeedbackType = Literal["suggestion", "something_off", "not_found"]
+FeedbackStatus = Literal["new", "reviewed", "resolved"]
+
+
+class FilmSearchResult(BaseModel):
+    tmdb_id: Optional[int] = None  # None for an LGN film that is not on TMDB
+    title: str
+    year: Optional[int] = None
+    poster_url: Optional[str] = None
+    # "lgn": one of our own stories (open capsule_id); "tmdb": any other film.
+    source: Literal["lgn", "tmdb"]
+    capsule_id: Optional[int] = None
+
+
+class FilmSearchResponse(BaseModel):
+    results: List[FilmSearchResult]
+    # Set when TMDB could not be asked (busy, down); LGN's own films still list.
+    notice: Optional[str] = None
+
+
+class FilmDetail(BaseModel):
+    tmdb_id: int
+    title: str
+    year: Optional[int] = None
+    runtime: Optional[int] = None
+    director: Optional[str] = None
+    cast: List[str] = []
+    genres: List[str] = []
+    poster_url: Optional[str] = None
+    # The Watch tab's picture: a still from TMDB. None means use the poster.
+    still_url: Optional[str] = None
+    handling: FilmHandling = "normal"
+    care_note: Optional[str] = None
+    logline: Optional[str] = None
+    # An LGN story for this film: the page sends the visitor there instead.
+    lgn_capsule_id: Optional[int] = None
+
+
+class WatchGroup(BaseModel):
+    kind: Literal["stream", "free", "ads", "rent", "buy"]
+    label: str
+    providers: List[str]
+
+
+class FilmWatch(BaseModel):
+    """Where a film can be watched in one region. TMDB's data, sourced from
+    JustWatch: anything that shows it must credit JustWatch."""
+    region: str
+    available: bool
+    # TMDB's own page for the film in this region. One link for every provider:
+    # TMDB does not give a link per service.
+    link: str
+    groups: List[WatchGroup] = []
+
+
+class FilmPromptOut(BaseModel):
+    id: int
+    kind: PromptKind
+    dimension: Dimension
+    position: int = 0
+    title: Optional[str] = None
+    content: Optional[str] = None
+    steps: Optional[str] = None
+    tips: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PromptSet(BaseModel):
+    reflect: List[FilmPromptOut] = []
+    practice: List[FilmPromptOut] = []
+
+
+class FilmPromptsResponse(BaseModel):
+    handling: FilmHandling = "normal"
+    # Per kind, which set is the default: Reflect can be LGN's own while
+    # Practice is still the universal one. A kind that is LGN's own is the ONLY
+    # set offered for it: no universal alternative and no AI set.
+    default_sources: dict
+    default: PromptSet
+    # Only when ai_status is "ready" (and the film allows it), and only for the
+    # kinds LGN has not written yet (the others come back empty). None when
+    # there is nothing to offer.
+    ai: Optional[PromptSet] = None
+    ai_status: AiStatus = "none"
+
+
+class FilmFeedbackCreate(BaseModel):
+    type: FeedbackType
+    tmdb_id: Optional[int] = None
+    film_title: Optional[str] = Field(None, max_length=300)
+    kind: Optional[PromptKind] = None
+    dimension: Optional[Dimension] = None
+    message: Optional[str] = Field(None, max_length=2000)
+    suggested_text: Optional[str] = Field(None, max_length=2000)
+    film_year_typed: Optional[str] = Field(None, max_length=16)
+    email: Optional[str] = Field(None, max_length=254)
+    # Honeypot: real visitors never see this field, so a value means a bot.
+    website: Optional[str] = Field(None, max_length=200)
+
+
+class FilmFeedbackOut(BaseModel):
+    id: int
+    tmdb_id: Optional[int] = None
+    film_title: Optional[str] = None
+    type: FeedbackType
+    kind: Optional[PromptKind] = None
+    dimension: Optional[Dimension] = None
+    message: Optional[str] = None
+    suggested_text: Optional[str] = None
+    film_year_typed: Optional[str] = None
+    email: Optional[str] = None
+    status: FeedbackStatus
+    created_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FilmFeedbackUpdate(BaseModel):
+    status: FeedbackStatus
+
+
+# --- admin ---
+class AdminFilmRow(BaseModel):
+    id: int
+    tmdb_id: int
+    title: Optional[str] = None  # fetched live; None if TMDB could not be asked
+    year: Optional[int] = None
+    handling: FilmHandling
+    has_care_note: bool = False
+    ai_status: AiStatus
+    lgn_prompt_count: int = 0
+
+
+class AdminFilmCreate(BaseModel):
+    tmdb_id: int = Field(..., gt=0)
+
+
+class AdminFilmUpdate(BaseModel):
+    handling: Optional[FilmHandling] = None
+    care_note: Optional[str] = Field(None, max_length=1000)
+    logline: Optional[str] = Field(None, max_length=1000)
+
+
+class AdminPrompt(FilmPromptOut):
+    source: PromptSource
+    external_film_id: Optional[int] = None
+
+
+class AdminFilmDetail(BaseModel):
+    id: int
+    film: Optional[FilmDetail] = None  # live TMDB details; None if unavailable
+    tmdb_id: int
+    handling: FilmHandling
+    care_note: Optional[str] = None
+    logline: Optional[str] = None
+    ai_status: AiStatus
+    ai_model: Optional[str] = None
+    lgn: List[AdminPrompt] = []
+    ai: List[AdminPrompt] = []
+
+
+class AdminPromptCreate(BaseModel):
+    # None = a universal prompt.
+    tmdb_id: Optional[int] = None
+    kind: PromptKind
+    dimension: Dimension
+    title: Optional[str] = Field(None, max_length=300)
+    content: Optional[str] = Field(None, max_length=2000)
+    steps: Optional[str] = Field(None, max_length=4000)
+    tips: Optional[str] = Field(None, max_length=1000)
+
+
+class AdminPromptUpdate(BaseModel):
+    dimension: Optional[Dimension] = None
+    position: Optional[int] = None
+    title: Optional[str] = Field(None, max_length=300)
+    content: Optional[str] = Field(None, max_length=2000)
+    steps: Optional[str] = Field(None, max_length=4000)
+    tips: Optional[str] = Field(None, max_length=1000)
+
+
+class AdminPromote(BaseModel):
+    # Replace an existing LGN set for the same kind (otherwise that is a 409).
+    replace: bool = False
+
+
+class PublicFeatures(BaseModel):
+    beyond_the_screen: bool
+
+
+class FeatureState(BaseModel):
+    enabled: bool
+    # "admin": the portal's switch has been used. "default": nothing saved, so
+    # the server's BEYOND_THE_SCREEN_ENABLED applies.
+    source: Literal["admin", "default"]
+    default: bool
+
+
+class FeatureUpdate(BaseModel):
+    # null clears the portal's switch and goes back to the server default.
+    enabled: Optional[bool] = None

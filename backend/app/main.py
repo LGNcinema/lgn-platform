@@ -19,7 +19,8 @@ import anthropic
 
 from app.database import engine, Base, SessionLocal, get_db
 from app.config import settings
-from app import geme, models, schemas
+from app import film_defaults, geme, models, schemas
+from app.films_api import router as films_router
 from app.auth import create_token, require_admin, require_configured, verify_password
 from app.video import fetch_vimeo_metadata, parse_video_source
 
@@ -96,6 +97,11 @@ def _bootstrap_database():
             db.commit()
     except Exception as e:
         print(f"Database startup/seed error: {e}")
+    try:
+        # Beyond the Screen: the questions every film shows until LGN writes its own.
+        film_defaults.seed_universal_prompts(db)
+    except Exception as e:
+        print(f"Universal prompt seed error: {e}")
     finally:
         db.close()
 
@@ -123,6 +129,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(films_router)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
