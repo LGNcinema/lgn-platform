@@ -482,10 +482,17 @@ class FilmDetail(BaseModel):
     lgn_capsule_id: Optional[int] = None
 
 
+class WatchProvider(BaseModel):
+    name: str
+    # The platform's own search for the film; TMDB's page for a platform we
+    # have no search address for (see app/watch_links.py).
+    url: str
+
+
 class WatchGroup(BaseModel):
     kind: Literal["stream", "free", "ads", "rent", "buy"]
     label: str
-    providers: List[str]
+    providers: List[WatchProvider]
 
 
 class FilmWatch(BaseModel):
@@ -493,8 +500,8 @@ class FilmWatch(BaseModel):
     JustWatch: anything that shows it must credit JustWatch."""
     region: str
     available: bool
-    # TMDB's own page for the film in this region. One link for every provider:
-    # TMDB does not give a link per service.
+    # TMDB's own page for the film in this region: the fallback for a platform
+    # with no link of its own, and "more options" for the visitor.
     link: str
     groups: List[WatchGroup] = []
 
@@ -615,6 +622,21 @@ class AdminPromptCreate(BaseModel):
     content: Optional[str] = Field(None, max_length=2000)
     steps: Optional[str] = Field(None, max_length=4000)
     tips: Optional[str] = Field(None, max_length=1000)
+
+
+class AdminPromptItem(BaseModel):
+    """One circle's question (Reflect) or action (Practice) in a whole-set save."""
+    dimension: Dimension
+    title: Optional[str] = Field(None, max_length=300)
+    content: Optional[str] = Field(None, max_length=2000)
+    steps: Optional[str] = Field(None, max_length=4000)
+    tips: Optional[str] = Field(None, max_length=1000)
+
+
+class AdminPromptSet(BaseModel):
+    # At most one per circle. Whatever is left out is removed, so an emptied slot
+    # in the editor is simply not sent.
+    items: List[AdminPromptItem] = Field(default_factory=list, max_length=3)
 
 
 class AdminPromptUpdate(BaseModel):

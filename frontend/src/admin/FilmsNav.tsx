@@ -1,44 +1,37 @@
-/** The sidebar card for Go Beyond films, under Stories and Storyboard. */
+/** The sidebar card for Go Beyond films, under Stories and Storyboard: one row, like the Storyboard's. */
 interface Props {
-  /** Which page of the films area is open, or null when elsewhere. */
-  active: 'list' | 'universal' | 'inbox' | null;
-  inboxNew: number;
+  /** Somewhere in the films area is open. */
+  active: boolean;
   /** Whether visitors can see the feature; null until known. */
   live: boolean | null;
-  onOpen: (path: string) => void;
+  /** Visitor notes nobody has dealt with yet. */
+  inboxNew: number;
+  onOpen: () => void;
 }
 
-export function FilmsNav({ active, inboxNew, live, onOpen }: Props) {
-  const row = (id: 'list' | 'universal' | 'inbox', path: string, title: string, sub: string, count = 0) => (
-    <button
-      type="button"
-      className={`admin-capsule-row admin-sb-nav-row${active === id ? ' is-selected' : ''}`}
-      aria-current={active === id ? 'page' : undefined}
-      onClick={() => onOpen(path)}
-    >
-      <span>
-        <span className="admin-sb-nav-title">{title}</span>
-        <span className="admin-sb-nav-sub">{sub}</span>
-      </span>
-      {count > 0 && (
-        <span className="admin-count" aria-hidden="true">
-          {count}
-        </span>
-      )}
-    </button>
-  );
-
+export function FilmsNav({ active, live, inboxNew, onOpen }: Props) {
+  const status = live === null ? '' : live ? 'On for visitors' : 'Off for visitors';
   return (
     <section className="admin-picker admin-sb-nav" aria-label="Go Beyond films">
       <h2 className="admin-section-title">Go Beyond films</h2>
-      {row(
-        'list',
-        '/admin/films',
-        'Films',
-        live === null ? 'Any film, outside the monthly stories' : live ? 'On for visitors' : 'Off for visitors',
-      )}
-      {row('universal', '/admin/films/universal', 'Universal questions', 'Shown for every film by default')}
-      {row('inbox', '/admin/films/inbox', 'Inbox', inboxNew > 0 ? `${inboxNew} new` : 'Nothing new', inboxNew)}
+      <button
+        type="button"
+        className={`admin-capsule-row admin-sb-nav-row${active ? ' is-selected' : ''}`}
+        aria-current={active ? 'page' : undefined}
+        onClick={onOpen}
+      >
+        <span>
+          <span className="admin-sb-nav-title">Films and questions</span>
+          <span className="admin-sb-nav-sub">
+            {[status, inboxNew > 0 ? `${inboxNew} new` : ''].filter(Boolean).join(' · ') || 'Any film, beyond the stories'}
+          </span>
+        </span>
+        {inboxNew > 0 && (
+          <span className="admin-count" aria-hidden="true">
+            {inboxNew}
+          </span>
+        )}
+      </button>
     </section>
   );
 }

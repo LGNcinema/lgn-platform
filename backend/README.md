@@ -108,8 +108,10 @@ Responses: `401` for a wrong password or a missing/expired/tampered token,
 | `DELETE` | `/api/admin/{collection}/{item_id}` | → 204 |
 | `GET` / `PUT` | `/api/admin/features/beyond-the-screen` | The visitor on/off switch for *Beyond the Screen* (below). `PUT {"enabled": true}` or `false` saves the choice; `null` goes back to the `BEYOND_THE_SCREEN_ENABLED` default. |
 | `GET` / `POST` | `/api/admin/films` | The outside films LGN has touched; `POST {"tmdb_id"}` adds one. `GET /api/admin/films/search?q=` searches TMDB to find it. |
-| `GET` / `PATCH` / `DELETE` | `/api/admin/films/{tmdb_id}` | One film's settings (handling, care note, logline), LGN's questions and the AI set. `POST …/promote` copies the AI set into LGN's; `DELETE …/ai` discards it so it can be regenerated. |
-| `GET` / `POST` / `PATCH` / `DELETE` | `/api/admin/film-prompts[/{id}]` | LGN's per-film questions and the universal set (`GET …/film-prompts/universal`). |
+| `GET` / `PATCH` / `DELETE` | `/api/admin/films/{tmdb_id}` | One film's settings (handling, care note, logline), LGN's questions and the AI set. `DELETE …/ai` discards the AI set so the next visit writes a new one. `POST …/promote` copies the AI set into LGN's (the admin screen fills its form from the AI draft instead). |
+| `PUT` | `/api/admin/films/{tmdb_id}/prompts/{kind}` | **Replaces** LGN's whole `reflect` or `practice` set for a film in one transaction: `{"items": [{"dimension": "self", "content": …}]}` (practice items carry `title` / `steps` / `tips`). One item per circle at most; an empty list removes LGN's set, so the film goes back to the universal one. This is what the admin screen saves with. |
+| `PUT` | `/api/admin/film-prompts/universal/{kind}` | The same for the universal set, which can't be emptied (422). |
+| `GET` / `POST` / `PATCH` / `DELETE` | `/api/admin/film-prompts[/{id}]` | The same questions one row at a time, for API clients (`GET …/film-prompts/universal` lists the universal set). |
 | `GET` / `PATCH` / `DELETE` | `/api/admin/film-feedback[/{id}]` | The visitor inbox: suggestions, "something's off" and "can't find it". |
 
 `{collection}` is one of `reflections`, `practices`.
@@ -291,8 +293,10 @@ Search any film and Reflect / Practice on it, without the film embedded.
   one with no text on it, else the poster, else a title card). Play opens **Where to watch**
   (`GET /api/films/{id}/watch?region=US`): TMDB's watch-provider data, which TMDB sources from
   **JustWatch and requires be credited** (the panel's footer and the About -> Credits tab; TMDB
-  revokes the key otherwise). TMDB gives one link per country, not per service, so every button opens
-  TMDB's page for the film. Stills are TMDB publicity art: TMDB does not own them, so ask TMDB about
+  revokes the key otherwise). TMDB names the services but gives no link to the film on them, so each
+  button is that service's own **search for the title**, built on the server from the TMDB provider id
+  (`app/watch_links.py`; ~90% of real buttons). A service it doesn't know opens TMDB's page instead.
+  To add one: add its search address and a test there. Stills are TMDB publicity art: TMDB does not own them, so ask TMDB about
   them in the approval email. "How this film was made" is hidden for these films until it has content.
 - **TMDB.** With no credentials and `ENV=development`, search answers from a built-in sample of films
   (`app/tmdb.py`). Put `TMDB_READ_ACCESS_TOKEN` (or `TMDB_API_KEY`) in the git-ignored `.env` for real

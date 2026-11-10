@@ -60,10 +60,11 @@ export const HANDLING_LABEL: Record<Handling, string> = {
   held: 'Held (no page)',
 };
 
+/** Reads after "AI draft: ". */
 export const AI_LABEL: Record<AiStatus, string> = {
-  none: 'Not generated',
-  pending: 'Generating…',
-  ready: 'AI questions ready',
-  unavailable: 'AI doesn’t know this film',
-  failed: 'AI failed (will retry)',
+  none: 'not written yet',
+  pending: 'being written…',
+  ready: 'ready',
+  unavailable: 'the AI doesn’t know this film',
+  failed: 'failed (it will retry)',
 };

@@ -138,12 +138,6 @@ export function AdminApp() {
   const reviewAll = useMatch('/admin/storyboard') !== null;
   /** Go Beyond films: any film outside the monthly stories. */
   const filmsArea = useMatch('/admin/films/*') !== null;
-  const filmsPage = useMatch('/admin/films/:which')?.params.which;
-  const filmsActive: 'list' | 'universal' | 'inbox' | null = !filmsArea
-    ? null
-    : filmsPage === 'inbox' || filmsPage === 'universal'
-      ? filmsPage
-      : 'list';
 
   const routeCapsuleId = tabMatch?.params.capsuleId ?? capsuleOnlyMatch?.params.capsuleId;
   const parsedId = routeCapsuleId ? Number(routeCapsuleId) : NaN;
@@ -257,6 +251,12 @@ export function AdminApp() {
     }
     run();
   }, []);
+
+  /** Move around the Go Beyond films area, asking first if there is unsaved work. */
+  const goFilms = useCallback(
+    (path: string) => runGuarded('Opening another page will discard them.', () => navigate(path)),
+    [navigate, runGuarded],
+  );
 
   useEffect(() => {
     if (pendingNav) stayRef.current?.focus();
@@ -574,18 +574,16 @@ export function AdminApp() {
               }}
             />
             <FilmsNav
-              active={filmsActive}
+              active={filmsArea}
               inboxNew={filmInboxNew}
               live={beyondFlag.state ? beyondFlag.state.enabled : null}
-              onOpen={(path) => {
-                runGuarded('Opening another page will discard them.', () => navigate(path));
-              }}
+              onOpen={() => goFilms('/admin/films')}
             />
           </aside>
 
           <main className="admin-main">
             {filmsArea ? (
-              <FilmsAdmin onInboxChanged={() => void refreshFilmInbox()} flag={beyondFlag} />
+              <FilmsAdmin flag={beyondFlag} inboxNew={filmInboxNew} onInboxChanged={() => void refreshFilmInbox()} go={goFilms} />
             ) : reviewAll ? (
               <StoryboardPanel capsuleId={null} pendingCounts={pendingCounts} onReviewed={() => void refreshCounts()} />
             ) : capsuleId === null ? (

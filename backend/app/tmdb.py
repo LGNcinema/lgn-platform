@@ -20,6 +20,7 @@ import urllib.parse
 import urllib.request
 from typing import Optional
 
+from app import watch_links
 from app.config import settings
 
 API = "https://api.themoviedb.org/3"
@@ -171,48 +172,61 @@ def watch(tmdb_id: int, region: str) -> dict:
     with ads, rent, buy). TMDB's data, which TMDB sources from JustWatch: whoever
     shows it MUST credit JustWatch, or TMDB revokes the API key.
 
-    TMDB gives one link per region (its own page for the film, which links out to
-    each service), not one per service, so `link` is shared by every provider."""
+    TMDB gives one link per region (its own page for the film), never one per
+    service. So each provider's own link is built here from its id and name and the
+    film's title (see watch_links.py); `link` stays as TMDB's page, the fallback for
+    any platform we have no search address for."""
     region = region.upper()
     if is_fixture_mode():
         film = FIXTURES.get(tmdb_id)
         if not film or film["adult"]:
             raise TmdbError("not_found")
-        return _watch_for(_sample_providers(region), region, tmdb_id)
+        return _watch_for(_sample_providers(region), region, tmdb_id, film["title"])
     item = _get(f"/movie/{int(tmdb_id)}", append_to_response="watch/providers")
     if item.get("adult"):
         raise TmdbError("not_found")
-    return _watch_for(item.get("watch/providers", {}).get("results", {}), region, item["id"])
+    title = item.get("title") or item.get("original_title") or ""
+    return _watch_for(item.get("watch/providers", {}).get("results", {}), region, item["id"], title)
 
 
-def _watch_for(results: dict, region: str, tmdb_id: int) -> dict:
+def _watch_for(results: dict, region: str, tmdb_id: int, title: str = "") -> dict:
     entry = results.get(region) or {}
+    # Only ever hand the page a link to TMDB itself as the fallback.
+    page = entry.get("link") or ""
+    if not page.startswith(f"{WATCH_PAGE}/"):
+        page = f"{WATCH_PAGE}/movie/{int(tmdb_id)}/watch"
     groups = []
     for key, source, label in WATCH_GROUPS:
         ranked = sorted(entry.get(source) or [], key=lambda p: (p.get("display_priority", 999), p.get("provider_name", "")))
-        names: list[str] = []
+        providers: list[dict] = []
         for provider in ranked:
             name = (provider.get("provider_name") or "").strip()
-            if name and name not in names:
-                names.append(name)
-        if names:
-            groups.append({"kind": key, "label": label, "providers": names})
-    # Only ever hand the page a link to TMDB itself.
-    link = entry.get("link") or ""
-    if not link.startswith(f"{WATCH_PAGE}/"):
-        link = f"{WATCH_PAGE}/movie/{int(tmdb_id)}/watch"
-    return {"region": region, "available": bool(groups), "link": link, "groups": groups}
+            if not name or any(p["name"] == name for p in providers):
+                continue
+            own = watch_links.link_for(provider.get("provider_id"), name, title, region)
+            providers.append({"name": name, "url": own or page})
+        if providers:
+            groups.append({"kind": key, "label": label, "providers": providers})
+    return {"region": region, "available": bool(groups), "link": page, "groups": groups}
 
 
 def _sample_providers(region: str) -> dict:
-    """Development with no TMDB credential: invented services, clearly labelled,
-    so the Where-to-watch panel can be tried."""
+    """Development with no TMDB credential: made-up availability (it is the same
+    for every film), clearly labelled, so the Where-to-watch panel can be tried.
+    The ids are real, so the links are real searches; "Sample Free Service" is
+    unknown on purpose, to show the fallback to TMDB's page."""
     rows = {
-        "flatrate": ["Sample Streaming"],
-        "rent": ["Sample Rentals"],
-        "buy": ["Sample Store"],
+        "flatrate": [(8, "Netflix (sample data)")],
+        "free": [(0, "Sample Free Service")],
+        "rent": [(2, "Apple TV Store (sample data)")],
+        "buy": [(10, "Amazon Video (sample data)")],
     }
-    return {region: {key: [{"provider_name": n, "display_priority": 1} for n in names] for key, names in rows.items()}}
+    return {
+        region: {
+            key: [{"provider_id": pid, "provider_name": n, "display_priority": 1} for pid, n in names]
+            for key, names in rows.items()
+        }
+    }
 
 
 def _summary(film: dict) -> dict:

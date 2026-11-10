@@ -105,10 +105,17 @@ export const fetchFilm = (tmdbId: number, signal?: AbortSignal) =>
 export const fetchFilmPrompts = (tmdbId: number, signal?: AbortSignal) =>
   request<FilmPromptsResponse>(`/api/films/${tmdbId}/prompts`, { signal });
 
+/** One platform: its own search for the film, or TMDB's page if we have no
+ *  search address for it (the server decides; see backend/app/watch_links.py). */
+export interface WatchProvider {
+  name: string;
+  url: string;
+}
+
 export interface WatchGroup {
   kind: 'stream' | 'free' | 'ads' | 'rent' | 'buy';
   label: string;
-  providers: string[];
+  providers: WatchProvider[];
 }
 
 /** Where a film can be watched in one region. TMDB's data, which TMDB sources
@@ -116,7 +123,7 @@ export interface WatchGroup {
 export interface FilmWatch {
   region: string;
   available: boolean;
-  /** TMDB's own page for the film. One link for every provider. */
+  /** TMDB's own page for the film: "more options". */
   link: string;
   groups: WatchGroup[];
 }

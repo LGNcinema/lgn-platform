@@ -527,29 +527,42 @@ def test_details_ask_for_images_and_carry_a_still(monkeypatch):
     assert seen["append_to_response"] == "credits,images" and seen["include_image_language"] == "en,null"
 
 
-def test_watch_groups_are_ranked_deduped_and_the_link_is_always_tmdbs(monkeypatch):
+def test_watch_providers_get_their_own_link_or_fall_back_to_tmdbs_page(monkeypatch):
     def fake_get(path, **params):
         assert params["append_to_response"] == "watch/providers"
-        return {"id": 7, "adult": False, "watch/providers": {"results": {
+        return {"id": 7, "title": "The Goonies", "adult": False, "watch/providers": {"results": {
             "US": {"link": "https://www.themoviedb.org/movie/7-x/watch?locale=US",
-                   "flatrate": [{"provider_name": "Second", "display_priority": 2},
-                                {"provider_name": "First", "display_priority": 1}],
-                   "rent": [{"provider_name": "Shop", "display_priority": 1}, {"provider_name": "Shop", "display_priority": 1}],
-                   "ads": [{"provider_name": "Free-ish", "display_priority": 1}]},
-            "GB": {"link": "https://evil.example/steal", "buy": [{"provider_name": "Shop", "display_priority": 1}]},
+                   "flatrate": [{"provider_id": 337, "provider_name": "Disney Plus", "display_priority": 2},
+                                {"provider_id": 8, "provider_name": "Netflix", "display_priority": 1}],
+                   "rent": [{"provider_id": 2, "provider_name": "Apple TV Store", "display_priority": 1},
+                            {"provider_id": 2, "provider_name": "Apple TV Store", "display_priority": 1}],
+                   "ads": [{"provider_id": 424242, "provider_name": "Some New Service", "display_priority": 1}]},
+            "GB": {"link": "https://evil.example/steal", "buy": [{"provider_id": 9, "provider_name": "Amazon Prime Video", "display_priority": 1}]},
         }}}
 
     monkeypatch.setattr(settings, "TMDB_READ_ACCESS_TOKEN", "x")
     monkeypatch.setattr(tmdb, "_get", fake_get)
 
     us = tmdb.watch(7, "us")
-    assert us["available"] and us["region"] == "US"
-    assert [(g["kind"], g["providers"]) for g in us["groups"]] == [
-        ("stream", ["First", "Second"]), ("ads", ["Free-ish"]), ("rent", ["Shop"])]
-    assert us["link"] == "https://www.themoviedb.org/movie/7-x/watch?locale=US"
+    page = "https://www.themoviedb.org/movie/7-x/watch?locale=US"
+    assert us["available"] and us["region"] == "US" and us["link"] == page
+    by_kind = {g["kind"]: g["providers"] for g in us["groups"]}
+    # Ranked by TMDB's own order, each platform with ITS OWN link.
+    assert by_kind["stream"] == [
+        {"name": "Netflix", "url": "https://www.netflix.com/search?q=The%20Goonies"},
+        {"name": "Disney Plus", "url": "https://www.disneyplus.com/search/The%20Goonies"},
+    ]
+    # De-duplicated within a group.
+    assert by_kind["rent"] == [{"name": "Apple TV Store", "url": "https://tv.apple.com/search?term=The%20Goonies"}]
+    # A platform we have no search address for falls back to TMDB's page, never a dead button.
+    assert by_kind["ads"] == [{"name": "Some New Service", "url": page}]
 
-    # A link that is not TMDB's is never passed on.
-    assert tmdb.watch(7, "GB")["link"] == "https://www.themoviedb.org/movie/7/watch"
+    # The region picks the store (Amazon UK), and a link that is not TMDB's is never passed on.
+    gb = tmdb.watch(7, "GB")
+    assert gb["link"] == "https://www.themoviedb.org/movie/7/watch"
+    assert gb["groups"][0]["providers"] == [
+        {"name": "Amazon Prime Video", "url": "https://www.amazon.co.uk/s?k=The%20Goonies&i=instant-video"}]
+
     # A region with nothing: say so, and still point at TMDB's page.
     nowhere = tmdb.watch(7, "FR")
     assert nowhere["available"] is False and nowhere["groups"] == []
@@ -559,8 +572,13 @@ def test_watch_groups_are_ranked_deduped_and_the_link_is_always_tmdbs(monkeypatc
 def test_watch_endpoint_in_sample_mode(client, admin):
     body = client.get(f"/api/films/{SPIRITED}/watch").json()
     assert body["available"] and body["region"] == "US"
-    assert [g["kind"] for g in body["groups"]] == ["stream", "rent", "buy"]
+    assert [g["kind"] for g in body["groups"]] == ["stream", "free", "rent", "buy"]
     assert body["link"].startswith("https://www.themoviedb.org/")
+    urls = {p["name"]: p["url"] for g in body["groups"] for p in g["providers"]}
+    assert urls["Netflix (sample data)"] == "https://www.netflix.com/search?q=Spirited%20Away"
+    assert urls["Apple TV Store (sample data)"] == "https://tv.apple.com/search?term=Spirited%20Away"
+    assert urls["Amazon Video (sample data)"] == "https://www.amazon.com/s?k=Spirited%20Away&i=instant-video"
+    assert urls["Sample Free Service"] == body["link"]  # unknown platform: TMDB's page
     # Region: two letters, any case; anything else means the default.
     assert client.get(f"/api/films/{SPIRITED}/watch?region=gb").json()["region"] == "GB"
     assert client.get(f"/api/films/{SPIRITED}/watch?region=nonsense").json()["region"] == "US"
@@ -577,3 +595,86 @@ def test_watch_endpoint_refuses_held_adult_and_unknown_films(client, admin):
 def test_film_details_carry_the_still_field(client):
     body = client.get(f"/api/films/{SPIRITED}").json()
     assert "still_url" in body and body["still_url"] is None  # sample films have none
+
+
+# ----------------------------------------------- saving a whole set (the editor's Save)
+
+
+def _set(client, admin, kind, items, tmdb_id=SPIRITED):
+    return client.put(f"/api/admin/films/{tmdb_id}/prompts/{kind}", headers=admin, json={"items": items})
+
+
+def _q(dimension, text):
+    return {"dimension": dimension, "content": text}
+
+
+def test_saving_a_set_replaces_the_whole_set_and_empty_goes_back_to_universal(client, admin):
+    client.get(f"/api/films/{SPIRITED}")
+    r = _set(client, admin, "reflect", [_q("world", "W?"), _q("self", "S?")])
+    assert r.status_code == 200 and [(p["dimension"], p["content"]) for p in r.json()] == [("self", "S?"), ("world", "W?")]
+    body = client.get(f"/api/films/{SPIRITED}/prompts").json()
+    assert body["default_sources"]["reflect"] == "lgn" and len(body["default"]["reflect"]) == 2
+
+    # Sending three replaces those two: nothing is left over from before.
+    _set(client, admin, "reflect", [_q("self", "S2?"), _q("neighbor", "N2?"), _q("world", "W2?")])
+    got = client.get(f"/api/admin/films/{SPIRITED}", headers=admin).json()["lgn"]
+    assert sorted(p["content"] for p in got) == ["N2?", "S2?", "W2?"]
+
+    # An emptied editor is an empty list: the film is back on the universal questions.
+    assert _set(client, admin, "reflect", []).json() == []
+    assert client.get(f"/api/films/{SPIRITED}/prompts").json()["default_sources"]["reflect"] == "universal"
+
+
+def test_a_practice_set_keeps_title_steps_and_tip(client, admin):
+    client.get(f"/api/films/{SPIRITED}")
+    items = [{"dimension": "self", "title": " Sit with it ", "steps": "One.\nTwo.", "tips": "Be kind."},
+             {"dimension": "world", "steps": "Do the thing."}]
+    rows = _set(client, admin, "practice", items).json()
+    assert rows[0]["title"] == "Sit with it" and rows[0]["steps"] == "One.\nTwo." and rows[0]["tips"] == "Be kind."
+    assert rows[1]["title"] == "World practice"  # a missing title gets the usual default
+
+
+def test_a_set_save_is_checked_before_anything_changes(client, admin):
+    client.get(f"/api/films/{SPIRITED}")
+    _set(client, admin, "reflect", [_q("self", "Keep me?")])
+    bad = [
+        ("reflect", [_q("self", "A?"), _q("self", "B?")]),              # two in one circle
+        ("reflect", [{"dimension": "self", "content": "  "}]),            # a question needs text
+        ("practice", [{"dimension": "self", "title": "No steps"}]),       # an action needs a step
+        ("reflect", [_q("self", "1?"), _q("neighbor", "2?"), _q("world", "3?"), _q("self", "4?")]),  # too many
+        ("reflect", [{"dimension": "galaxy", "content": "?"}]),           # not a circle
+    ]
+    for kind, items in bad:
+        assert _set(client, admin, kind, items).status_code == 422, (kind, items)
+    # None of the refused saves touched what was there.
+    assert [p["content"] for p in client.get(f"/api/admin/films/{SPIRITED}", headers=admin).json()["lgn"]] == ["Keep me?"]
+    assert client.put(f"/api/admin/films/{SPIRITED}/prompts/mystery", headers=admin, json={"items": []}).status_code == 422
+    assert _set(client, admin, "reflect", [], tmdb_id=424242).status_code == 404  # not added yet
+    assert client.put(f"/api/admin/films/{SPIRITED}/prompts/reflect", json={"items": []}).status_code == 401
+
+
+def test_saving_one_kind_leaves_the_other_kind_and_the_ai_set_alone(client, admin, db):
+    settings.FILM_AI_ENABLED = True
+    client.get(f"/api/films/{SPIRITED}")
+    client.post(f"/api/films/{SPIRITED}/ai")
+    assert db.query(models.FilmPrompt).filter_by(source="ai").count() == 6
+    _set(client, admin, "practice", [{"dimension": "self", "steps": "Do it."}])
+    _set(client, admin, "reflect", [_q("self", "Mine?")])
+    _set(client, admin, "reflect", [])
+    db.expire_all()
+    assert db.query(models.FilmPrompt).filter_by(source="ai").count() == 6
+    lgn = client.get(f"/api/admin/films/{SPIRITED}", headers=admin).json()["lgn"]
+    assert [(p["kind"], p["steps"]) for p in lgn] == [("practice", "Do it.")]
+
+
+def test_the_universal_set_can_be_rewritten_but_never_emptied(client, admin):
+    r = client.put("/api/admin/film-prompts/universal/reflect", headers=admin,
+                   json={"items": [_q("self", "New self?"), _q("neighbor", "New neighbor?"), _q("world", "New world?")]})
+    assert r.status_code == 200 and len(r.json()) == 3
+    assert [p["content"] for p in client.get("/api/films/universal-prompts").json()["reflect"]] == [
+        "New self?", "New neighbor?", "New world?"]
+    assert len(client.get("/api/films/universal-prompts").json()["practice"]) == 3  # the other kind is untouched
+
+    refused = client.put("/api/admin/film-prompts/universal/reflect", headers=admin, json={"items": []})
+    assert refused.status_code == 422 and "empty" in refused.json()["detail"]
+    assert len(client.get("/api/films/universal-prompts").json()["reflect"]) == 3

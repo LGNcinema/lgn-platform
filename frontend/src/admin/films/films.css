@@ -1,20 +1,85 @@
-.fa-search {
+/* Go Beyond films (the admin). Rides on panels.css (.apnl-*) and admin.css
+   (.admin-tabs); only what they don't already have is here. */
+
+.admin-portal .fa {
+  gap: 16px;
+}
+
+/* ---------------------------------------------------------------- header */
+
+.admin-portal .fa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-portal .fa-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--primary);
+}
+
+.admin-portal .fa-head-note {
+  margin: -4px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.admin-portal .fa-switch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.admin-portal .fa-switch-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.admin-portal .fa-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex: none;
+}
+
+.admin-portal .fa-dot.is-on {
+  background: #2f9e5b;
+}
+
+.admin-portal .fa-tabs {
+  align-self: flex-start;
+}
+
+/* ------------------------------------------------------------- the films */
+
+.admin-portal .fa-search {
   display: flex;
   gap: 8px;
 }
 
-.fa-search .apnl-input {
+.admin-portal .fa-search .apnl-input {
   flex: 1;
 }
 
-.fa-hits,
-.fa-rows {
+.admin-portal .fa-hits,
+.admin-portal .fa-rows {
   list-style: none;
-  margin: 12px 0 0;
+  margin: 0;
   padding: 0;
 }
 
-.fa-hits li {
+.admin-portal .fa-hits li {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -23,7 +88,13 @@
   border-bottom: 1px solid var(--border);
 }
 
-.fa-row {
+.admin-portal .fa-count {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.admin-portal .fa-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -39,22 +110,22 @@
   cursor: pointer;
 }
 
-.fa-row:hover {
+.admin-portal .fa-row:hover {
   background: var(--bg-card-hover);
 }
 
-.fa-row-title {
+.admin-portal .fa-row-title {
   font-weight: 600;
 }
 
-.fa-row-pills {
+.admin-portal .fa-row-pills {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 6px;
 }
 
-.fa-pill {
+.admin-portal .fa-pill {
   display: inline-block;
   padding: 1px 8px;
   border: 1px solid var(--border);
@@ -63,85 +134,150 @@
   color: var(--text-muted);
 }
 
-.fa-pill--on {
+.admin-portal .fa-pill--on {
   color: var(--text-main);
   border-color: var(--text-main);
 }
 
-.fa-pill--warn {
+.admin-portal .fa-pill--warn {
   color: var(--text-main);
   background: var(--bg-card-hover);
 }
 
-.fa-kind {
-  margin-top: 24px;
+/* -------------------------------------------------------------- one film */
+
+.admin-portal .fa-film-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.fa-dim {
-  margin-top: 16px;
+.admin-portal .fa-film-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--primary);
 }
 
-.fa-dim-title {
-  margin-bottom: 8px;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+.admin-portal .fa-film-head p {
+  margin: 0;
+}
+
+/* Links in this area (Preview, Reply to): quiet and readable in both themes. */
+.admin-portal .fa a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.admin-portal .fa a:hover {
+  color: var(--text-main);
+}
+
+/* The questions: tabs, then one form per tab. */
+.admin-portal .fa-sets {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-portal .fa-kind-tabs {
+  align-self: flex-start;
+}
+
+.admin-portal .fa-kind-tabs .fa-pill {
+  margin-left: 8px;
+  padding: 0 7px;
+  font-size: 11px;
+}
+
+.admin-portal .fa-set {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--admin-radius, 12px);
+}
+
+.admin-portal .fa-status,
+.admin-portal .fa-hint,
+.admin-portal .fa-ai {
+  margin: 0;
+  font-size: 0.85rem;
   color: var(--text-muted);
 }
 
-.fa-conflict {
-  margin: 12px 0;
-  padding: 12px;
-  border: 1px solid var(--text-main);
+.admin-portal .fa-hint {
+  font-size: 0.8rem;
 }
 
-.fa-filters {
+/* One action = a title, its steps and a tip, kept together under the circle's name. */
+.admin-portal .fa-circle {
+  margin: 0;
+  padding: 0 0 0 14px;
+  border: none;
+  border-left: 2px solid var(--border);
+}
+
+/* The circle is the heading; Title / Steps / Tip are the small labels under it. */
+.admin-portal .fa-circle legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-main);
+}
+
+.admin-portal .fa-circle-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-portal .fa-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.admin-portal .fa-foot p {
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ inbox */
+
+.admin-portal .fa-filters {
   display: flex;
   gap: 4px;
-  margin-bottom: 16px;
 }
 
-.fa-meta {
+.admin-portal .fa-note-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin: 4px 0 8px;
+  align-items: baseline;
+  gap: 0 4px;
+  margin: 0;
 }
 
-.fa-quote {
+.admin-portal .fa-note-date {
+  margin-left: auto;
+  font-size: 0.8rem;
+}
+
+.admin-portal .fa-quote {
   margin: 8px 0;
   padding-left: 12px;
   border-left: 3px solid var(--border);
   white-space: pre-wrap;
 }
 
-.fa-text {
+.admin-portal .fa-text {
   white-space: pre-wrap;
-}
-
-.fa-switch {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.fa-switch-state {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0;
-}
-
-.fa-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--muted, #8a8a8a);
-  flex: none;
-}
-
-.fa-dot.is-on {
-  background: #2f9e5b;
 }

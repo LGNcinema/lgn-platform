@@ -508,6 +508,59 @@ def _check_prompt(kind: str, content: Optional[str], steps: Optional[str]) -> No
         raise HTTPException(422, "A Practice action needs at least one step.")
 
 
+def _default_title(kind: str, dimension: str) -> str:
+    return f"{dimension.capitalize()} {'question' if kind == 'reflect' else 'practice'}"
+
+
+def _replace_set(db: Session, ext_id: Optional[int], source: str, kind: str,
+                 items: List[schemas.AdminPromptItem]) -> List[schemas.AdminPrompt]:
+    """Make `items` the WHOLE set for one kind: what the editor sends is what is
+    kept, and anything not sent is removed (a cleared slot is a deleted question).
+    All or nothing: it is checked first, then swapped in one transaction."""
+    seen = set()
+    for item in items:
+        _check_prompt(kind, item.content, item.steps)
+        if item.dimension in seen:
+            raise HTTPException(422, f"Only one {kind} item per circle: {item.dimension} appears twice.")
+        seen.add(item.dimension)
+    for old in [r for r in _rows(db, ext_id, source) if r.kind == kind]:
+        db.delete(old)
+    reflect = kind == "reflect"
+    rows = [
+        models.FilmPrompt(
+            external_film_id=ext_id, source=source, kind=kind, dimension=item.dimension, position=1,
+            title=_clean(item.title) or _default_title(kind, item.dimension),
+            content=_clean(item.content) if reflect else None,
+            steps=None if reflect else _clean(item.steps),
+            tips=None if reflect else _clean(item.tips),
+        )
+        for item in items
+    ]
+    db.add_all(rows)
+    db.commit()
+    for row in rows:
+        db.refresh(row)
+    return [_admin_prompt(r) for r in _sorted(rows)]
+
+
+@router.put("/api/admin/films/{tmdb_id}/prompts/{kind}", response_model=List[schemas.AdminPrompt])
+def admin_replace_lgn_set(tmdb_id: int, kind: schemas.PromptKind, body: schemas.AdminPromptSet,
+                          db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    """Save LGN's whole Reflect or Practice set for a film in one go (the editor's
+    Save). An empty list removes it, so the film goes back to the universal set."""
+    return _replace_set(db, _admin_ext(db, tmdb_id).id, "lgn", kind, body.items)
+
+
+@router.put("/api/admin/film-prompts/universal/{kind}", response_model=List[schemas.AdminPrompt])
+def admin_replace_universal_set(kind: schemas.PromptKind, body: schemas.AdminPromptSet,
+                                db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    """Save the universal Reflect or Practice set. It can be rewritten but never
+    emptied: every film without questions of its own falls back to it."""
+    if not body.items:
+        raise HTTPException(422, "The universal set can't be empty: films without their own questions use it.")
+    return _replace_set(db, None, "universal", kind, body.items)
+
+
 @router.get("/api/admin/film-prompts/universal", response_model=List[schemas.AdminPrompt])
 def admin_universal_prompts(db: Session = Depends(get_db), _: bool = Depends(require_admin)):
     return [_admin_prompt(r) for r in _sorted(_rows(db, None, "universal"))]
@@ -524,7 +577,7 @@ def admin_create_prompt(body: schemas.AdminPromptCreate, db: Session = Depends(g
     row = models.FilmPrompt(
         external_film_id=ext_id, source=source, kind=body.kind, dimension=body.dimension,
         position=max([r.position for r in peers], default=0) + 1,
-        title=_clean(body.title) or f"{body.dimension.capitalize()} {'question' if body.kind == 'reflect' else 'practice'}",
+        title=_clean(body.title) or _default_title(body.kind, body.dimension),
         content=_clean(body.content), steps=_clean(body.steps), tips=_clean(body.tips),
     )
     db.add(row)

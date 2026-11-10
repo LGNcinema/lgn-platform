@@ -29,8 +29,10 @@ function countryName(region: string): string {
  *
  * The data is TMDB's, which TMDB sources from JustWatch, and TMDB requires that
  * JustWatch be credited wherever it is shown (see the line at the foot, and the
- * Credits tab). TMDB gives one link per country, not one per service, so every
- * button opens TMDB's page for the film, where each service links out.
+ * Credits tab). TMDB names the services but gives no link to the film on them,
+ * so each button is that service's own search for the title, built on the server
+ * (backend/app/watch_links.py). A service we have no search address for opens
+ * TMDB's page for the film instead.
  *
  * Nothing is asked of the visitor: their country comes from their browser's
  * language and goes only to our own API.
@@ -77,10 +79,10 @@ export function WhereToWatch({ open, onClose, tmdbId, title }: Props) {
             <section key={group.kind} className="ww-group" aria-label={group.label}>
               <h3 className="lgn-label ww-group-label">{group.label}</h3>
               <ul className="ww-list">
-                {group.providers.map((name) => (
-                  <li key={name}>
-                    <a className="lgn-btn ww-btn" href={state.watch.link} target="_blank" rel="noopener noreferrer">
-                      <span>{name}</span>
+                {group.providers.map((provider) => (
+                  <li key={provider.name}>
+                    <a className="lgn-btn ww-btn" href={provider.url} target="_blank" rel="noopener noreferrer">
+                      <span>{provider.name}</span>
                     </a>
                   </li>
                 ))}
@@ -92,7 +94,8 @@ export function WhereToWatch({ open, onClose, tmdbId, title }: Props) {
       <p className="ww-foot">
         {state.kind === 'ready' && state.watch.available && (
           <span>
-            Showing {countryName(state.watch.region)}. Each opens TMDB’s page for this film, where every service links out.
+            Showing {countryName(state.watch.region)}. Each button searches that service for {title}. Not what you
+            wanted? <a href={state.watch.link} target="_blank" rel="noopener noreferrer">See TMDB’s full list.</a>
           </span>
         )}
         <span>
