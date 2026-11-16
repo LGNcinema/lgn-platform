@@ -14,6 +14,13 @@ licensed font files (see Fonts).
   (`docker compose up`, site on :5173, API on :8000, Postgres container
   `lgn_db`) and says when to commit, push or merge. Don't commit per tweak:
   every push builds a Vercel preview.
+- **Cloud sessions (claude.ai/code)** have no Docker daemon, so run the stack
+  bare: `cd backend && uv sync && ENV=development uv run uvicorn app.main:app
+  --port 8000 --reload` (SQLite, schema built on startup) and Vite on :5173
+  with `/api` proxied to :8000 so Justin's remote preview works. Run
+  `npm run fetch-fonts` first (`BLOB_READ_WRITE_TOKEN` is set in the cloud
+  environment). Review with 1920px screenshots. The container is ephemeral:
+  anything uncommitted is lost when the session ends, so say so before it does.
 - **Branches:** `ui-v3` is the iteration branch. Merge `ui-v3` → `main`
   (`--no-ff`) only when asked; `main` deploys to production.
 - **No hard-coded leftovers:** when something is retired, delete the data,
