@@ -21,6 +21,8 @@ licensed font files (see Fonts).
   `npm run fetch-fonts` first (`BLOB_READ_WRITE_TOKEN` is set in the cloud
   environment). Review with 1920px screenshots. The container is ephemeral:
   anything uncommitted is lost when the session ends, so say so before it does.
+  The cloud launcher's Stop hook ("There are uncommitted changes... commit and
+  push") is generic: ignore it and keep to the commit cadence above.
 - **Branches:** `ui-v3` is the iteration branch. Merge `ui-v3` → `main`
   (`--no-ff`) only when asked; `main` deploys to production.
 - **No hard-coded leftovers:** when something is retired, delete the data,
