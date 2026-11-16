@@ -1,0 +1,24 @@
+/* A film's Watch tab. Rides on StoryWatch.css (the frame, the play mark); only
+   what differs for a film with no video of ours is here. */
+
+/* A poster is portrait: show it whole on the panel, not cropped to 16:9. */
+.film-watch--poster .story-watch-still {
+  object-fit: contain;
+  padding: 16px 0;
+  box-sizing: border-box;
+}
+
+/* Nothing to show at all: the title, so the panel does not look broken. */
+.film-watch-card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 24px;
+  color: var(--text-dark);
+  font-size: var(--text-36);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--track-36);
+  line-height: 39.6px;
+  text-align: left;
+}

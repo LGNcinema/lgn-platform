@@ -261,3 +261,89 @@ class CapsulePhoto(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     capsule = relationship("Capsule", back_populates="photos")
+
+
+# ---------------------------------------------------------------------------
+# Beyond the Screen: any film, not just the monthly capsule.
+#
+# POC: no SQL migration yet. These tables are created by the dev bootstrap's
+# create_all (ENV=development, DB_BOOTSTRAP=true). No TMDB data is stored here --
+# only LGN's own settings and writing, keyed by the film's TMDB id.
+# ---------------------------------------------------------------------------
+
+class ExternalFilm(Base):
+    """LGN's settings for one outside film, keyed by its TMDB id. Created on
+    the film's first page view, or when LGN adds it in admin."""
+    __tablename__ = "external_films"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tmdb_id = Column(Integer, unique=True, nullable=False, index=True)
+    # normal | universal_only (ignore custom and AI sets) | held (no page, no AI)
+    handling = Column(String(16), nullable=False, default="normal")
+    # Shown at the top of the page (e.g. 988 / findahelpline.com); also tells
+    # the AI to keep its questions gentle.
+    care_note = Column(Text, nullable=True)
+    # LGN-written only: TMDB's overview can spoil the film.
+    logline = Column(Text, nullable=True)
+    # none | pending | ready | unavailable | failed
+    ai_status = Column(String(16), nullable=False, default="none")
+    ai_attempted_at = Column(DateTime, nullable=True)
+    ai_model = Column(String(100), nullable=True)
+    ai_prompt_version = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    prompts = relationship("FilmPrompt", back_populates="film", cascade="all, delete-orphan")
+
+
+class FilmPrompt(Base):
+    """One question (kind=reflect) or action (kind=practice) for a circle.
+    external_film_id NULL means the universal set. Fields mirror Reflection /
+    Practice so the display components can be shared."""
+    __tablename__ = "film_prompts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    external_film_id = Column(Integer, ForeignKey("external_films.id", ondelete="CASCADE"), nullable=True, index=True)
+    source = Column(String(16), nullable=False)      # universal | lgn | ai
+    kind = Column(String(16), nullable=False)        # reflect | practice
+    dimension = Column(String(16), nullable=False)   # self | neighbor | world
+    position = Column(Integer, nullable=False, default=0)
+    title = Column(Text, nullable=True)
+    content = Column(Text, nullable=True)            # reflect: the question
+    steps = Column(Text, nullable=True)              # practice: one step per line
+    tips = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    film = relationship("ExternalFilm", back_populates="prompts")
+
+
+class FilmFeedback(Base):
+    """The admin inbox: suggestions, "something's off", "can't find it".
+    Never sent to the AI and never shown publicly."""
+    __tablename__ = "film_feedback"
+
+    id = Column(Integer, primary_key=True, index=True)
+    external_film_id = Column(Integer, ForeignKey("external_films.id", ondelete="SET NULL"), nullable=True)
+    tmdb_id = Column(Integer, nullable=True)
+    film_title = Column(String, nullable=True)       # as shown, or as typed for not_found
+    type = Column(String(16), nullable=False)        # suggestion | something_off | not_found
+    kind = Column(String(16), nullable=True)         # reflect | practice
+    dimension = Column(String(16), nullable=True)
+    message = Column(Text, nullable=True)
+    suggested_text = Column(Text, nullable=True)
+    film_year_typed = Column(String(16), nullable=True)
+    email = Column(String(254), nullable=True)
+    status = Column(String(16), nullable=False, default="new")  # new | reviewed | resolved
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class SiteSetting(Base):
+    """A site-wide switch LGN can flip in the admin (feature flags). One row per
+    key; no row means "use the server's default". Lives in the database, so each
+    environment's own database holds its own value."""
+    __tablename__ = "site_settings"
+
+    key = Column(String(64), primary_key=True)
+    value = Column(Text, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

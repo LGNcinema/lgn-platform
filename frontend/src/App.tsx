@@ -11,6 +11,9 @@ import { WatchMode } from './components/campfire/WatchMode';
 import { StoryReflect } from './components/campfire/StoryReflect';
 import { StoryPractice } from './components/campfire/StoryPractice';
 import { Storyboard } from './components/campfire/Storyboard';
+import { FilmPage } from './components/beyond/FilmPage';
+import { Credits } from './components/about/Credits';
+import { fetchFeatures } from './components/beyond/features';
 import { VALID_STORY_SECTIONS, formatStoryMonth, storyNumber, type StorySection } from './components/campfire/campfire';
 import type { CapsuleDetail, CapsuleSummary, GemeTuning } from './types';
 import { API_URL } from './api';
@@ -156,8 +159,9 @@ function normalizeFilmLink(raw: string): string | null {
 
 const FILM_LINK_INVALID = 'Please enter a link to your film, like youtube.com/watch?v=… or vimeo.com/123456.';
 
-const VALID_VIEWS = ['home', 'campfire', 'capsule', 'watch', 'storyboard', 'timeline', 'about', 'invest', 'contact', 'submit-film'] as const;
-const VALID_ABOUT_SUBVIEWS = ['purpose', 'mission-vision', 'board-staff'] as const;
+const VALID_VIEWS = ['home', 'campfire', 'capsule', 'watch', 'storyboard', 'timeline', 'about', 'invest', 'contact', 'submit-film', 'film'] as const;
+const VALID_ABOUT_SUBVIEWS = ['purpose', 'mission-vision', 'board-staff', 'credits'] as const;
+type AboutSubView = typeof VALID_ABOUT_SUBVIEWS[number];
 
 /**
  * Views that open in a theme other than light. Everything absent from this map
@@ -180,9 +184,14 @@ function App() {
     const viewParam = new URLSearchParams(window.location.search).get('view');
     return (VALID_VIEWS as readonly string[]).includes(viewParam || '') ? (viewParam as typeof VALID_VIEWS[number]) : 'home';
   });
-  const [aboutSubView, setAboutSubView] = useState<'purpose' | 'mission-vision' | 'board-staff'>(() => {
+  // Beyond the Screen: which outside film (TMDB id) the film view shows.
+  const [filmId, setFilmId] = useState<number | null>(() => {
+    const id = Number(new URLSearchParams(window.location.search).get('tmdb'));
+    return Number.isInteger(id) && id > 0 ? id : null;
+  });
+  const [aboutSubView, setAboutSubView] = useState<AboutSubView>(() => {
     const subParam = new URLSearchParams(window.location.search).get('sub');
-    return (VALID_ABOUT_SUBVIEWS as readonly string[]).includes(subParam || '') ? (subParam as typeof VALID_ABOUT_SUBVIEWS[number]) : 'mission-vision';
+    return (VALID_ABOUT_SUBVIEWS as readonly string[]).includes(subParam || '') ? (subParam as AboutSubView) : 'mission-vision';
   });
 
   // Database API States
@@ -191,6 +200,8 @@ function App() {
   activeCapsuleIdRef.current = activeCapsule?.id ?? null;
   const [allCapsules, setAllCapsules] = useState<CapsuleSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  /** Beyond the Screen on or off (an admin switch); null until the server has said. */
+  const [beyondOn, setBeyondOn] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Determine if we are in a development environment or debugging mode
@@ -348,6 +359,20 @@ function App() {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
+    void fetchFeatures(controller.signal).then((f) => {
+      if (!controller.signal.aborted) setBeyondOn(f.beyondTheScreen);
+    });
+    return () => controller.abort();
+  }, []);
+
+  // A link to the Credits tab means nothing while there is nothing to credit
+  // (Beyond the Screen off): land on the first tab, not an empty page.
+  useEffect(() => {
+    if (beyondOn === false && aboutSubView === 'credits') setAboutSubView('mission-vision');
+  }, [beyondOn, aboutSubView]);
+
+  useEffect(() => {
     const story = Number(new URLSearchParams(window.location.search).get('story'));
     fetchData(Number.isInteger(story) && story > 0 ? story : undefined);
   }, []);
@@ -356,7 +381,7 @@ function App() {
    * Every navigation writes the page into the address bar, so a refresh
    * reopens it and Back/Forward step through pages. Only our own keys are
    * touched; testing params (?theme=, ?grid=, ?modal=, ...) are left as-is. */
-  const NAV_KEYS = ['view', 'sub', 'story', 'section', 'action'];
+  const NAV_KEYS = ['view', 'sub', 'story', 'section', 'action', 'tmdb'];
   const navSearch = (() => {
     const params = new URLSearchParams(window.location.search);
     // While a story is still loading, keep the ?story= already in the URL --
@@ -370,6 +395,7 @@ function App() {
       if (story) params.set('story', story);
     }
     if (currentView === 'capsule') params.set('section', storySection);
+    if (currentView === 'film' && filmId) params.set('tmdb', String(filmId));
     const query = params.toString();
     return query ? `?${query}` : '';
   })();
@@ -394,7 +420,9 @@ function App() {
       const sub = params.get('sub');
       const section = params.get('section');
       const story = Number(params.get('story'));
+      const tmdb = Number(params.get('tmdb'));
       restoringFromHistory.current = true;
+      setFilmId(Number.isInteger(tmdb) && tmdb > 0 ? tmdb : null);
       setCurrentView((VALID_VIEWS as readonly string[]).includes(view) ? (view as SiteView) : 'home');
       if ((VALID_ABOUT_SUBVIEWS as readonly string[]).includes(sub || '')) {
         setAboutSubView(sub as typeof VALID_ABOUT_SUBVIEWS[number]);
@@ -407,6 +435,12 @@ function App() {
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
+
+  /** Open the page for any other film, by its TMDB id. */
+  const openFilm = (tmdbId: number) => {
+    setFilmId(tmdbId);
+    setCurrentView('film');
+  };
 
   const handleCapsuleSelect = (id: number) => {
     fetchData(id);
@@ -487,7 +521,7 @@ function App() {
 
 
   const renderActiveView = () => {
-    if (loading) {
+    if (loading || beyondOn === null) {
       return (
         <div className="loading-container">
           <div className="spinner"></div>
@@ -526,7 +560,7 @@ function App() {
         );
 
       case 'campfire':
-        return <CampfireHome stories={allCapsules} onOpenStory={(id) => openStory(id)} />;
+        return <CampfireHome stories={allCapsules} onOpenStory={(id) => openStory(id)} onOpenFilm={openFilm} beyondEnabled={beyondOn} />;
 
       case 'capsule': {
         if (storySection === 'making') {
@@ -558,6 +592,24 @@ function App() {
           </StoryShell>
         );
       }
+
+      case 'film':
+        // Switched off, or a bad or missing ?tmdb=: nothing to show, so back to
+        // the Go Beyond page (an old link to a film page lands there when the
+        // feature is off).
+        if (!beyondOn || !filmId) {
+          setTimeout(() => setCurrentView('campfire'), 0);
+          return null;
+        }
+        return (
+          <FilmPage
+            key={filmId}
+            tmdbId={filmId}
+            onBackToCampfire={() => setCurrentView('campfire')}
+            onOpenFilm={openFilm}
+            onOpenStory={(id) => openStory(id)}
+          />
+        );
 
       case 'watch':
         return <WatchMode capsule={activeCapsule} onExit={() => setCurrentView('capsule')} />;
@@ -674,6 +726,9 @@ function App() {
       }
 
       case 'about': {
+        // The Credits tab exists only while there is something to credit (today,
+        // TMDB, which is in use only while Beyond the Screen is on).
+        const hasCredits = beyondOn === true;
         const aboutTab = (sub: typeof aboutSubView, label: string) => (
           <button
             type="button"
@@ -701,6 +756,7 @@ function App() {
               {aboutTab('mission-vision', 'Mission + Vision')}
               {aboutTab('purpose', 'Purpose')}
               {aboutTab('board-staff', 'Board + Staff')}
+              {hasCredits && aboutTab('credits', 'Credits')}
               {aboutSubView === 'board-staff' && (
                 <img className="about-photo about-photo--left" src="/images/about-board-staff.jpg" alt="" />
               )}
@@ -749,6 +805,8 @@ function App() {
                   </section>
                 </>
               )}
+
+              {aboutSubView === 'credits' && hasCredits && <Credits />}
             </div>
 
             {aboutSubView === 'mission-vision' && <img className="about-photo" src="/images/about-mission-vision.jpg" alt="" />}
@@ -1003,7 +1061,7 @@ function App() {
       )}
 
       <div className="page-body" style={{ position: 'relative', flexGrow: 1 }}>
-      <main className={['home', 'campfire', 'capsule', 'watch', 'storyboard', 'invest', 'timeline', 'about'].includes(currentView) ? '' : 'container'}>
+      <main className={['home', 'campfire', 'capsule', 'film', 'watch', 'storyboard', 'invest', 'timeline', 'about'].includes(currentView) ? '' : 'container'}>
         {renderActiveView()}
       </main>
 

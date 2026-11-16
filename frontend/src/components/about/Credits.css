@@ -1,0 +1,20 @@
+/* About -> Credits. The type is the other About tabs' own (about-title, the
+   page's body text); this only spaces things: 42.75px under the title as on
+   Purpose, and the same 100px between entries as Mission + Vision. */
+.about-title + .about-credit {
+  margin-top: 42.75px;
+}
+
+.about-credit + .about-credit {
+  margin-top: calc(100.45 * var(--vdp));
+}
+
+.about-credit-intro {
+  max-width: 605px;
+}
+
+.about-credit-intro a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

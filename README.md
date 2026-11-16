@@ -155,6 +155,8 @@ frontend bundle, so nothing here leaks into the browser.
 | `ENV`               | `production`                                                                 |
 | `ADMIN_PASSWORD`    | The shared admin-portal password. Without it the portal answers `503`.        |
 | `ANTHROPIC_API_KEY` | Geme's key. Without it the Geme endpoints report unavailable and the UI hides the entry point. |
+| `TMDB_READ_ACCESS_TOKEN` | *Beyond the Screen*'s film data. **Preview only** until TMDB approves LGN's use in writing; leave it out of Production. Without it the film pages report that search isn't set up. |
+| `BEYOND_THE_SCREEN_ENABLED` | `true` on **Preview** to have the feature on there. Leave it unset on Production (off). The switch in the admin portal overrides it, and is stored per database. |
 
 Leave `GEME_DEBUG` unset — it lets any caller replace Geme's system prompt and
 spend tokens against this key, and is for local development only.

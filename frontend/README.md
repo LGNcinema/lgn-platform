@@ -40,8 +40,9 @@ Since routing is plain `useState` (no router/URL paths), these params set the in
 
 | Parameter | Values | Notes |
 | :--- | :--- | :--- |
-| **`?view=`** | `home` \| `capsule` \| `timeline` \| `about` \| `invest` \| `contact` \| `submit-film` | Sets the initial top-level view. Invalid/missing values fall back to `home`. |
-| **`?sub=`** | `mission-vision` \| `purpose` \| `board-staff` | Sets the initial About sub-view. Only relevant when `view=about`. |
+| **`?view=`** | `home` \| `capsule` \| `timeline` \| `about` \| `invest` \| `contact` \| `submit-film` \| `film` | Sets the initial top-level view. Invalid/missing values fall back to `home`. |
+| **`?sub=`** | `mission-vision` \| `purpose` \| `board-staff` \| `credits` | Sets the initial About sub-view. Only relevant when `view=about`. `credits` exists only while *Beyond the Screen* is switched on. |
+| **`?tmdb=`** | a TMDB film id, e.g. `84892` | Which film to show. Only relevant when `view=film`, which needs *Beyond the Screen* switched on (otherwise it lands on the Go Beyond page). |
 | **`?action=`** | `reflect` \| `discuss` \| `practice` \| `gather` | Jumps straight into a Capsule sub-page (Reflect/Discuss/Practice). Only relevant when `view=capsule`. |
 
 Example: `?view=capsule&action=discuss` opens the Discuss guide directly. These only set initial state — in-app navigation (clicking nav links/buttons) still works normally and does not update the URL.

@@ -14,7 +14,12 @@ import { STORY_NAV_SECTIONS, type StorySection } from './campfire';
 const SHOW_GEME = false;
 
 interface Props {
-  capsule: CapsuleDetail;
+  /** A monthly story. Omitted for any other film (Beyond the Screen), which
+   *  passes `title` and `intro` instead. */
+  capsule?: CapsuleDetail;
+  title?: string;
+  /** Which section links to show. Default: Watch, Reflect, Practice. */
+  sections?: { key: StorySection; label: string }[];
   /** The three small caps labels across the top of the panel, at the left
    *  margin and the two column lines. A story: "LGN", "Story No. 1",
    *  "January 2027". */
@@ -27,6 +32,11 @@ interface Props {
   gemeTuningVersion: number;
   /** Replaces the film credit under the title (the search page's own copy). */
   intro?: ReactNode;
+  /** A small line above the title ("Not the right film?"). */
+  eyebrow?: ReactNode;
+  /** The page already has its own heading above this panel (a film under the
+   *  search bar): no "< Go Beyond" link and no gap at the top. */
+  embedded?: boolean;
   /** At the foot of the left column (above Geme, when shown): Watch's "How this film was
    *  made" button. */
   leftFoot?: ReactNode;
@@ -47,6 +57,8 @@ interface Props {
  */
 export function StoryShell({
   capsule,
+  title,
+  sections = STORY_NAV_SECTIONS,
   labels,
   section,
   onSelectSection,
@@ -54,10 +66,12 @@ export function StoryShell({
   gemeTuning,
   gemeTuningVersion,
   intro,
+  eyebrow,
+  embedded = false,
   leftFoot,
   children,
 }: Props) {
-  const film = capsule.film;
+  const film = capsule?.film;
   const [chatOpen, setChatOpen] = useState(false);
   // null = still asking. Geme only appears once the server says it can talk.
   const [gemeEnabled, setGemeEnabled] = useState<boolean | null>(null);
@@ -79,10 +93,12 @@ export function StoryShell({
   }, []);
 
   return (
-    <div className="story-shell">
-      <button type="button" className="story-shell-back" onClick={onBackToCampfire}>
-        &lt; Go Beyond
-      </button>
+    <div className={`story-shell${embedded ? ' story-shell--embedded' : ''}`}>
+      {!embedded && (
+        <button type="button" className="story-shell-back" onClick={onBackToCampfire}>
+          &lt; Go Beyond
+        </button>
+      )}
 
       <div className="story-shell-panel">
         <div className="story-shell-labels lgn-label">
@@ -96,12 +112,13 @@ export function StoryShell({
               for every film however long its credit; a longer one pushes
               them down instead of overlapping. */}
           <div className="story-shell-intro">
-            <h1 className="story-shell-title">{capsule.title}</h1>
+            {eyebrow && <div className="story-shell-eyebrow lgn-label">{eyebrow}</div>}
+            <h1 className="story-shell-title">{title ?? capsule?.title}</h1>
             {intro ?? (film && <FilmCredit film={film} className="story-shell-credit" />)}
           </div>
 
           <nav className="story-shell-nav" aria-label="Film sections">
-            {STORY_NAV_SECTIONS.map(({ key, label }) => (
+            {sections.map(({ key, label }) => (
               <button
                 key={key}
                 type="button"
@@ -126,7 +143,7 @@ export function StoryShell({
         <div className="story-shell-right">{children}</div>
       </div>
 
-      {chatOpen && (
+      {chatOpen && capsule && (
         // Keyed on the tuning version so an Apply in the dev panel starts a
         // fresh conversation with the new settings from the first word.
         <GemeChat key={gemeTuningVersion} capsule={capsule} onClose={() => setChatOpen(false)} tuning={gemeTuning} />

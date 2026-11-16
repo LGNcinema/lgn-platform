@@ -1,15 +1,19 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './CampfireHome.css';
 import { API_URL } from '../../api';
 import type { CapsuleDetail, CapsuleSummary } from '../../types';
 import { FilmCredit } from './FilmCredit';
-import { GuidesDialog } from './GuidesDialog';
+import { BeyondSearch } from '../beyond/BeyondSearch';
 import { comingSoonMonths, storiesInOrder } from './campfire';
 
 interface Props {
   /** Published stories only (the public API never returns drafts). */
   stories: CapsuleSummary[];
   onOpenStory: (capsuleId: number) => void;
+  /** Any other film, by its TMDB id (Beyond the Screen). */
+  onOpenFilm: (tmdbId: number) => void;
+  /** The admin's on/off switch for the film search. Off: the section is gone. */
+  beyondEnabled: boolean;
 }
 
 /** Per-story detail state. A missing key means the fetch is still in flight. */
@@ -36,21 +40,17 @@ function monthDots(month: string): string {
  * The Campfire hub. Figma v3: "Campfire—home".
  *
  * Two sections:
- * - "Take it beyond the screen": the film search. Scaffolding only -- the
- *   search itself (a page of guidance for any film) is being built
- *   separately, so for now submitting says it's on its way. "How it works."
- *   opens the guides explainer.
+ * - "Take it beyond the screen": the film search (FilmSearch): a page of
+ *   guidance for any film. "How it works." opens the guides explainer.
  * - "Gather with us": the monthly film. One large card (the newest published
  *   story, unless the visitor steps back), with the next story -- or a
  *   "Coming Soon" card after the newest -- to its right behind a ">", and the
  *   previous story to its left behind a "<" when there is one.
  */
-export function CampfireHome({ stories, onOpenStory }: Props) {
+export function CampfireHome({ stories, onOpenStory, onOpenFilm, beyondEnabled }: Props) {
   const ordered = useMemo(() => storiesInOrder(stories), [stories]);
   const [details, setDetails] = useState<Record<number, DetailState>>({});
   const [selected, setSelected] = useState<number | null>(null);
-  const [guidesOpen, setGuidesOpen] = useState(false);
-  const [searchNote, setSearchNote] = useState<string | null>(null);
 
   // Keyed on the id list rather than the array so a parent re-render that hands
   // us an equal-but-new array does not refetch every story.
@@ -84,44 +84,11 @@ export function CampfireHome({ stories, onOpenStory }: Props) {
   const latest = ordered[ordered.length - 1];
   const [comingMonth] = latest ? comingSoonMonths(latest.month, 1) : [];
 
-  const onSearch = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const query = String(new FormData(e.currentTarget).get('film') ?? '').trim();
-    setSearchNote(query ? 'Guides for any film are on their way. For now, gather with us below.' : null);
-  };
-
   return (
     <div className="campfire-home">
-      <section className="cf-section" aria-labelledby="cf-beyond-heading">
-        <h1 id="cf-beyond-heading" className="cf-heading cf-heading--beyond">Take it beyond the screen</h1>
-        <div className="cf-beyond">
-          <p className="cf-beyond-intro">
-            Guided reflection and practice for any film.
-            <br />
-            <span className="cf-grey">
-              Starts with AI is refined by people.{' '}
-              <button type="button" className="cf-how" onClick={() => setGuidesOpen(true)}>
-                How it works.
-              </button>
-            </span>
-          </p>
-          <form className="cf-search" role="search" onSubmit={onSearch}>
-            <input
-              className="lgn-field cf-search-field"
-              type="search"
-              name="film"
-              placeholder="What film did you just watch?"
-              aria-label="What film did you just watch?"
-              autoComplete="off"
-              onChange={() => setSearchNote(null)}
-            />
-            <button type="submit" className="lgn-btn">Go beyond</button>
-            <p className="cf-search-note" role="status">{searchNote}</p>
-          </form>
-        </div>
-      </section>
+      {beyondEnabled && <BeyondSearch onOpenFilm={onOpenFilm} onOpenStory={onOpenStory} />}
 
-      <section className="cf-section cf-section--gather" aria-labelledby="cf-gather-heading">
+      <section className={`cf-section cf-section--gather${beyondEnabled ? '' : ' cf-section--first'}`} aria-labelledby="cf-gather-heading">
         <h2 id="cf-gather-heading" className="cf-heading cf-heading--gather">Gather with us</h2>
 
         {current ? (
@@ -165,7 +132,6 @@ export function CampfireHome({ stories, onOpenStory }: Props) {
         )}
       </section>
 
-      <GuidesDialog open={guidesOpen} onClose={() => setGuidesOpen(false)} />
     </div>
   );
 }

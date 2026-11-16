@@ -1,0 +1,37 @@
+.tmdb-credit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 22px;
+  margin-top: 28px;
+}
+
+/* The notice is body text like the rest of About, not fine print: TMDB asks for
+   it "prominently". */
+.tmdb-notice {
+  max-width: 605px;
+}
+
+/* TMDB's own logo file, used as a stencil: the shape is theirs, unchanged, and
+   only the fill is ours. TMDB's FAQ: the logo "can be white, black or any of the
+   approved colors used throughout our branding" and must not otherwise be
+   modified in color. So this is pure black, or pure white in the dark theme --
+   NOT grey, and no opacity, either of which would be a colour TMDB has not
+   approved.
+
+   Size: 200 design px wide, about half of LGN's own wordmark in the footer
+   (397), and in the same unit so that stays true at every window width. TMDB's
+   terms require its logo to be less prominent than LGN's marks; don't grow this
+   past that. */
+.tmdb-logo {
+  display: block;
+  height: calc(26 * var(--dp));
+  aspect-ratio: 273.42 / 35.52; /* the logo's own proportions */
+  background-color: #000;
+  -webkit-mask: url('/images/tmdb-logo.svg') left center / contain no-repeat;
+  mask: url('/images/tmdb-logo.svg') left center / contain no-repeat;
+}
+
+[data-theme='dark'] .tmdb-logo {
+  background-color: #fff;
+}

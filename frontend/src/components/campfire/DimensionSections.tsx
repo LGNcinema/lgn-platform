@@ -4,7 +4,7 @@ import { DIMENSIONS, type Dimension } from './campfire';
 
 interface Props {
   /** Resets the open section when the film changes. */
-  resetKey: number;
+  resetKey: number | string;
   /** The copy above the three sections. */
   intro: ReactNode;
   /** The open section's body. */

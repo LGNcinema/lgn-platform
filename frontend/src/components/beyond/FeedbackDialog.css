@@ -1,0 +1,49 @@
+.feedback-dialog .lgn-dialog-inner {
+  width: min(560px, calc(100vw - 32px));
+}
+
+.feedback-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding-top: 24px;
+  line-height: 22px;
+}
+
+.feedback-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.feedback-row {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.feedback-row .feedback-field { flex: 1; }
+.feedback-row .feedback-field--year { flex: 0 0 110px; }
+
+.feedback-text {
+  min-height: 110px;
+  padding: 10px;
+}
+
+.feedback-trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.feedback-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.feedback-error { color: var(--text-grey); }

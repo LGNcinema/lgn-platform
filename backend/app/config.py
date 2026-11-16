@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
@@ -62,6 +64,39 @@ class Settings(BaseSettings):
     # reach the API can replace Geme's system prompt and spend tokens against this
     # server's key. docker-compose enables it for local development only.
     GEME_DEBUG: bool = False
+
+    # --- Beyond the Screen (any film) ---------------------------------------
+    # TMDB supplies search, details and posters. With no key, a development
+    # server answers from a small built-in sample so the feature can be tried
+    # locally; anywhere else the film endpoints answer 503.
+    #
+    # LAUNCH BLOCKER: TMDB's terms forbid using its data with AI without
+    # written approval, and the site is not public until that is in hand.
+    TMDB_API_KEY: str = ""
+    # TMDB's "API Read Access Token" (the long one). Either credential works; if
+    # both are set the token is used.
+    TMDB_READ_ACCESS_TOKEN: str = ""
+    # The feature's on/off switch FOR VISITORS: search, film pages and their
+    # endpoints. This is only the DEFAULT -- the admin portal's switch (stored in
+    # the database) overrides it. Off unless set, so a forgotten variable fails
+    # closed. Set true on a staging server to have it on there while production
+    # stays off.
+    BEYOND_THE_SCREEN_ENABLED: bool = False
+    # AI-written questions per film -- the kill switch. Unset means ON in
+    # development (it writes clearly-marked [Sample] questions and calls no model,
+    # so the whole flow, including the AI toggle, can be tried) and OFF everywhere
+    # else. Set it explicitly to override either way.
+    FILM_AI_ENABLED: Optional[bool] = None
+    # TMDB's API terms forbid using its content with an AI without their written
+    # approval. While a TMDB credential is set, no real model is ever called
+    # (development writes the [Sample] questions instead; anywhere else AI stays
+    # off) until this is set true -- only after that approval is in hand.
+    FILM_AI_ALLOW_WITH_TMDB: bool = False
+    # New generations per UTC day, failures included. Stops a bot or a surge
+    # from running up a bill.
+    FILM_AI_DAILY_CAP: int = 50
+    # Empty = use GEME_MODEL.
+    FILM_AI_MODEL: str = ""
 
     class Config:
         env_file = ".env"

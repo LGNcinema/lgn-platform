@@ -1,0 +1,77 @@
+/* Results fall in under the field, in the page's own search grid
+   (CampfireHome.css: intro | field | button). */
+.fs-results {
+  grid-column: 2 / -1;
+  margin-top: 12px;
+}
+
+.fs-results:empty {
+  display: none;
+}
+
+.fs-note {
+  color: var(--text-grey);
+}
+
+.fs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: calc(912 * var(--dp));
+  border-top: 1px solid var(--rule);
+}
+
+.fs-row {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 8px 4px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  color: var(--primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.fs-row:hover,
+.fs-row:focus-visible {
+  background: var(--panel);
+  outline: none;
+}
+
+.fs-row:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.fs-poster {
+  display: block;
+  width: 36px;
+  height: 54px;
+  object-fit: cover;
+  background: var(--placeholder-box);
+}
+
+.fs-title {
+  font-size: var(--text-20);
+  letter-spacing: var(--track-20);
+  line-height: 22px;
+}
+
+.fs-meta {
+  color: var(--text-grey);
+}
+
+.fs-missing {
+  margin-top: 14px;
+  color: var(--text-grey);
+}
+
+@media (max-width: 1024px) {
+  .fs-results {
+    grid-column: 1 / -1;
+  }
+}
