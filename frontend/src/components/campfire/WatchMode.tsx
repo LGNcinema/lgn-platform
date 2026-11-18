@@ -90,8 +90,8 @@ export function WatchMode({ capsule, onExit }: Props) {
         <>
         {/* Not in the frame: once the card is gone, the page still needs a way
             out. It sits in the top page margin, in the card label's style. */}
-        <button type="button" className="watch-mode-back lgn-label" onClick={onExit}>
-          &lt; Back
+        <button type="button" className="watch-mode-back lgn-label" aria-label="Back" onClick={onExit}>
+          &lt;
         </button>
         <div
           ref={stageRef}

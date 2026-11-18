@@ -21,12 +21,6 @@ export function StoryPractice({ capsule }: Props) {
     <DimensionSections
       variant="practice"
       resetKey={capsule.id}
-      intro={
-        <p className="practice-intro">
-          {capsule.practice_title?.trim() ||
-            'A weekly exercise in rooting. Three levels on engagement with our core practice. Find one that suits you best, or participate in multiple!'}
-        </p>
-      }
       renderBody={(dimension) => {
         // splitLines, not split('\n'): seeded rows have historically stored
         // the separator as a literal backslash-n.

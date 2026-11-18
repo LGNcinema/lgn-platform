@@ -3,10 +3,8 @@ import './DimensionSections.css';
 import { DIMENSIONS, type Dimension } from './campfire';
 
 interface Props {
-  /** Resets the open section when the film changes. */
+  /** Closes the open section when the film changes. */
   resetKey: number;
-  /** The copy above the three sections. */
-  intro: ReactNode;
   /** The open section's body. */
   renderBody: (dimension: Dimension) => ReactNode;
   /** Practice's list leaves more room under it than Reflect's form. */
@@ -15,19 +13,18 @@ interface Props {
 
 /**
  * Self / Neighbor / World, the layout Reflect and Practice share in V3.
- * Figma: "Campfire—reflect", "Campfire—practice" -- intro copy, then three
- * ruled rows with 48px names; one is open at a time ("v"), the others show
- * ">". Self is open to start.
+ * Figma: "Campfire—reflect", "Campfire—practice" -- three ruled rows with
+ * the names in display type; one is open at a time ("v"), the others show
+ * ">". All start closed (UX, 2026-11), and there is no copy above them.
  */
-export function DimensionSections({ resetKey, intro, renderBody, variant }: Props) {
-  const [open, setOpen] = useState<Dimension | null>('self');
+export function DimensionSections({ resetKey, renderBody, variant }: Props) {
+  const [open, setOpen] = useState<Dimension | null>(null);
   const ids = useId();
 
-  useEffect(() => setOpen('self'), [resetKey]);
+  useEffect(() => setOpen(null), [resetKey]);
 
   return (
     <div className={`dim dim--${variant}`}>
-      <div className="dim-intro">{intro}</div>
       <div className="dim-list">
         {DIMENSIONS.map(({ key, label }) => {
           const isOpen = open === key;

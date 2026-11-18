@@ -1,6 +1,6 @@
 /* StoryShell -- the film page frame. Figma v3 "Campfire—lightpoles",
    "—reflect", "—practice", at 1920:
-   - "< Campfire", 36px, baseline y=218;
+   - the back link, a bare "<" (UX), the 36 size, baseline y=218;
    - the #EDEDED panel: x 40..1880, top y=274 (49px under the back link's
      line), 877 tall;
    - labels (12px caps) baseline 28px under the panel's top, at x = 61 / 660
@@ -28,14 +28,17 @@
   font-size: var(--text-36);
   font-weight: var(--weight-display);
   letter-spacing: var(--track-36);
-  line-height: 39.6px;
+  line-height: var(--leading);
   cursor: pointer;
 }
 
+/* Hover: black to grey, no underline (UX). */
+.story-shell-back {
+  transition: color 0.15s;
+}
+
 .story-shell-back:hover {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 5px;
+  color: var(--text-grey);
 }
 
 .story-shell-back:focus-visible {
@@ -82,7 +85,7 @@
   font-size: var(--text-48);
   letter-spacing: var(--track-48);
   font-weight: var(--weight-display);
-  line-height: 52.8px;
+  line-height: var(--leading);
 }
 
 /* 20px, wrapping at ~420px as the frame's two lines do. */
@@ -97,11 +100,45 @@
   text-transform: none;
 }
 
+/* Watch / Reflect / Practice as one row of joined boxes (Figma V3 film
+   frames): the current one in black, the others in grey. Neighbouring boxes
+   share a border; the current one is raised so its black edge shows. */
 .story-shell-nav {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 22px;
+}
+
+.story-shell-tab {
+  position: relative;
+  height: var(--control-height);
+  padding: 0 8px;
+  border: 1px solid var(--text-grey);
+  background: none;
+  color: var(--text-grey);
+  font-size: 14px;
+  line-height: var(--leading);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.story-shell-tab + .story-shell-tab {
+  margin-left: -1px;
+}
+
+.story-shell-tab:hover {
+  color: var(--primary);
+}
+
+.story-shell-tab.active {
+  z-index: 1;
+  border-color: var(--primary);
+  color: var(--primary);
+  cursor: default;
+}
+
+.story-shell-tab:focus-visible {
+  z-index: 2;
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 /* Watch's "How this film was made": at the foot of the column (its bottom
@@ -117,8 +154,7 @@
 }
 
 .story-shell-foot .lgn-btn {
-  min-width: 290px;
-  height: 35px;
+  min-width: 200px;
 }
 
 .story-shell-geme {

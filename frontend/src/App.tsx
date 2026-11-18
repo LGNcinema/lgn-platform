@@ -156,7 +156,7 @@ function normalizeFilmLink(raw: string): string | null {
 
 const FILM_LINK_INVALID = 'Please enter a link to your film, like youtube.com/watch?v=… or vimeo.com/123456.';
 
-const VALID_VIEWS = ['home', 'campfire', 'capsule', 'watch', 'storyboard', 'timeline', 'about', 'invest', 'contact', 'submit-film'] as const;
+const VALID_VIEWS = ['campfire', 'capsule', 'watch', 'storyboard', 'timeline', 'about', 'invest', 'contact', 'submit-film'] as const;
 const VALID_ABOUT_SUBVIEWS = ['purpose', 'mission-vision', 'board-staff'] as const;
 
 /**
@@ -178,7 +178,7 @@ function App() {
   // sync below, so a refresh reopens the same page and Back/Forward work.
   const [currentView, setCurrentView] = useState<SiteView>(() => {
     const viewParam = new URLSearchParams(window.location.search).get('view');
-    return (VALID_VIEWS as readonly string[]).includes(viewParam || '') ? (viewParam as typeof VALID_VIEWS[number]) : 'home';
+    return (VALID_VIEWS as readonly string[]).includes(viewParam || '') ? (viewParam as typeof VALID_VIEWS[number]) : 'campfire';
   });
   const [aboutSubView, setAboutSubView] = useState<'purpose' | 'mission-vision' | 'board-staff'>(() => {
     const subParam = new URLSearchParams(window.location.search).get('sub');
@@ -221,7 +221,7 @@ function App() {
   const [filmSubmitting, setFilmSubmitting] = useState(false);
 
   const [activeTimelineEra, setActiveTimelineEra] = useState<string>('Before The Common Era');
-  const [investExpandedRow, setInvestExpandedRow] = useState<string | null>('time');
+  const [investExpandedRow, setInvestExpandedRow] = useState<string | null>(null);
   // Which section of a story page is showing. ?section= sets it for QA; the old
   // ?action= is still read, and its retired values (discuss, gather) fall back
   // to Watch rather than to a section that no longer exists.
@@ -363,7 +363,8 @@ function App() {
     // dropping it for a moment would add a stray step to the history.
     const pendingStory = params.get('story');
     NAV_KEYS.forEach((k) => params.delete(k));
-    if (currentView !== 'home') params.set('view', currentView);
+    // The landing page (Go Beyond) is the bare URL.
+    if (currentView !== 'campfire') params.set('view', currentView);
     if (currentView === 'about') params.set('sub', aboutSubView);
     if (['capsule', 'watch', 'storyboard'].includes(currentView)) {
       const story = activeCapsule ? String(activeCapsule.id) : pendingStory;
@@ -390,12 +391,12 @@ function App() {
   useEffect(() => {
     const onPopState = () => {
       const params = new URLSearchParams(window.location.search);
-      const view = params.get('view') || 'home';
+      const view = params.get('view') || 'campfire';
       const sub = params.get('sub');
       const section = params.get('section');
       const story = Number(params.get('story'));
       restoringFromHistory.current = true;
-      setCurrentView((VALID_VIEWS as readonly string[]).includes(view) ? (view as SiteView) : 'home');
+      setCurrentView((VALID_VIEWS as readonly string[]).includes(view) ? (view as SiteView) : 'campfire');
       if ((VALID_ABOUT_SUBVIEWS as readonly string[]).includes(sub || '')) {
         setAboutSubView(sub as typeof VALID_ABOUT_SUBVIEWS[number]);
       }
@@ -407,6 +408,21 @@ function App() {
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
+
+  // "Add to Storyboard" (the header; Reflect and Practice) opens the
+  // Storyboard with its form already up; any other way onto the Storyboard
+  // opens it plain. Each request remounts the board, so it also works when
+  // the visitor is already on it.
+  const [storyboardWithForm, setStoryboardWithForm] = useState(false);
+  const [storyboardFormRequest, setStoryboardFormRequest] = useState(0);
+  useEffect(() => {
+    if (currentView !== 'storyboard') setStoryboardWithForm(false);
+  }, [currentView]);
+  const openStoryboardForm = () => {
+    setStoryboardWithForm(true);
+    setStoryboardFormRequest((n) => n + 1);
+    setCurrentView('storyboard');
+  };
 
   const handleCapsuleSelect = (id: number) => {
     fetchData(id);
@@ -501,7 +517,7 @@ function App() {
         <div className="error-container">
           <h2 className="error-title">Unable to load LGN Platform</h2>
           <p className="error-msg">{error || 'No active capsule was found in the database.'}</p>
-          <button className="retry-btn" onClick={() => fetchData()}>
+          <button className="lgn-btn" onClick={() => fetchData()}>
             Try Again
           </button>
         </div>
@@ -509,24 +525,8 @@ function App() {
     }
 
     switch (currentView) {
-      case 'home':
-        return (
-          <div className="home-view-wrapper">
-            <h1>
-              <img className="home-hero-logo" src={theme === 'dark' ? '/images/lgn-logo-registered-white.svg' : '/images/lgn-logo-registered.svg'} alt="Life is Greater than Numbers" />
-            </h1>
-            <p className="home-hero-subtitle">Watch. Reflect. Practice.</p>
-            <button type="button" className="lgn-btn home-hero-btn" onClick={() => setCurrentView('campfire')}>Go Beyond</button>
-            <p className="home-definition">
-              LGN (n.)&nbsp; A community platform that offers one short film each
-              <br />
-              month as common ground for reflection, discussion, and practice.
-            </p>
-          </div>
-        );
-
       case 'campfire':
-        return <CampfireHome stories={allCapsules} onOpenStory={(id) => openStory(id)} />;
+        return <CampfireHome stories={allCapsules} theme={theme} onOpenStory={(id) => openStory(id)} />;
 
       case 'capsule': {
         if (storySection === 'making') {
@@ -543,11 +543,17 @@ function App() {
             gemeTuning={gemeTuning}
             gemeTuningVersion={gemeTuningVersion}
             leftFoot={
-              storySection === 'watch' && hasBehindTheScenes(activeCapsule) ? (
-                <button type="button" className="lgn-btn" onClick={() => setStorySection('making')}>
-                  How this film was made
+              storySection === 'watch' ? (
+                hasBehindTheScenes(activeCapsule) ? (
+                  <button type="button" className="lgn-btn" onClick={() => setStorySection('making')}>
+                    How this film was made
+                  </button>
+                ) : undefined
+              ) : (
+                <button type="button" className="lgn-btn" onClick={openStoryboardForm}>
+                  Add to the storyboard
                 </button>
-              ) : undefined
+              )
             }
           >
             {storySection === 'watch' && (
@@ -565,9 +571,11 @@ function App() {
       case 'storyboard':
         return (
           <Storyboard
+            key={storyboardFormRequest}
             capsule={activeCapsule}
             films={allCapsules}
             onOpenFilm={(id) => openStory(id)}
+            startWithForm={storyboardWithForm}
           />
         );
 
@@ -814,7 +822,7 @@ function App() {
               <div className="form-success-card">
                 <h3>✓ Message Sent</h3>
                 <p>Thank you for reaching out. We have logged your submission successfully.</p>
-                <button className="retry-btn" onClick={() => setContactSuccess(false)} style={{ marginTop: '16px' }}>
+                <button className="lgn-btn" onClick={() => setContactSuccess(false)} style={{ marginTop: '16px' }}>
                   Send Another Message
                 </button>
               </div>
@@ -856,7 +864,7 @@ function App() {
                     style={{ minHeight: '150px' }}
                   />
                 </div>
-                <button type="submit" className="rsvp-button" style={{ marginTop: '8px' }} disabled={contactSubmitting} id="btn-submit-contact">
+                <button type="submit" className="lgn-btn" style={{ marginTop: '8px' }} disabled={contactSubmitting} id="btn-submit-contact">
                   {contactSubmitting ? 'Sending...' : 'Send Message'}
                 </button>
               </form>
@@ -877,7 +885,7 @@ function App() {
               <div className="form-success-card">
                 <h3>✓ Film Submitted Successfully</h3>
                 <p>We have received your submission details. Our curation panel reviews all films for the monthly highlights slot.</p>
-                <button className="retry-btn" onClick={() => setFilmSuccess(false)} style={{ marginTop: '16px' }}>
+                <button className="lgn-btn" onClick={() => setFilmSuccess(false)} style={{ marginTop: '16px' }}>
                   Submit Another Film
                 </button>
               </div>
@@ -981,7 +989,7 @@ function App() {
                   />
                   <label htmlFor="film-is-own">This is YOUR film</label>
                 </div>
-                <button type="submit" className="rsvp-button full-width" style={{ marginTop: '8px' }} disabled={filmSubmitting} id="btn-submit-film">
+                <button type="submit" className="lgn-btn" style={{ marginTop: '8px' }} disabled={filmSubmitting} id="btn-submit-film">
                   {filmSubmitting ? 'Submitting...' : 'Submit Film Details'}
                 </button>
               </form>
@@ -999,17 +1007,18 @@ function App() {
           currentView={currentView}
           theme={theme}
           onNavigate={setCurrentView}
+          onAddToStoryboard={openStoryboardForm}
         />
       )}
 
       <div className="page-body" style={{ position: 'relative', flexGrow: 1 }}>
-      <main className={['home', 'campfire', 'capsule', 'watch', 'storyboard', 'invest', 'timeline', 'about'].includes(currentView) ? '' : 'container'}>
+      <main className={['campfire', 'capsule', 'watch', 'storyboard', 'invest', 'timeline', 'about'].includes(currentView) ? '' : 'container'}>
         {renderActiveView()}
       </main>
 
       <SiteFooter theme={theme} onNavigate={setCurrentView} />
 
-      {showGridOverlay && <GridOverlay cols={currentView === 'home' ? 12 : 6} rows={currentView === 'home' ? 6 : 3} />}
+      {showGridOverlay && <GridOverlay cols={6} rows={3} />}
       </div>
 
       {isDev && (

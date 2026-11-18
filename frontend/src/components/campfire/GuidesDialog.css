@@ -8,11 +8,11 @@
 .guides-dialog-body {
   margin-top: 28px;
   font-size: var(--text-20);
-  line-height: 22px;
+  line-height: var(--leading);
 }
 
 .guides-dialog-body p + p {
-  margin-top: 22px;
+  margin-top: 1.1em;
 }
 
 .guides-dialog-tiers {

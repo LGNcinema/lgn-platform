@@ -103,36 +103,18 @@ async function copyToClipboard(value: string): Promise<boolean> {
 /**
  * Right column of Reflect. Figma v3: "Campfire—reflect".
  *
- * PRIVACY -- a promise made on the page, not a style choice. "Your
- * reflections are private. Only you can see them." is only true if the
- * visitor's text never leaves the device, so this component makes NO network
- * request with it: no submission, no analytics, nothing. The two places it
+ * PRIVACY -- answers are private to the visitor, so this component makes NO
+ * network request with their text: no submission, no analytics, nothing. The two places it
  * goes are both on-device: this browser's localStorage, and -- on "Save my
- * answer" -- the visitor's own clipboard. Anyone changing this: keep it that way, or
- * change the copy first.
+ * answer" -- the visitor's own clipboard. Anyone changing this: keep it that way.
  */
 export function StoryReflect({ capsule }: Props) {
   const groups = useMemo(() => byDimension(capsule.reflections ?? []), [capsule.reflections]);
-
-  // One introduction for the whole tab (the admin's Reflect introduction), or,
-  // for stories written before it existed, the first reflection's.
-  const intro =
-    capsule.reflect_intro?.trim() ||
-    (capsule.reflections ?? []).find((r) => r.introduction?.trim())?.introduction?.trim();
 
   return (
     <DimensionSections
       variant="reflect"
       resetKey={capsule.id}
-      intro={
-        <>
-          <p>
-            {intro ||
-              `After viewing ${capsule.title}, here are a few questions to help you reflect on what you just watched: for yourself, for your neighbor, and for the world.`}
-          </p>
-          <p>Your reflections are private. Only you can see them.</p>
-        </>
-      }
       renderBody={(dimension) => (
         <ReflectAnswer
           key={`${capsule.id}-${dimension}`}

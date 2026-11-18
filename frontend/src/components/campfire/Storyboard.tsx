@@ -22,6 +22,8 @@ interface Props {
   films: CapsuleSummary[];
   /** "Watch with us": open a film's page. */
   onOpenFilm: (capsuleId: number) => void;
+  /** Arrived from a film's "Add to the storyboard": open the form at once. */
+  startWithForm?: boolean;
 }
 
 /** The form's limit ("UP TO 500 WORDS"); the server's own cap is 5,000 characters. */
@@ -166,7 +168,7 @@ type Load = { state: 'loading' } | { state: 'error' } | { state: 'ready'; storie
  * appears; the visitor's own show in the meantime, marked with where they
  * stand.
  */
-export function Storyboard({ capsule, films, onOpenFilm }: Props) {
+export function Storyboard({ capsule, films, onOpenFilm, startWithForm = false }: Props) {
   const ordered = useMemo(() => storiesInOrder(films), [films]);
   const filmIds = ordered.map((f) => f.id).join(',');
   const titleOf = useMemo(() => new Map(ordered.map((f) => [f.id, f.title])), [ordered]);
@@ -178,7 +180,7 @@ export function Storyboard({ capsule, films, onOpenFilm }: Props) {
   const [newestFirst, setNewestFirst] = useState(true);
   const [pages, setPages] = useState<Record<string, number>>({});
   const [reading, setReading] = useState<string | null>(null);
-  const [formOpen, setFormOpen] = useState(OPEN_FORM_ON_LOAD);
+  const [formOpen, setFormOpen] = useState(OPEN_FORM_ON_LOAD || startWithForm);
   const [formFilm, setFormFilm] = useState(capsule.id);
   const [thanks, setThanks] = useState(false);
 

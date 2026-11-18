@@ -32,7 +32,7 @@
   font-size: var(--text-48);
   letter-spacing: var(--track-48);
   font-weight: var(--weight-display);
-  line-height: 52.8px;
+  line-height: var(--leading);
 }
 
 /* Back link straight above the title when there is no picture. */
@@ -46,7 +46,7 @@
   margin-top: calc(82 * var(--vdp));
   font-size: var(--text-20);
   letter-spacing: var(--track-20);
-  line-height: 22px;
+  line-height: var(--leading);
 }
 
 .story-behind-rights {
@@ -79,7 +79,7 @@
 }
 
 .story-behind-credit-group + .story-behind-credit-group {
-  margin-top: 22px;
+  margin-top: 1.1em;
 }
 
 /* Roles from x=660, names from x=970. */
@@ -119,7 +119,7 @@
   margin-top: calc(110 * var(--vdp));
   font-size: var(--text-20);
   letter-spacing: var(--track-20);
-  line-height: 22px;
+  line-height: var(--leading);
 }
 
 .story-behind-gallery + .story-behind-section {
@@ -135,7 +135,7 @@
 }
 
 .story-behind-section-body p + p {
-  margin-top: 22px;
+  margin-top: 1.1em;
 }
 
 /* Below desktop: one column; the gallery two across. */

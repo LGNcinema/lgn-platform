@@ -14,7 +14,7 @@
   font-size: var(--text-36);
   letter-spacing: var(--track-36);
   font-weight: var(--weight-display);
-  line-height: 39.6px;
+  line-height: var(--leading);
 }
 
 /* The tagline (baseline 284), the 912px search field and the 292px button
@@ -101,7 +101,7 @@
 .storyboard-month-name {
   font-size: var(--text-20);
   font-weight: 400;
-  line-height: 22px;
+  line-height: var(--leading);
 }
 
 .storyboard-pager {
@@ -144,7 +144,7 @@
   font-size: var(--text-36);
   font-weight: var(--weight-display);
   letter-spacing: var(--track-36);
-  line-height: 38px;
+  line-height: 1.06;
   white-space: pre-line;
   overflow-wrap: anywhere;
 }
@@ -288,7 +288,7 @@
   font-size: var(--text-36);
   font-weight: var(--weight-display);
   letter-spacing: var(--track-36);
-  line-height: 38px;
+  line-height: 1.06;
   white-space: pre-line;
   overflow-wrap: anywhere;
 }
@@ -333,7 +333,7 @@
   font-size: var(--text-36);
   font-weight: var(--weight-display);
   letter-spacing: var(--track-36);
-  line-height: 39.6px;
+  line-height: var(--leading);
 }
 
 .storyboard-reader-add {
@@ -367,19 +367,19 @@
 
 .storyboard-form-dialog .lgn-dialog-label {
   text-transform: none;
-  letter-spacing: normal;
+  letter-spacing: var(--track);
 }
 
 .storyboard-form-title {
   font-size: var(--text-48);
   font-weight: var(--weight-display);
   letter-spacing: var(--track-48);
-  line-height: 52.8px;
+  line-height: var(--leading);
 }
 
 .storyboard-form-dialog .lgn-dialog-close {
   font-size: var(--text-20);
-  line-height: 22px;
+  line-height: var(--leading);
   text-transform: none;
   margin-top: 6.7px;
 }

@@ -80,8 +80,8 @@ export function StoryShell({
 
   return (
     <div className="story-shell">
-      <button type="button" className="story-shell-back" onClick={onBackToCampfire}>
-        &lt; Go Beyond
+      <button type="button" className="story-shell-back" aria-label="Back to Go Beyond" onClick={onBackToCampfire}>
+        &lt;
       </button>
 
       <div className="story-shell-panel">
@@ -105,7 +105,7 @@ export function StoryShell({
               <button
                 key={key}
                 type="button"
-                className={`lgn-link story-shell-nav-btn${section === key ? ' active' : ''}`}
+                className={`story-shell-tab${section === key ? ' active' : ''}`}
                 aria-current={section === key ? 'page' : undefined}
                 onClick={() => onSelectSection(key)}
               >

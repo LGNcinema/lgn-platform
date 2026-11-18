@@ -221,8 +221,6 @@ def _capsule_detail(capsule: models.Capsule) -> schemas.CapsuleDetail:
         is_published=_is_published(capsule),
         pre_watch_prompt=capsule.pre_watch_prompt,
         pre_watch_supporting_text=capsule.pre_watch_supporting_text,
-        reflect_intro=capsule.reflect_intro,
-        practice_title=capsule.practice_title,
         spark_url=capsule.spark_url,
         bts_copyright=capsule.bts_copyright,
         bts_credits=capsule.bts_credits,

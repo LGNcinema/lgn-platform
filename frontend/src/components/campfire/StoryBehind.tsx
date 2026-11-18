@@ -85,8 +85,8 @@ export function StoryBehind({ capsule, onBack }: Props) {
 
   return (
     <div className="story-behind">
-      <button type="button" className="story-shell-back" onClick={onBack}>
-        &lt; {capsule.title}
+      <button type="button" className="story-shell-back" aria-label={`Back to ${capsule.title}`} onClick={onBack}>
+        &lt;
       </button>
 
       {capsule.bts_hero && <StoryPhoto photo={capsule.bts_hero} className="story-behind-hero" alt="" />}

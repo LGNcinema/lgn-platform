@@ -30,7 +30,6 @@ export interface Reflection {
   id: number;
   capsule_id: number;
   title: string;
-  introduction?: string;
   content: string;
   author?: string;
   created_at: string;
@@ -77,10 +76,6 @@ export interface CapsuleDetail {
   is_published?: boolean;
   pre_watch_prompt?: string;
   pre_watch_supporting_text?: string;
-  /** One introduction for the whole Reflect tab (V3). */
-  reflect_intro?: string | null;
-  /** The Practice tab's title / intro line (V3). */
-  practice_title?: string | null;
   /** The story's LGN Spark: its YouTube interview. Public placement TBD. */
   spark_url?: string | null;
   /** The behind-the-scenes page ("How this film was made"). Photo `url`s are

@@ -1,25 +1,14 @@
 /* Self / Neighbor / World. Figma v3 "Campfire—reflect" / "—practice", at
    1920 (the right column starts at x=660, y=377):
-   - intro copy, 20px, up to ~900px wide;
-   - the first rule 156.5px under the column's top, x 660..1837;
+   - the first rule at the column's top (UX removed the intro copy), x 660..1837;
    - each name 48px, its line 2.65px under its rule; a closed row is 115px
      rule to rule;
-   - the chevron, 24px, at the row's top right;
+   - the chevron, 14px like every ">" (UX), at the row's top right;
    - an open row's body starts 42.7px (Reflect) / 48.7px (Practice) under
      the name's line, and leaves 47.5 / 80.8 before the next rule. */
 
 .dim {
   padding-right: 3px;
-}
-
-.dim-intro {
-  min-height: calc(156.5 * var(--vdp));
-  max-width: 905px;
-  line-height: 22px;
-}
-
-.dim-intro > p + p {
-  margin-top: 22px;
 }
 
 .dim-row {
@@ -30,7 +19,7 @@
   font-size: var(--text-48);
   letter-spacing: var(--track-48);
   font-weight: var(--weight-display);
-  line-height: 52.8px;
+  line-height: var(--leading);
 }
 
 .dim-toggle {
@@ -43,7 +32,7 @@
   background: none;
   color: var(--primary);
   font: inherit;
-  letter-spacing: inherit;
+  letter-spacing: var(--track);
   text-align: left;
   cursor: pointer;
 }
@@ -52,21 +41,16 @@
   padding-bottom: 0;
 }
 
-.dim-toggle:hover > span:first-child {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 6px;
-}
-
 .dim-toggle:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
 .dim-chevron {
-  font-size: 24px;
-  line-height: 24px;
-  margin-top: 1px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 14px;
+  margin-top: 6px;
 }
 
 .dim-body {

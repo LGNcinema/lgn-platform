@@ -54,7 +54,6 @@ Dimension = Literal["self", "neighbor", "world"]
 
 class ReflectionBase(BaseModel):
     title: str
-    introduction: Optional[str] = None
     content: str
     author: Optional[str] = None
     dimension: Optional[Dimension] = None
@@ -64,7 +63,6 @@ class ReflectionCreate(ReflectionBase):
 
 class ReflectionUpdate(BaseModel):
     title: Optional[str] = None
-    introduction: Optional[str] = None
     content: Optional[str] = None
     author: Optional[str] = None
     dimension: Optional[Dimension] = None
@@ -130,8 +128,6 @@ class CapsuleBase(BaseModel):
     publish_at: Optional[datetime] = None
     pre_watch_prompt: Optional[str] = None
     pre_watch_supporting_text: Optional[str] = None
-    reflect_intro: Optional[str] = None
-    practice_title: Optional[str] = None
     # The story's LGN Spark (YouTube interview). Public placement TBD.
     spark_url: Optional[str] = Field(None, max_length=500)
     bts_copyright: Optional[str] = None
@@ -150,8 +146,6 @@ class CapsuleUpdate(BaseModel):
     publish_at: Optional[datetime] = None
     pre_watch_prompt: Optional[str] = None
     pre_watch_supporting_text: Optional[str] = None
-    reflect_intro: Optional[str] = None
-    practice_title: Optional[str] = None
     spark_url: Optional[str] = Field(None, max_length=500)
     bts_copyright: Optional[str] = None
     bts_credits: Optional[str] = None

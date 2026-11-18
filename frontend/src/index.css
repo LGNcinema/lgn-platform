@@ -135,23 +135,32 @@
   --rule: var(--primary);
   --text-grey: #888888;
   --placeholder-box: #d9d9d9;  /* an image that hasn't loaded / isn't set */
+  /* Type scale (UX, 2026-11): everything one step smaller than the V3
+     frames, which set 12 / 20 / 36 / 48. Each token keeps its frame name so
+     the mapping stays legible: 20 -> 14, 36 -> 24, 48 -> 36; 12 stays. */
   --text-12: 12px;
-  --text-20: 20px;
-  --text-36: 36px;
-  --text-48: 48px;
+  --text-20: 14px;
+  --text-36: 24px;
+  --text-48: 36px;
   --leading: 1.1;
-  /* Tracking per size, as the frames set it (from the text-SVG export):
-     12px at -0.03em, 20 and 36 at -0.02em, 48 at -0.04em. */
-  --track-12: -0.03em;
-  --track-20: -0.02em;
-  --track-36: -0.02em;
-  --track-48: -0.04em;
-  /* Weight for the 36 and 48px sizes. The frames set them in Helvetica Neue
-     Regular, but Helvetica Now Text is drawn for reading sizes and its
-     Regular comes out ~17% lighter there; its Medium matches the frames'
-     ink within ~3% (measured against the @2x exports, 2026-11-03). At 20
-     and 12px, Now Text Regular already matches. */
+  /* Tracking: -4% on every size (UX). Declared once as an em value and
+     applied per element by the universal rule below, so each element
+     resolves it against its own font-size. The per-size names remain as
+     aliases for the rules that set them explicitly. */
+  --track: -0.04em;
+  --track-12: var(--track);
+  --track-20: var(--track);
+  --track-36: var(--track);
+  --track-48: var(--track);
+  /* Weight for the 36 and 48px sizes (now 24 / 36px). Helvetica Now Text
+     Regular reads ~17% lighter than the frames' Helvetica Neue at display
+     sizes; Medium matches. */
   --weight-display: 500;
+  /* 12px caps labels: Medium (UX trial). */
+  --weight-12: 500;
+  /* Boxed buttons and fields (frames: 37px tall, buttons 202 wide). */
+  --control-height: 28px;
+  --btn-min-width: 152px;
 }
 
 [data-theme="dark"] {
@@ -192,6 +201,14 @@
   padding: 0;
 }
 
+/* Tracking on every element, resolved against that element's own size.
+   Zero specificity: a rule that sets letter-spacing itself still wins. */
+*,
+*::before,
+*::after {
+  letter-spacing: var(--track);
+}
+
 body {
   background-color: var(--bg-darker);
   color: var(--text-main);
@@ -214,7 +231,7 @@ input,
 textarea,
 select {
   font: inherit;
-  letter-spacing: inherit;
+  letter-spacing: var(--track);
   color: inherit;
 }
 
@@ -294,23 +311,24 @@ select {
 
 /* ---- V3 shared controls ----
    The outlined button: a 1px box with its label on the left and a ">" on the
-   right. Figma: 202x37 by default (wider where the label needs it), label
-   inset 11px, the ">" 12px in from the right edge. A fixed size, like all
-   text and buttons -- it never scales with the window. */
+   right, both 14px (UX: every boxed button and every ">" at 14pt). The
+   frames drew it 202x37 around 20px text; the box is scaled with the type
+   (x0.75 rather than x0.7, so it stays an easy target). A fixed size, like
+   all text and buttons -- it never scales with the window. */
 .lgn-btn {
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  min-width: 202px;
-  height: 37px;
-  padding: 0 11px 0 10px;
+  gap: 12px;
+  min-width: var(--btn-min-width);
+  height: var(--control-height);
+  padding: 0 9px 0 8px;
   border: 1px solid var(--rule);
   border-radius: 0;
   background: transparent;
   color: var(--primary);
   font-family: var(--font-sans);
-  font-size: var(--text-20);
+  font-size: 14px;
   font-weight: 400;
   line-height: var(--leading);
   text-align: left;
@@ -323,6 +341,7 @@ select {
 .lgn-btn::after {
   content: '>';
   flex: none;
+  font-size: 14px;
 }
 
 .lgn-btn:hover {
@@ -341,10 +360,19 @@ select {
 }
 
 .lgn-btn:focus-visible,
-.lgn-link:focus-visible,
-.lgn-field:focus-visible {
+.lgn-link:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+/* Text fields show focus by the blinking caret alone (UX): no outline and
+   no change to the box. Buttons and links keep their keyboard ring above. */
+input:focus,
+textarea:focus,
+select:focus,
+.lgn-field:focus,
+.lgn-field:focus-visible {
+  outline: none;
 }
 
 /* A text-only control: header and footer links, tabs, "Submit". Underlined
@@ -367,12 +395,12 @@ select {
   text-decoration-line: underline;
 }
 
-/* The outlined field: the same 1px box as the button, 37px tall. */
+/* The outlined field: the same 1px box as the button, the same height. */
 .lgn-field {
   display: block;
   width: 100%;
-  height: 37px;
-  padding: 0 11px;
+  height: var(--control-height);
+  padding: 0 8px;
   border: 1px solid var(--rule);
   border-radius: 0;
   background: transparent;
@@ -398,13 +426,14 @@ select {
 
 textarea.lgn-field {
   height: auto;
-  padding: 11px;
+  padding: 8px;
   resize: vertical;
 }
 
 /* Small caps labels: "STORY NO. 1", "FILM NO.1", "LIGHTPOLES". */
 .lgn-label {
   font-size: var(--text-12);
+  font-weight: var(--weight-12);
   letter-spacing: var(--track-12);
   line-height: 14px;
   text-transform: uppercase;
@@ -428,52 +457,6 @@ textarea.lgn-field {
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-}
-
-/* Home. Figma v3 "home" (at 1920x1080), everything centred on the page:
-   - the logo, 611x68, top at y=363 (a graphic: it scales with --dp);
-   - "Watch. Reflect. Practice.", 20px, baseline y=468;
-   - "Go Beyond", a 292px outlined button, top at y=528;
-   - the definition, two centred lines, baselines y=639 / 661.
-   Vertical spacing uses --vdp so the page still fits a shorter window. */
-.home-view-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: calc(363 * var(--vdp)) var(--grid-margin) 0;
-  color: var(--primary);
-  text-align: center;
-}
-
-/* On the 660 grid line, not dead centre (as the frame draws it): the "L"
-   starts there (the logo file draws it 2.5px left of its own box, hence
-   297.5 rather than 300) --
-   like "Go Beyond" above it. Measured from the centre line, so the two stay
-   together at any width (the padding is symmetric: 50% is the centre). */
-.home-view-wrapper > h1 {
-  align-self: flex-start;
-  margin-left: calc(50% - 297.5 * var(--dp));
-}
-
-.home-hero-logo {
-  display: block;
-  width: calc(611 * var(--dp));
-  max-width: 100%;
-  height: auto;
-}
-
-/* 20px/22px lines: the baseline sits 18.3px below the line's top. */
-.home-hero-subtitle {
-  margin-top: calc(18.7 * var(--vdp));
-}
-
-.home-hero-btn {
-  width: 292px;
-  margin-top: calc(56.3 * var(--vdp));
-}
-
-.home-definition {
-  margin-top: calc(55.7 * var(--vdp));
 }
 
 /* Capsule View */
@@ -538,7 +521,7 @@ textarea.lgn-field {
   font-weight: 500;
   color: #ffffff;
   line-height: 48px;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--track);
 }
 
 .capsule-title-pills {
@@ -580,7 +563,7 @@ textarea.lgn-field {
   font-weight: 500;
   margin-top: -6px;
   margin-bottom: 16px;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--track);
   line-height: 1;
 }
 
@@ -926,7 +909,7 @@ textarea.lgn-field {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 22px;
+  gap: 1.1em;
   padding-top: 3.7px;
 }
 
@@ -960,7 +943,7 @@ textarea.lgn-field {
   font-size: var(--text-48);
   letter-spacing: var(--track-48);
   font-weight: var(--weight-display);
-  line-height: 52.8px;
+  line-height: var(--leading);
 }
 
 .about-statement {
@@ -982,7 +965,7 @@ textarea.lgn-field {
 }
 
 .about-purpose-text + .about-purpose-text {
-  margin-top: 22px;
+  margin-top: 1.1em;
 }
 
 /* Board + Staff: a 36px heading over a rule (as the Campfire's), then two
@@ -997,7 +980,7 @@ textarea.lgn-field {
   font-size: var(--text-36);
   letter-spacing: var(--track-36);
   font-weight: var(--weight-display);
-  line-height: 39.6px;
+  line-height: var(--leading);
 }
 
 .team-list-layout {
@@ -1012,7 +995,7 @@ textarea.lgn-field {
   font-size: var(--text-48);
   letter-spacing: var(--track-48);
   font-weight: var(--weight-display);
-  line-height: 52.8px;
+  line-height: var(--leading);
 }
 
 .team-list-item .person-title {
@@ -1021,17 +1004,17 @@ textarea.lgn-field {
 
 .team-list-item .person-bio {
   max-width: 510px;
-  margin-top: 22px;
+  margin-top: 1.1em;
 }
 
 /* ---------------------------------------------------------------- invest */
 
-/* "How you can invest / in this vision": 36px on 38px, baselines 226/264. */
+/* "How you can invest / in this vision": the 36 size (now 24px). */
 .invest-title {
   font-size: var(--text-36);
   letter-spacing: var(--track-36);
   font-weight: var(--weight-display);
-  line-height: 38px;
+  line-height: var(--leading);
   margin-top: 8.9px;
 }
 
@@ -1060,7 +1043,7 @@ textarea.lgn-field {
   background: none;
   color: var(--primary);
   font: inherit;
-  letter-spacing: inherit;
+  letter-spacing: var(--track);
   text-align: left;
   cursor: pointer;
 }
@@ -1074,18 +1057,12 @@ textarea.lgn-field {
   outline-offset: 2px;
 }
 
-.invest-accordion-row:hover .invest-row-title {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 6px;
-}
-
 .invest-row-title {
   padding-top: 2.65px;
   font-size: var(--text-48);
   font-weight: var(--weight-display);
   letter-spacing: var(--track-48);
-  line-height: 52.8px;
+  line-height: var(--leading);
 }
 
 .invest-row-content {
@@ -1093,10 +1070,11 @@ textarea.lgn-field {
   max-width: 400px;
 }
 
+/* 14px like every ">" (UX). */
 .invest-row-icon {
-  padding-top: 2px;
-  font-size: 24px;
-  line-height: 24px;
+  padding-top: 8px;
+  font-size: 14px;
+  line-height: 14px;
 }
 
 .invest-steps {
@@ -1105,7 +1083,7 @@ textarea.lgn-field {
 }
 
 .invest-steps li + li {
-  margin-top: 22px;
+  margin-top: 1.1em;
 }
 
 /* "Give Here": 250px under Treasure's rule; the small print 31px under it. */
@@ -1410,7 +1388,8 @@ textarea.lgn-field {
 /* Footer styles live with the component: components/chrome/SiteFooter.css */
 
 /* Timeline -- "A witness through time". Figma v3, at 1920: white Courier
-   on black, 20px on tight 18px leading throughout; four columns at x = 40 /
+   on black, 14px throughout (UX, 2026-11; the frames set 20px on 18px
+   leading, kept here at the same tight ratio); four columns at x = 40 /
    350 / 660 / 970; the title's baseline at y=210, the column heads' 130px
    further, the first entry's 85px under those; ~80px from an entry's last
    line to the next. (V3 drops V2's [Tag] column.) */
@@ -1420,9 +1399,8 @@ textarea.lgn-field {
   background-color: var(--bg-darker);
   color: var(--primary);
   font-family: var(--font-serif);
-  font-size: var(--text-20);
-  line-height: 18px;
-  letter-spacing: 0;
+  font-size: 14px;
+  line-height: 14px;
 }
 
 .timeline-header-grid,
@@ -1478,8 +1456,7 @@ textarea.lgn-field {
   background: none;
   color: var(--primary);
   font: inherit;
-  letter-spacing: inherit;
-  line-height: 18px;
+  line-height: inherit;
   text-align: left;
   cursor: pointer;
 }
@@ -1577,7 +1554,7 @@ textarea.lgn-field {
   color: #ffffff;
   font-family: var(--font-sans);
   font-weight: 500;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--track);
   line-height: 1;
 }
 
@@ -1864,7 +1841,7 @@ textarea.lgn-field {
   font-weight: 500;
   font-size: 40px;
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--track);
   color: var(--text-main);
   text-align: left;
   margin-bottom: 12px;
@@ -1890,7 +1867,7 @@ textarea.lgn-field {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 22px;
+  gap: 1.1em;
   margin-top: clamp(24px, 2.6vw, 50px);
 }
 
@@ -2057,7 +2034,7 @@ textarea.lgn-field {
   font-weight: 500;
   font-size: 32px;
   line-height: 1.1;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--track);
   color: #f5f5f5;
   text-align: left;
 }
@@ -2142,7 +2119,7 @@ textarea.lgn-field {
   font-size: 20px;
   font-weight: 500;
   line-height: 1.2;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--track);
   color: var(--text-main);
 }
 
@@ -2296,7 +2273,7 @@ textarea.lgn-field {
   font-size: 40px;
   font-weight: 500;
   color: var(--text-dark);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--track);
 }
 
 @media (max-width: 768px) {
@@ -2310,7 +2287,7 @@ textarea.lgn-field {
   font-size: 24px;
   font-weight: 500;
   color: var(--text-main);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--track);
 }
 
 @media (max-width: 768px) {
@@ -2448,7 +2425,7 @@ textarea.lgn-field {
   font-family: var(--font-sans);
   font-size: 64px;
   font-weight: 500;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--track);
   margin-bottom: 24px;
 }
 
@@ -2527,7 +2504,7 @@ textarea.lgn-field {
   font-size: 96px; /* Big bold text from Figma */
   line-height: 1.1;
   font-weight: 500;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--track);
 }
 
 @media (max-width: 768px) {
@@ -2609,7 +2586,7 @@ textarea.lgn-field {
   font-family: var(--font-sans);
   font-weight: 500;
   font-size: 48px;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--track);
   color: var(--text-main);
   line-height: 1.15;
 }

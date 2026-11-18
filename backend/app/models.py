@@ -37,10 +37,8 @@ class Capsule(Base):
     publish_at = Column(DateTime, nullable=True)
     pre_watch_prompt = Column(String, nullable=True)
     pre_watch_supporting_text = Column(Text, nullable=True)
-    # V3 (migrations/20261027120000_v3_stories_admin.sql): one introduction for
-    # Reflect, the Practice tab's title, and the story's LGN Spark link.
-    reflect_intro = Column(Text, nullable=True)
-    practice_title = Column(Text, nullable=True)
+    # V3 (migrations/20261027120000_v3_stories_admin.sql): the story's LGN
+    # Spark link.
     spark_url = Column(Text, nullable=True)
     # Behind-the-scenes page (migrations/20261028130000_bts_page.sql). Credits
     # are one "Role: Name, Name" per line; a blank line starts a new group.
@@ -135,7 +133,6 @@ class Reflection(Base):
     id = Column(Integer, primary_key=True, index=True)
     capsule_id = Column(Integer, ForeignKey("capsules.id"), nullable=False)
     title = Column(String, nullable=False)
-    introduction = Column(Text, nullable=True)
     content = Column(Text, nullable=False) # Supports markdown (e.g. questions)
     author = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

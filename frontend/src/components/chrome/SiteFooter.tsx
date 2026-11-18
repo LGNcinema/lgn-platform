@@ -124,7 +124,7 @@ export function SiteFooter({ theme, onNavigate }: Props) {
             </div>
             <button
               type="submit"
-              className="lgn-link join-form-submit"
+              className="lgn-btn join-form-submit"
               disabled={join.kind === 'sending'}
               aria-busy={join.kind === 'sending' || undefined}
             >

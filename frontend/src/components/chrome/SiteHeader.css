@@ -1,22 +1,18 @@
-/* Global header. Figma v3, the top of every frame (at 1920):
-   - the LGN icon, 40x41 at (40, 39);
-   - the three main links, 20px, baselines on y = 54. They sit on the
-     page's grid: "Go Beyond" starts on the 660 line (300 design px left of
-     centre), where the home logo's "L" and the inner pages' body text
-     start, and "Invest" on the 970 line (10 right of centre, the footer's
-     Contact column). Both are measured from the centre line, as those are,
-     so they stay lined up at every window width. "About" is centred
-     between them, so its two gaps match whatever the first label's length;
-   - Storyboard ending on the right margin (x = 1880), same baseline.
-   The x positions are layout, so they scale with --dp like the grid; the text
-   itself stays 20px. The header is the logo's box: 41px tall from
-   --header-top, which is what --header-bottom reports to the pages below. */
+/* Global header (UX, 2026-11: simplified navigation), at 1920:
+   - the LGN icon, 40x41 at (40, 39), back to the landing page;
+   - two boxed buttons, "Give" and "Add to Storyboard", ending on the right
+     margin (x = 1880), centred on the icon's height (UX's mock).
+   The header is the logo's box: 41px tall from --header-top, which is what
+   --header-bottom reports to the pages below. */
 
 .site-header {
   position: absolute;
   top: calc(var(--header-top) - 1px);
   left: var(--grid-margin);
   right: var(--grid-margin);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   height: 41px;
   z-index: 100;
   pointer-events: none;
@@ -42,67 +38,12 @@
   outline-offset: 2px;
 }
 
-.site-header-link {
-  position: absolute;
-  /* A 20px/22px line box puts Helvetica Now Text's baseline 18.5px below its
-     top; the frame's baseline is 15px below the logo's top. */
-  top: -3.5px;
-  font-size: var(--text-20);
-  line-height: 22px;
-  white-space: nowrap;
-  pointer-events: auto;
-}
-
-/* The box runs from the 660 line (300 design px left of centre) to the 970
-   line (10 past it); "Invest" is placed just past its end, and About's auto
-   margins centre it in what "Go Beyond" leaves. The header box is centred
-   on the page, so its 50% is the page's centre line. */
-.site-header-main {
-  position: absolute;
-  top: -3.5px;
-  left: calc(50% - 300 * var(--dp));
-  width: calc(310 * var(--dp));
+.site-header-nav {
   display: flex;
+  gap: 32px;
 }
 
-.site-header-main .site-header-link {
-  position: static;
-}
-
-.site-header-main .site-header-link--about {
-  margin: 0 auto;
-}
-
-.site-header-main .site-header-link--invest {
-  position: absolute;
-  /* The box already carries the links' -3.5px nudge. */
-  top: 0;
-  left: 100%;
-}
-
-.site-header-link--storyboard { right: 0; }
-
-/* Phones: the four links no longer fit at their desktop points. They move
-   under the logo as one row. (Mobile layout is its own pass; this keeps the
-   header usable meanwhile.) */
-@media (max-width: 768px) {
-  .site-header {
-    height: auto;
-  }
-
-  .site-header-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 20px;
-    margin-top: 12px;
-  }
-
-  .site-header-link,
-  .site-header-main {
-    position: static;
-  }
-
-  .site-header-main {
-    display: contents;
-  }
+.site-header-btn {
+  min-width: 112px;
+  pointer-events: auto;
 }

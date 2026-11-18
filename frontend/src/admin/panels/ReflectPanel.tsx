@@ -1,7 +1,6 @@
 /**
- * ReflectPanel -- the story's Reflect tab, in V3's shape: one introduction for
- * the whole tab, then Self / Neighbor / World, each holding as many questions
- * as you add. The first question in each is the featured one. Visitors write
+ * ReflectPanel -- the story's Reflect tab, in V3's shape: Self / Neighbor /
+ * World, each holding as many questions as you add. The first question in each is the featured one. Visitors write
  * their answers privately on the site.
  */
 import type { Dimension, Reflection } from '../../types';
@@ -9,7 +8,6 @@ import { DIMENSIONS } from '../../components/campfire/campfire';
 import { ListPanel, Note, PanelHead, Section } from './Fields';
 import type { ListFieldSpec, PanelProps } from './Fields';
 import { str } from './formState';
-import { StoryFieldsForm } from './StoryFieldsForm';
 
 type QuestionDraft = { content: string };
 
@@ -38,20 +36,6 @@ export function ReflectPanel({ capsule, onSaved }: PanelProps) {
       <PanelHead
         title="Reflect"
         description="What visitors are asked after the film. Their answers stay private, on their own device."
-      />
-
-      <StoryFieldsForm
-        capsule={capsule}
-        onSaved={onSaved}
-        title="Introduction"
-        fields={[
-          {
-            key: 'reflect_intro',
-            label: 'Introduction text',
-            rows: 4,
-            help: 'One introduction for the whole tab, shown above Self / Neighbor / World. Blank shows a standard line naming the film.',
-          },
-        ]}
       />
 
       {DIMENSIONS.map(({ key, label }) => (

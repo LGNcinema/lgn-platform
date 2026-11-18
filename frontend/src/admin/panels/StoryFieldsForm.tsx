@@ -1,8 +1,8 @@
 /**
  * StoryFieldsForm -- a small editor for a few story-level (capsule) fields,
  * saved on their own. Used where a tab needs one or two of the story's own
- * fields next to its other content: "Before the film" on Watch, the
- * introduction on Reflect, the title on Practice.
+ * fields next to its other content: "Before the film" on Watch, the copyright
+ * and credits on Behind the Film.
  *
  * It PATCHes only its own keys, so it never overwrites a field another panel
  * owns.
@@ -17,8 +17,6 @@ import { orNull, str, useEditState, useSaveState } from './formState';
 export type StoryTextKey =
   | 'pre_watch_prompt'
   | 'pre_watch_supporting_text'
-  | 'reflect_intro'
-  | 'practice_title'
   | 'bts_copyright'
   | 'bts_credits';
 

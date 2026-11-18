@@ -90,7 +90,7 @@
   margin-top: 30px;
   font-size: var(--text-20);
   font-weight: 400;
-  line-height: 22px;
+  line-height: var(--leading);
   text-wrap: pretty;
 }
 
@@ -98,7 +98,7 @@
 .watch-mode-supporting {
   margin-top: 12px;
   color: var(--text-grey);
-  line-height: 22px;
+  line-height: var(--leading);
   text-wrap: pretty;
 }
 
@@ -125,7 +125,7 @@
 }
 
 .watch-mode-back:hover {
-  text-decoration: underline;
+  color: var(--text-grey);
 }
 
 .watch-mode-back:focus-visible {

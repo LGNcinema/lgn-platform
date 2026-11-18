@@ -1,91 +1,49 @@
-/* The Campfire hub. Figma v3 "Campfire—home", at 1920:
-   - "Take it beyond the screen": 36px, baseline y=218, a 1px rule 10.5px
-     under it (x 40..1880);
-   - under the rule (47px): the two-line intro at x=40, the 912px search
-     field at x=659 and the 202px "Go beyond" 18px after it;
-   - "Gather with us": 36px, baseline y=502, its rule 16.5px under it;
-   - 44.5px under that: the featured card, #EDEDED 642x825 at x=649, a 48px
-     ">" 24px past it, and the 512x656 coming-soon card at x=1369, centred on
-     the featured card's height;
-   - 47px from the cards to the footer's rule.
-   Sizes of panels and gaps scale with --dp (vertical ones with --vdp); text
-   and buttons stay at their px. Line tops sit (leading - baseline) above:
-   20/22 -> 18.3, 36/39.6 -> 32.9, 48/52.8 -> 43.85, 12/14 -> 11.4. */
+/* The landing page. Figma "HOME", at 1920, with UX's smaller type:
+   - the Life > Numbers wordmark centred, its top ~313px down;
+   - "Watch. Reflect. Practice." under it, then the search row (a ~430px
+     field and the "Search" button) centred, and a grey line under that;
+   - "LGN Presents" under a full-width rule: the heading and its two lines
+     on the left, the film carousel from the 660 line to the right margin.
+   Panel sizes and gaps scale with --dp (vertical ones with --vdp); text and
+   buttons stay at their px. */
 
 .campfire-home {
-  padding: calc(185 * var(--vdp)) var(--grid-margin) calc(47 * var(--vdp));
+  padding: calc(300 * var(--vdp)) var(--grid-margin) calc(64 * var(--vdp));
   color: var(--primary);
-}
-
-.cf-heading {
-  font-size: var(--text-36);
-  letter-spacing: var(--track-36);
-  font-weight: var(--weight-display);
-  line-height: 39.6px;
-  border-bottom: 1px solid var(--rule);
-}
-
-.cf-heading--beyond {
-  padding-bottom: 3.9px;
-}
-
-.cf-heading--gather {
-  padding-bottom: 9.9px;
 }
 
 .cf-grey {
   color: var(--text-grey);
 }
 
-/* ---------------------------------------------------------------- search */
+/* ------------------------------------------------------------------ hero */
 
-.cf-beyond {
-  display: grid;
-  /* The field starts on the 660 grid line under "Go Beyond": 300 design px
-     left of the page's centre, less the 18px gap -- measured from the centre
-     line like the header, so the space after the intro shrinks as the menu
-     moves in on narrower windows. */
-  grid-template-columns: max(200px, calc(50% - 318 * var(--dp))) minmax(0, calc(912 * var(--dp))) auto;
-  justify-content: start;
-  column-gap: calc(18 * var(--dp));
-  align-items: start;
-  margin-top: calc(46.5 * var(--vdp));
+.cf-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
-.cf-beyond-intro {
-  margin-top: 0.7px;
-  line-height: 22px;
+.cf-hero-logo img {
+  display: block;
+  width: calc(611 * var(--dp));
+  max-width: 100%;
+  height: auto;
 }
 
-/* "How it works." -- italic in the frame; a button, opening the explainer. */
-.cf-how {
-  padding: 0;
-  border: none;
-  background: none;
-  color: inherit;
-  font-style: italic;
-  cursor: pointer;
+.cf-hero-tagline {
+  margin-top: calc(24 * var(--vdp));
 }
 
-.cf-how:hover {
-  color: var(--primary);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.cf-how:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
-/* The field and its button form one row; the status line goes under them. */
 .cf-search {
-  display: contents;
+  display: flex;
+  gap: 12px;
+  margin-top: calc(24 * var(--vdp));
 }
 
 .cf-search-field {
-  /* Placeholder inset 12px, as drawn. */
-  padding: 0 12px;
+  width: 360px;
 }
 
 /* type=search adds a clear button and rounding in some browsers. */
@@ -93,114 +51,149 @@
   -webkit-appearance: none;
 }
 
-.cf-search-note {
-  grid-column: 2 / -1;
-  margin-top: 12px;
-  color: var(--text-grey);
+.cf-search-btn {
+  min-width: 120px;
 }
 
-.cf-search-note:empty {
-  display: none;
+.cf-hero-note {
+  margin-top: 16px;
+  min-height: 1.1em;
 }
 
-/* ---------------------------------------------------------------- gather */
-
-.cf-section--gather {
-  margin-top: calc(148.3 * var(--vdp));
-}
-
-/* Four tracks: the previous film (x 40..649), the featured card (642), the
-   arrow's gap (78) and the next card (512, to the margin). */
-.cf-gather {
-  display: grid;
-  grid-template-columns: calc(609 * var(--dp)) calc(642 * var(--dp)) minmax(0, 1fr);
-  align-items: start;
-  margin-top: calc(44.5 * var(--vdp));
-}
-
-/* The side cards sit 71px below the featured card's top (not quite centred
-   on it), the arrow centred on them. */
-.cf-gather-side {
-  display: flex;
-  align-items: center;
-  margin-top: calc(71 * var(--dp));
-}
-
-.cf-gather-side--prev {
-  justify-content: flex-start;
-}
-
-.cf-gather-side--prev .cf-card--side {
-  width: calc(512 * var(--dp));
-}
-
-.cf-gather-side--prev .cf-arrow {
-  margin: 0 auto;
-}
-
-.cf-gather-side--next .cf-arrow {
-  margin: 0 calc(26 * var(--dp)) 0 calc(24 * var(--dp));
-}
-
-.cf-gather-side--next .cf-card--side {
-  flex: 1;
-}
-
-/* The 48px chevron between cards. */
-.cf-arrow {
-  flex: none;
+/* "How guides work." / "How it works." -- buttons that read as text. */
+.cf-text-btn {
   padding: 0;
   border: none;
   background: none;
-  color: var(--primary);
-  font-size: var(--text-48);
-  font-weight: var(--weight-display);
-  letter-spacing: var(--track-48);
-  line-height: 52.8px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
   cursor: pointer;
+  transition: color 0.15s;
 }
 
-span.cf-arrow {
-  cursor: default;
+.cf-text-btn:hover {
+  color: var(--primary);
 }
 
-button.cf-arrow:hover {
-  opacity: 0.6;
+.cf-presents-text .cf-text-btn:hover {
+  color: var(--text-grey);
 }
 
-button.cf-arrow:focus-visible {
+.cf-text-btn:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
-.cf-card {
-  background: var(--panel);
-}
+/* -------------------------------------------------------------- presents */
 
-/* The featured card: padding 22; the labels' baselines 30 from its top, the
-   title's 287, the credit's first 340; the still 595 wide, 22 from the
-   bottom. The card's height is fixed (it's the frame's), so the still is
-   pushed to its foot. */
-.cf-card--feature {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  height: calc(825 * var(--dp));
-  min-height: 600px;
-  padding: 18.6px calc(24 * var(--dp)) calc(22 * var(--dp)) 22px;
-}
-
-.cf-card-labels {
+.cf-presents {
   display: grid;
-  grid-template-columns: calc(312 * var(--dp)) auto;
+  /* The carousel starts on the 660 line, measured from the page's centre. */
+  grid-template-columns: calc(50% - 300 * var(--dp)) minmax(0, 1fr);
+  margin-top: calc(220 * var(--vdp));
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
 }
 
-.cf-card-title {
-  margin-top: calc(210.6 * var(--dp));
+.cf-heading {
   font-size: var(--text-48);
   letter-spacing: var(--track-48);
   font-weight: var(--weight-display);
-  line-height: 52.8px;
+  line-height: var(--leading);
+}
+
+.cf-presents-text {
+  margin-top: 18px;
+}
+
+.cf-empty {
+  margin-top: 44px;
+}
+
+/* -------------------------------------------------------------- carousel */
+
+.cf-carousel {
+  --card-w: calc(560 * var(--dp));
+  --card-h: calc(var(--card-w) * 825 / 642);
+  --gap: calc(36 * var(--dp));
+  --side-scale: 0.8;
+  margin-top: calc(28 * var(--vdp));
+}
+
+/* The row clips sideways only, so a card's hover growth isn't cut off. */
+.cf-carousel-track {
+  position: relative;
+  height: var(--card-h);
+  overflow-x: clip;
+  /* The neighbours fade out at the row's ends rather than being cut. */
+  mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+}
+
+/* Each card sits at the centre and is moved out by its offset from the
+   active card: the neighbour's centre is 0.9 card widths + a gap away (half
+   the active card + half a scaled one), the next one 0.8 further. */
+.cf-slide {
+  --abs: max(var(--offset), calc(var(--offset) * -1));
+  --sign: clamp(-1, var(--offset), 1);
+  --dist: calc(var(--sign) * (min(var(--abs), 1) * 0.9 + max(var(--abs) - 1, 0) * 0.8) * var(--card-w) + var(--offset) * var(--gap));
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: var(--card-w);
+  height: var(--card-h);
+  transform: translateX(calc(-50% + var(--dist))) scale(var(--side-scale));
+  transition:
+    transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1),
+    opacity 0.5s;
+  opacity: 0.55;
+}
+
+.cf-slide.is-active {
+  transform: translateX(-50%) scale(1);
+  opacity: 1;
+  z-index: 1;
+}
+
+.cf-slide:not(.is-active):hover {
+  opacity: 0.85;
+}
+
+/* The centred card grows a touch on hover: a cue that it opens. */
+.cf-slide.is-active:hover {
+  transform: translateX(-50%) scale(1.025);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cf-slide {
+    transition: opacity 0.2s;
+  }
+}
+
+.cf-card {
+  width: 100%;
+  height: 100%;
+  background: var(--panel);
+}
+
+.cf-card--film {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 22px;
+  cursor: pointer;
+}
+
+.cf-card-month {
+  margin-top: calc(var(--card-h) * 0.2);
+}
+
+.cf-card-title {
+  margin-top: 16px;
+  font-size: var(--text-48);
+  letter-spacing: var(--track-48);
+  font-weight: var(--weight-display);
+  line-height: var(--leading);
 }
 
 /* The whole card is the button's hit area. */
@@ -209,6 +202,7 @@ button.cf-arrow:focus-visible {
   border: none;
   background: none;
   color: inherit;
+  font: inherit;
   text-align: left;
   cursor: pointer;
 }
@@ -219,122 +213,131 @@ button.cf-arrow:focus-visible {
   inset: 0;
 }
 
-.cf-card--feature:hover .cf-card-title {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 6px;
-}
-
 .cf-card-link:focus-visible {
   outline: none;
 }
 
-.cf-card--feature:has(.cf-card-link:focus-visible) {
+.cf-card--film:has(.cf-card-link:focus-visible) {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
 .cf-card-credit {
-  max-width: 500px;
-  margin-top: calc(32.6 * var(--dp));
+  max-width: 440px;
+  margin-top: 28px;
 }
 
-/* The frame's credit is all one weight; FilmCredit's names are in caps
-   anyway here (the whole label is). */
+/* The frame's credit is all one weight. */
 .cf-card-credit .film-credit-name {
-  font-weight: 400;
+  font-weight: inherit;
 }
 
 .cf-card-still {
   display: block;
-  width: calc(595 * var(--dp));
+  width: 100%;
   aspect-ratio: 595 / 335;
   margin-top: auto;
-  margin-left: 1px;
   object-fit: cover;
   background: var(--placeholder-box);
 }
 
-/* The side cards: 512x656, text centred in grey caps. */
-.cf-card--side {
+/* The coming-soon card: centred grey caps. */
+.cf-card--coming {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: calc(656 * var(--dp));
-  min-height: 480px;
   padding: 24px;
   border: none;
   color: var(--text-grey);
   text-align: center;
 }
 
-button.cf-card--side {
+button.cf-card--coming {
   cursor: pointer;
 }
 
-button.cf-card--side:hover {
-  color: var(--primary);
-}
-
-button.cf-card--side:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
-/* Paragraphs one line (14px) apart. */
-.cf-side-text {
+.cf-coming-text {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-.cf-side-title {
-  font-size: var(--text-20);
-  line-height: 22px;
-  letter-spacing: var(--track-20);
-  text-transform: none;
+/* "<  JANUARY 2027  >" under the centred card. */
+.cf-carousel-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 20px;
 }
 
-.cf-empty {
-  margin-top: 44px;
+.cf-carousel-month {
+  min-width: 120px;
+  text-align: center;
 }
 
-/* Below desktop the three tracks stack: featured card first. */
+/* 14px like every ">" (UX), with a larger hit area than the glyph. */
+.cf-arrow {
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  color: var(--primary);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.cf-arrow:hover:not(:disabled) {
+  color: var(--text-grey);
+}
+
+.cf-arrow:disabled {
+  color: var(--text-grey);
+  opacity: 0.4;
+  cursor: default;
+}
+
+.cf-arrow:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* "How LGN Presents works". */
+.presents-dialog {
+  width: 630px;
+}
+
+.presents-dialog-body {
+  margin-top: 28px;
+}
+
+.presents-dialog-body p + p {
+  margin-top: 1.1em;
+}
+
+.presents-dialog-body strong {
+  font-weight: var(--weight-display);
+}
+
+/* Below desktop: the intro above the carousel, the cards wider. */
 @media (max-width: 1024px) {
-  .cf-beyond {
-    grid-template-columns: 1fr auto;
-    row-gap: 16px;
-  }
-
-  .cf-beyond-intro {
-    grid-column: 1 / -1;
-  }
-
-  .cf-search-note {
-    grid-column: 1 / -1;
-  }
-
-  .cf-gather {
+  .cf-presents {
     grid-template-columns: 1fr;
-    row-gap: 24px;
   }
 
-  .cf-card--feature {
-    order: -1;
-    height: auto;
-    min-height: 0;
+  .cf-carousel {
+    --card-w: min(70vw, 480px);
   }
 
-  .cf-card-title {
-    margin-top: 80px;
-  }
-
-  .cf-card-still {
+  .cf-search {
+    flex-direction: column;
+    align-items: stretch;
     width: 100%;
-    margin-top: 40px;
+    max-width: 480px;
   }
 
-  .cf-gather-side--prev:empty {
-    display: none;
+  .cf-search-field {
+    width: 100%;
   }
 }
