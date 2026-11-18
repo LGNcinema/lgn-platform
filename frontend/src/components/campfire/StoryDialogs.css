@@ -1,0 +1,70 @@
+/* The film page's popups (Figma popups 4, 5, 10, 11): a 630px panel like
+   "How these guides are made", 14px copy, boxed buttons in a row. */
+.story-dialog {
+  width: 630px;
+}
+
+.story-dialog-body {
+  margin-top: 28px;
+}
+
+.story-dialog-body > p + p {
+  margin-top: 1.1em;
+}
+
+.story-dialog-body strong {
+  font-weight: var(--weight-display);
+}
+
+.story-dialog-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.story-dialog-buttons .lgn-btn {
+  min-width: 0;
+}
+
+.story-dialog-buttons .is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.story-dialog-note {
+  margin-top: 12px;
+  color: var(--text-grey);
+  overflow-wrap: anywhere;
+}
+
+.story-dialog-prompt {
+  display: block;
+}
+
+.story-dialog-when {
+  max-width: 280px;
+  margin-top: 14px;
+}
+
+/* Cast and crew: roles and names in two columns, groups a line apart. */
+.story-dialog--credits {
+  width: 520px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.credits-group + .credits-group {
+  margin-top: 1.1em;
+}
+
+.credits-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 24px;
+}
+
+.credits-names {
+  display: flex;
+  flex-direction: column;
+}

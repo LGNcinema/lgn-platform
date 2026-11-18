@@ -18,10 +18,10 @@ import { hasBehindTheScenes, StoryBehind } from '../components/campfire/StoryBeh
 import { PhotoLoaderContext } from '../components/campfire/StoryPhoto';
 import { StoryPractice } from '../components/campfire/StoryPractice';
 import { StoryReflect } from '../components/campfire/StoryReflect';
-import { StoryShell } from '../components/campfire/StoryShell';
+import { StoryFoot, StoryShell } from '../components/campfire/StoryShell';
 import { StoryWatch } from '../components/campfire/StoryWatch';
 import { WatchMode } from '../components/campfire/WatchMode';
-import { formatStoryMonth, type StorySection } from '../components/campfire/campfire';
+import type { StorySection } from '../components/campfire/campfire';
 import { SiteFooter } from '../components/chrome/SiteFooter';
 import { SiteHeader } from '../components/chrome/SiteHeader';
 import type { CapsuleDetail, CapsulePhoto } from '../types';
@@ -31,7 +31,6 @@ import { API_URL, getToken } from './adminClient';
 export interface PreviewMessage {
   type: 'lgn-preview';
   capsule: CapsuleDetail;
-  storyNumber: number;
 }
 
 /** What this page sends once it is listening, so the tab knows to post. */
@@ -71,7 +70,7 @@ export function PreviewFrame() {
   }, []);
 
   if (!data) return null;
-  const { capsule, storyNumber } = data;
+  const { capsule } = data;
 
   // Watch is immersive on the site too: no header or footer.
   if (watching) return <WatchMode capsule={capsule} onExit={() => setWatching(false)} />;
@@ -82,18 +81,18 @@ export function PreviewFrame() {
     ) : (
       <StoryShell
         capsule={capsule}
-        labels={['LGN', `Story No. ${storyNumber}`, formatStoryMonth(capsule.month)]}
         section={section}
         onSelectSection={setSection}
         onBackToCampfire={noop}
         gemeTuning={null}
         gemeTuningVersion={0}
         leftFoot={
-          section === 'watch' && hasBehindTheScenes(capsule) ? (
-            <button type="button" className="lgn-btn" onClick={() => setSection('making')}>
-              How this film was made
-            </button>
-          ) : undefined
+          <StoryFoot
+            capsule={capsule}
+            section={section}
+            onOpenMaking={hasBehindTheScenes(capsule) ? () => setSection('making') : undefined}
+            onAddToStoryboard={noop}
+          />
         }
       >
         {section === 'watch' && <StoryWatch capsule={capsule} onEnterWatch={() => setWatching(true)} />}
@@ -111,7 +110,7 @@ export function PreviewFrame() {
               admin token instead. */}
           <PhotoLoaderContext.Provider value={loadAdminPhoto}>{page}</PhotoLoaderContext.Provider>
         </main>
-        <SiteFooter theme="light" onNavigate={noop} />
+        <SiteFooter theme="light" onNavigate={noop} onOpenAbout={noop} />
       </div>
     </>
   );

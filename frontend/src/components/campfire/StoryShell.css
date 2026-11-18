@@ -51,19 +51,58 @@
   grid-template-columns: calc(599 * var(--dp)) minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   row-gap: calc(72 * var(--vdp));
-  min-height: calc(877 * var(--vdp));
+  min-height: calc(796 * var(--vdp));
   margin-top: calc(49.3 * var(--vdp));
   padding: 16.6px calc(40 * var(--dp)) 31px calc(21 * var(--dp));
   background: var(--panel);
 }
 
-/* Labels at the panel's left, and at the two column lines (x = 660, 1280). */
+/* The labels row: the tier's dots and name at the panel's left; "HOW THESE
+   GUIDES ARE MADE" from the 660 line with "SHARE" ~300 after it; "NEED
+   SUPPORT?" at the right. The last three open popups. */
 .story-shell-labels {
   grid-column: 1 / -1;
   display: grid;
-  /* The last label keeps its own width when the panel is narrow (the admin
-     preview), the first two giving way instead. */
-  grid-template-columns: minmax(0, calc(599 * var(--dp))) minmax(0, calc(620 * var(--dp))) minmax(max-content, 1fr);
+  grid-template-columns: minmax(0, calc(599 * var(--dp))) minmax(0, 1fr) auto;
+  align-items: baseline;
+}
+
+.story-shell-tier {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+/* The dots read larger than the caps beside them, as drawn. */
+.story-shell-dots {
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+
+.story-shell-label-links {
+  display: flex;
+  gap: calc(126 * var(--dp));
+}
+
+.story-shell-label-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.story-shell-label-btn:hover {
+  color: var(--text-grey);
+}
+
+.story-shell-label-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 /* ---------------------------------------------------------------- left */
@@ -75,9 +114,7 @@
   min-width: 0;
 }
 
-/* Title top to the section links' first line top: 219.55. */
 .story-shell-intro {
-  min-height: calc(219.55 * var(--vdp));
   padding-right: calc(40 * var(--dp));
 }
 
@@ -88,16 +125,9 @@
   line-height: var(--leading);
 }
 
-/* 20px, wrapping at ~420px as the frame's two lines do. */
-.story-shell-credit,
 .story-shell-intro > p {
   max-width: 425px;
-  margin-top: 35.75px;
-}
-
-.story-shell-credit .film-credit-name {
-  font-weight: 400;
-  text-transform: none;
+  margin-top: 1.1em;
 }
 
 /* Watch / Reflect / Practice as one row of joined boxes (Figma V3 film
@@ -105,6 +135,39 @@
    share a border; the current one is raised so its black edge shows. */
 .story-shell-nav {
   display: flex;
+  margin-top: calc(34 * var(--vdp));
+}
+
+/* Year, director, runtime; the description; "+ Cast and Crew" in grey.
+   ~130px under the tabs, wrapping at ~520 like the frame. */
+.story-shell-facts {
+  max-width: calc(520 * var(--dp));
+  margin-top: calc(110 * var(--vdp));
+  padding-right: calc(40 * var(--dp));
+}
+
+.story-shell-facts > * + * {
+  margin-top: 1.1em;
+}
+
+.story-shell-cast {
+  display: block;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-grey);
+  font: inherit;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.story-shell-cast:hover {
+  color: var(--primary);
+}
+
+.story-shell-cast:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 .story-shell-tab {
@@ -141,20 +204,15 @@
   outline-offset: 2px;
 }
 
-/* Watch's "How this film was made": at the foot of the column (its bottom
-   13px above Geme's top, y = 1040 at 1920). */
+/* The buttons at the foot of the column, stacked ("Beyond the Screen >"
+   over "Behind the film >"), level with the bottom of the video. */
 .story-shell-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
   margin-top: auto;
-}
-
-/* Without Geme under it: the frame's y = 1040, 111px above the panel's
-   bottom (80 + the panel's 31px padding). */
-.story-shell-foot:last-child {
-  margin-bottom: calc(80 * var(--vdp));
-}
-
-.story-shell-foot .lgn-btn {
-  min-width: 200px;
+  padding-top: 32px;
 }
 
 .story-shell-geme {

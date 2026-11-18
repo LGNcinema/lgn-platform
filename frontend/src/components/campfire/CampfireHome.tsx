@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type PointerEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type FormEvent, type PointerEvent } from 'react';
 import './CampfireHome.css';
 import { API_URL } from '../../api';
 import type { CapsuleDetail, CapsuleSummary } from '../../types';
@@ -12,6 +12,10 @@ interface Props {
   stories: CapsuleSummary[];
   onOpenStory: (capsuleId: number) => void;
   theme: 'light' | 'dark';
+  /** "For Filmmakers >" in How these guides are made. */
+  onOpenFilmmakers: () => void;
+  /** "Read more about how it works >": About, LGN Cinema. */
+  onOpenAboutCinema: () => void;
 }
 
 /** Per-story detail state. A missing key means the fetch is still in flight. */
@@ -59,7 +63,7 @@ type Slide =
  *   centred card opens that film. After the newest film, a "Coming Soon"
  *   card for the next month.
  */
-export function CampfireHome({ stories, onOpenStory, theme }: Props) {
+export function CampfireHome({ stories, onOpenStory, theme, onOpenFilmmakers, onOpenAboutCinema }: Props) {
   const ordered = useMemo(() => storiesInOrder(stories), [stories]);
   const [details, setDetails] = useState<Record<number, DetailState>>({});
   const [selected, setSelected] = useState<number | null>(null);
@@ -120,7 +124,7 @@ export function CampfireHome({ stories, onOpenStory, theme }: Props) {
             alt="Life is Greater than Numbers"
           />
         </h1>
-        <p className="cf-hero-tagline">Watch. Reflect. Practice.</p>
+        <WatchReflectPractice />
         <form className="cf-search" role="search" onSubmit={onSearch}>
           <input
             className="lgn-field cf-search-field"
@@ -146,16 +150,14 @@ export function CampfireHome({ stories, onOpenStory, theme }: Props) {
       </section>
 
       <section className="cf-presents" aria-labelledby="cf-presents-heading">
-        <div className="cf-presents-intro">
-          <h2 id="cf-presents-heading" className="cf-heading">LGN Presents</h2>
-          <p className="cf-presents-text">
-            One short film a month. Guided by its filmmaker.
-            <br />
-            <button type="button" className="cf-text-btn" onClick={() => setPresentsOpen(true)}>
-              How it works.
-            </button>
-          </p>
-        </div>
+        <h2 id="cf-presents-heading" className="cf-heading">LGN Presents</h2>
+        <p className="cf-presents-text">
+          One short film a month. Guided by its filmmaker.
+          <br />
+          <button type="button" className="cf-text-btn" onClick={() => setPresentsOpen(true)}>
+            How it works.
+          </button>
+        </p>
 
         {slides.length > 0 ? (
           <FilmCarousel
@@ -170,8 +172,15 @@ export function CampfireHome({ stories, onOpenStory, theme }: Props) {
         )}
       </section>
 
-      <GuidesDialog open={guidesOpen} onClose={() => setGuidesOpen(false)} />
-      <PresentsDialog open={presentsOpen} onClose={() => setPresentsOpen(false)} />
+      <GuidesDialog open={guidesOpen} onClose={() => setGuidesOpen(false)} onOpenFilmmakers={onOpenFilmmakers} />
+      <PresentsDialog
+        open={presentsOpen}
+        onClose={() => setPresentsOpen(false)}
+        onReadMore={() => {
+          setPresentsOpen(false);
+          onOpenAboutCinema();
+        }}
+      />
     </div>
   );
 }
@@ -185,9 +194,12 @@ interface CarouselProps {
 }
 
 /**
- * The row of film cards. Each card is placed by its distance from the active
- * one (--offset), so moving the row is a single CSS transition: cards slide
- * and scale together. Cards more than two away are hidden.
+ * The row of film cards, laid out as the Figma draws it: the month's film
+ * full size on the 660 line, the next one smaller to its right behind a ">",
+ * the previous one (if any) to its left behind a "<". Each card is placed by
+ * its distance from the active one (--offset), so moving the row is one CSS
+ * transition: cards slide and scale together. Only the hover (a dwell brings
+ * a neighbour to the centre) and that scale are new.
  */
 function FilmCarousel({ slides, active, details, onSelect, onOpen }: CarouselProps) {
   const dwell = useRef<number | null>(null);
@@ -218,19 +230,19 @@ function FilmCarousel({ slides, active, details, onSelect, onOpen }: CarouselPro
 
   const prev = active > 0 ? active - 1 : null;
   const next = active < slides.length - 1 ? active + 1 : null;
-  const current = slides[active];
 
   return (
-    <div className="cf-carousel" aria-roledescription="carousel" aria-label="Monthly films">
-      <div className="cf-carousel-track" onPointerLeave={clearDwell}>
+    <div className="cf-carousel" aria-roledescription="carousel" aria-label="Monthly films" onPointerLeave={clearDwell}>
+      <div className="cf-carousel-track">
         {slides.map((slide, i) => {
           const offset = i - active;
           if (Math.abs(offset) > 2) return null;
+          const hidden = Math.abs(offset) > 1;
           const isActive = offset === 0;
           return (
             <div
               key={slide.kind === 'story' ? slide.story.id : 'coming'}
-              className={`cf-slide${isActive ? ' is-active' : ''}`}
+              className={`cf-slide${isActive ? ' is-active' : ''}${hidden ? ' is-hidden' : ''}`}
               style={{ '--offset': offset } as CSSProperties}
               aria-hidden={isActive ? undefined : true}
               onPointerMove={(e) => onCardPointer(i, e)}
@@ -239,6 +251,7 @@ function FilmCarousel({ slides, active, details, onSelect, onOpen }: CarouselPro
               {slide.kind === 'story' ? (
                 <FilmCard
                   story={slide.story}
+                  number={slide.number}
                   detail={details[slide.story.id]}
                   interactive={isActive}
                   onClick={() => (isActive ? onOpen(slide.story.id) : onSelect(i))}
@@ -255,45 +268,35 @@ function FilmCarousel({ slides, active, details, onSelect, onOpen }: CarouselPro
         })}
       </div>
 
-      <div className="cf-carousel-nav">
-        <button
-          type="button"
-          className="cf-arrow"
-          aria-label="Previous month"
-          disabled={prev === null}
-          onClick={() => prev !== null && onSelect(prev)}
-        >
+      {/* The carets between the centred card and its neighbours (Figma: a
+          ">" between the month's film and the next). */}
+      {prev !== null && (
+        <button type="button" className="cf-caret cf-caret--prev" aria-label="Previous film" onClick={() => onSelect(prev)}>
           &lt;
         </button>
-        <span className="cf-carousel-month lgn-label" aria-live="polite">
-          {current.kind === 'story' ? monthLabel(current.story.month) : current.month ? monthLabel(current.month) : 'Coming soon'}
-        </span>
-        <button
-          type="button"
-          className="cf-arrow"
-          aria-label="Next month"
-          disabled={next === null}
-          onClick={() => next !== null && onSelect(next)}
-        >
+      )}
+      {next !== null && (
+        <button type="button" className="cf-caret cf-caret--next" aria-label="Next film" onClick={() => onSelect(next)}>
           &gt;
         </button>
-      </div>
+      )}
     </div>
   );
 }
 
 interface FilmCardProps {
   story: CapsuleSummary;
+  number: number;
   detail: DetailState | undefined;
   /** Only the centred card is in the tab order; the others are reached by the arrows. */
   interactive: boolean;
   onClick: () => void;
 }
 
-/** A month's film: its month, title, credit line and still. The whole card is
+/** A month's film: its number and month, title, credit line and still. The whole card is
  *  the button (the title's ::after covers it), so the heading stays a heading
  *  and screen readers hear a short name. */
-function FilmCard({ story, detail, interactive, onClick }: FilmCardProps) {
+function FilmCard({ story, number, detail, interactive, onClick }: FilmCardProps) {
   const film = detail && detail !== 'failed' ? detail.film : undefined;
   const thumbnail = film?.thumbnail_url?.trim();
   // A broken thumbnail URL falls back to the same grey block as "no still yet".
@@ -301,7 +304,10 @@ function FilmCard({ story, detail, interactive, onClick }: FilmCardProps) {
 
   return (
     <article className="cf-card cf-card--film" aria-busy={detail === undefined}>
-      <p className="cf-card-month lgn-label">{monthLabel(story.month)}</p>
+      <div className="cf-card-labels lgn-label">
+        <span>Film No. {number}</span>
+        <span>{monthLabel(story.month)}</span>
+      </div>
       <h3 className="cf-card-title">
         <button type="button" className="cf-card-link" tabIndex={interactive ? 0 : -1} onClick={onClick}>
           {story.title}
@@ -352,31 +358,70 @@ function ComingSoonCard({ number, month, onClick }: { number: number; month?: st
   );
 }
 
-/** "How LGN Presents works". Copy from the Figma popup. */
-function PresentsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+/**
+ * "Watch. Reflect. Practice." under the wordmark, with its explanation on
+ * hover or keyboard focus (Figma popup 1, "watch reflect practice—hover").
+ */
+function WatchReflectPractice() {
+  const id = useId();
   return (
-    <LgnDialog open={open} onClose={onClose} className="presents-dialog" label="How LGN Presents works">
+    <div className="cf-wrp">
+      <p className="cf-hero-tagline" tabIndex={0} aria-describedby={id}>
+        Watch. Reflect. Practice.
+      </p>
+      <div className="cf-wrp-pop" id={id} role="tooltip">
+        <p className="lgn-label">Watch. Reflect. Practice.</p>
+        <p className="cf-wrp-lead">
+          What a film sets in motion tends to stall unless it has somewhere to go. These three steps are that somewhere.
+        </p>
+        <ol className="cf-wrp-steps">
+          <li>
+            <strong>Watch.</strong> Look closer. Learn who made the film, why they made it, and how.
+          </li>
+          <li>
+            <strong>Reflect.</strong> Look inward. Answer three questions: one about yourself, one about your neighbor,
+            one about the world we share.
+          </li>
+          <li>
+            <strong>Practice.</strong> Live it out. Find three ways to carry the film forward: for you, for a neighbor,
+            for the world.
+          </li>
+        </ol>
+      </div>
+    </div>
+  );
+}
+
+/** "How “LGN Presents” works". Figma popup 3. */
+function PresentsDialog({ open, onClose, onReadMore }: { open: boolean; onClose: () => void; onReadMore: () => void }) {
+  return (
+    <LgnDialog open={open} onClose={onClose} className="presents-dialog" label="How “LGN Presents” works">
       <div className="presents-dialog-body">
+        <p className="presents-dialog-lead">Each month, LGN presents one short film for all of us to gather around.</p>
         <p>
-          <strong>One film, together.</strong> When many of us spend the same month with the same
-          story, we have common ground to stand on. A new film opens on the first Sunday of each
-          month.
+          <strong>One film, together.</strong> When many of us spend the same month with the same story, we have common
+          ground to stand on. A new film opens on the first Sunday of each month.
         </p>
         <p>
-          <strong>Why short films.</strong> A short can be a whole encounter in under half an hour.
-          That leaves room for what comes next.
+          <strong>Why short films.</strong> A short can be a whole encounter in under half an hour. That leaves room for
+          what comes next.
         </p>
         <p>
-          <strong>Shaped with the filmmaker.</strong> Every question and practice is written with
-          the people who made the film. It's the fullest kind of guide we offer (
-          <span aria-hidden="true">●●●●</span> LGN + Filmmaker), and the standard we hope every film
-          in the Library reaches.
+          <strong>Shaped with the filmmaker.</strong> Every question and practice is written with the people who made the
+          film. It’s the fullest kind of guide we offer (<span aria-hidden="true">●●●●</span> LGN + Filmmaker), and the
+          standard we hope every film in the Library reaches.
         </p>
         <p>
-          <strong>The filmmaker goes first.</strong> In our Beyond the Screen series on YouTube,
-          each filmmaker answers the questions and tries the practices before anyone else does.
+          <strong>The filmmaker goes first.</strong> In our Beyond the Screen series on YouTube, each filmmaker answers
+          the questions and tries the practices before anyone else does.{' '}
+          <a className="rich-link" href="https://www.youtube.com/@lgncinema" target="_blank" rel="noopener noreferrer">
+            Watch the series
+          </a>
         </p>
-        <p>Watch whenever you're ready. Then reflect, practice, and share on the Storyboard if you'd like.</p>
+        <p>Watch whenever you’re ready. Then reflect, practice, and share on the Storyboard if you’d like.</p>
+        <button type="button" className="lgn-btn presents-dialog-more" onClick={onReadMore}>
+          Read more about how it works
+        </button>
       </div>
     </LgnDialog>
   );

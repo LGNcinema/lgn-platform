@@ -25,3 +25,53 @@ export const splitLines = (value?: string | null): string[] =>
     .split(/\\r\\n|\\n|\r\n|\r|\n/)
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
+
+/** "1h 43m" from a runtime in seconds. */
+function formatRuntime(seconds?: number): string | null {
+  if (!seconds || seconds <= 0) return null;
+  const minutes = Math.round(seconds / 60);
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h ? `${h}h ${m}m` : `${m}m`;
+}
+
+/** The film's details under the tabs: year, director, runtime, then its
+ *  description (Figma: "2012 / Stephen Chbosky / 1h 43m"). */
+export function filmFacts(film: Film | null | undefined): string[] {
+  if (!film) return [];
+  return [
+    film.release_year?.trim(),
+    film.director?.trim(),
+    film.duration?.trim() || formatRuntime(film.video_duration_seconds) || undefined,
+  ].filter((v): v is string => Boolean(v));
+}
+
+export interface CreditRow {
+  role: string;
+  names: string;
+}
+
+/**
+ * The admin's credits text as groups of rows: one "Role: Name, Name" per line,
+ * a blank line between groups. A role with no names yet is left out, so the
+ * standard roles can sit in the admin unfilled. A line without a colon is all
+ * names.
+ */
+export function parseCredits(text: string | null | undefined): CreditRow[][] {
+  const groups: CreditRow[][] = [];
+  let current: CreditRow[] = [];
+  for (const raw of (text ?? '').replace(/\r\n?/g, '\n').split('\n')) {
+    const line = raw.trim();
+    if (!line) {
+      if (current.length) groups.push(current);
+      current = [];
+      continue;
+    }
+    const colon = line.indexOf(':');
+    const role = colon === -1 ? '' : line.slice(0, colon).trim();
+    const names = (colon === -1 ? line : line.slice(colon + 1)).trim();
+    if (names) current.push({ role, names });
+  }
+  if (current.length) groups.push(current);
+  return groups;
+}

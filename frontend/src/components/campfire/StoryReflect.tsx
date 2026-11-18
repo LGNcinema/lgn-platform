@@ -2,37 +2,11 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import './StoryReflect.css';
 import type { CapsuleDetail } from '../../types';
 import { DimensionSections } from './DimensionSections';
+import { copyToClipboard } from './clipboard';
 import { byDimension, DIMENSIONS, formatStoryMonth, type Dimension } from './campfire';
 
 interface Props {
   capsule: CapsuleDetail;
-}
-
-/** One answer per film and circle. */
-const answerKey = (capsuleId: number, dimension: Dimension) => `campfire_reflect_${capsuleId}_${dimension}`;
-/** V2 kept a single box per film; it carries over as the Self answer. */
-const legacyDraftKey = (capsuleId: number) => `campfire_reflect_draft_${capsuleId}`;
-
-// Every storage access is wrapped: localStorage throws outright (not just
-// returns null) in some privacy modes and with site data blocked, and an
-// answer is a convenience that must never take the page down.
-function readAnswer(capsuleId: number, dimension: Dimension): string {
-  try {
-    const saved = localStorage.getItem(answerKey(capsuleId, dimension));
-    if (saved !== null) return saved;
-    return dimension === 'self' ? localStorage.getItem(legacyDraftKey(capsuleId)) ?? '' : '';
-  } catch {
-    return '';
-  }
-}
-
-function writeAnswer(capsuleId: number, dimension: Dimension, text: string) {
-  try {
-    if (text) localStorage.setItem(answerKey(capsuleId, dimension), text);
-    else localStorage.removeItem(answerKey(capsuleId, dimension));
-  } catch {
-    // Blocked or full storage: the text still lives in the textarea.
-  }
 }
 
 /** The question(s) for a circle: a reflection's `content`, or its title when
@@ -42,7 +16,7 @@ function questionOf(r: { title?: string; content?: string }): string {
 }
 
 /**
- * What "Save my answer" puts on the clipboard: the story, the circle, its
+ * What "Copy" puts on the clipboard: the story, the circle, its
  * questions, the visitor's own words, and where it came from. Plain text so it
  * pastes cleanly into notes, email or a journal.
  *
@@ -73,43 +47,20 @@ function buildCopy(title: string, month: string, dimension: Dimension, questions
   return lines.join('\n');
 }
 
-/** Clipboard API where available; the old execCommand route as a fallback for
- *  browsers or contexts (plain-http LAN addresses) that don't expose it. */
-async function copyToClipboard(value: string): Promise<boolean> {
-  try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(value);
-      return true;
-    }
-  } catch {
-    // Permission denied or unavailable -- try the fallback below.
-  }
-  try {
-    const ta = document.createElement('textarea');
-    ta.value = value;
-    ta.setAttribute('readonly', '');
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    const ok = document.execCommand('copy');
-    ta.remove();
-    return ok;
-  } catch {
-    return false;
-  }
-}
 
 /**
  * Right column of Reflect. Figma v3: "Campfire—reflect".
  *
- * PRIVACY -- answers are private to the visitor, so this component makes NO
- * network request with their text: no submission, no analytics, nothing. The two places it
- * goes are both on-device: this browser's localStorage, and -- on "Save my
- * answer" -- the visitor's own clipboard. Anyone changing this: keep it that way.
+ * PRIVACY -- the page promises "nothing you write is saved", so this component
+ * makes NO network request with the visitor's text and stores nothing: answers
+ * live in memory while the page is open (so opening another row keeps them),
+ * and "Copy" puts one on the visitor's own clipboard. Anyone changing this:
+ * keep it that way, or change the copy first.
  */
 export function StoryReflect({ capsule }: Props) {
   const groups = useMemo(() => byDimension(capsule.reflections ?? []), [capsule.reflections]);
+  const [answers, setAnswers] = useState<Partial<Record<Dimension, string>>>({});
+  useEffect(() => setAnswers({}), [capsule.id]);
 
   return (
     <DimensionSections
@@ -118,7 +69,8 @@ export function StoryReflect({ capsule }: Props) {
       renderBody={(dimension) => (
         <ReflectAnswer
           key={`${capsule.id}-${dimension}`}
-          capsuleId={capsule.id}
+          text={answers[dimension] ?? ''}
+          onChange={(text) => setAnswers((prev) => ({ ...prev, [dimension]: text }))}
           title={capsule.title}
           month={capsule.month}
           dimension={dimension}
@@ -130,35 +82,30 @@ export function StoryReflect({ capsule }: Props) {
 }
 
 interface AnswerProps {
-  capsuleId: number;
+  text: string;
+  onChange: (text: string) => void;
   title: string;
   month: string;
   dimension: Dimension;
   questions: string[];
 }
 
-function ReflectAnswer({ capsuleId, title, month, dimension, questions }: AnswerProps) {
-  const [text, setText] = useState(() => readAnswer(capsuleId, dimension));
-  // Holds until the visitor edits again. 'failed' means it was kept on the
-  // device but couldn't be copied, so they're asked to copy it by hand.
-  const [saved, setSaved] = useState<'idle' | 'copied' | 'failed'>('idle');
+/** One circle's question, the visitor's box, and "Copy" -- which turns into
+ *  "Copied! Paste it somewhere safe—" until they type again (Figma popup 9). */
+function ReflectAnswer({ text, onChange, title, month, dimension, questions }: AnswerProps) {
+  const [copied, setCopied] = useState<'idle' | 'copied' | 'failed'>('idle');
   const fieldId = useId();
-
-  useEffect(() => {
-    setText(readAnswer(capsuleId, dimension));
-    setSaved('idle');
-  }, [capsuleId, dimension]);
 
   return (
     <div className="reflect-answer">
       {questions.length > 0 ? (
-        <ol className="reflect-questions">
+        <div className="reflect-questions">
           {questions.map((q, i) => (
-            <li key={i}>
+            <p key={i}>
               <label htmlFor={i === 0 ? fieldId : undefined}>{q}</label>
-            </li>
+            </p>
           ))}
-        </ol>
+        </div>
       ) : (
         <p className="reflect-questions">
           <label htmlFor={fieldId}>This question is still being written. Write freely in the meantime.</label>
@@ -171,29 +118,33 @@ function ReflectAnswer({ capsuleId, title, month, dimension, questions }: Answer
         placeholder="Write it out if it helps..."
         value={text}
         onChange={(e) => {
-          setText(e.target.value);
-          setSaved('idle');
-          // Kept as they type, so leaving for Watch or Practice loses nothing.
-          writeAnswer(capsuleId, dimension, e.target.value);
+          onChange(e.target.value);
+          setCopied('idle');
         }}
       />
 
       <div className="reflect-actions">
-        <button
-          type="button"
-          className="lgn-btn reflect-save"
-          onClick={async () => {
-            writeAnswer(capsuleId, dimension, text);
-            const ok = await copyToClipboard(buildCopy(title, month, dimension, questions, text));
-            setSaved(ok ? 'copied' : 'failed');
-          }}
-        >
-          {saved === 'idle' ? 'Save my answer' : 'Saved'}
-        </button>
-        <span className="reflect-status" role="status">
-          {saved === 'copied' && 'Kept on this device, and copied to your clipboard to take with you.'}
-          {saved === 'failed' && 'Kept on this device. It couldn’t be copied automatically, so select your text to copy it.'}
-        </span>
+        {copied === 'copied' ? (
+          <span className="lgn-btn reflect-copied" role="status">
+            Copied! Paste it somewhere safe—
+          </span>
+        ) : (
+          <button
+            type="button"
+            className="lgn-btn reflect-save"
+            onClick={async () => {
+              const ok = await copyToClipboard(buildCopy(title, month, dimension, questions, text));
+              setCopied(ok ? 'copied' : 'failed');
+            }}
+          >
+            Copy
+          </button>
+        )}
+        {copied === 'failed' && (
+          <span className="reflect-status" role="status">
+            It couldn’t be copied automatically. Select your text to copy it.
+          </span>
+        )}
       </div>
     </div>
   );

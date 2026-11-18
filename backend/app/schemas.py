@@ -7,6 +7,7 @@ class FilmBase(BaseModel):
     title: str
     director: str
     duration: Optional[str] = None
+    release_year: Optional[str] = Field(None, max_length=10)
     # Legacy / `file` provider URL. May also be a raw Vimeo link or a pasted
     # <iframe> embed snippet on create — the API parses it into the fields below.
     video_url: Optional[str] = None
@@ -31,6 +32,7 @@ class FilmUpdate(BaseModel):
     title: Optional[str] = None
     director: Optional[str] = None
     duration: Optional[str] = None
+    release_year: Optional[str] = Field(None, max_length=10)
     video_url: Optional[str] = None
     video_provider: Optional[str] = None
     video_id: Optional[str] = None
@@ -267,55 +269,6 @@ class GemeConfig(BaseModel):
     # The persona with this capsule's context appended -- what Geme actually receives.
     assembled_system_prompt: str
 
-# Contact Submission schemas
-class ContactSubmissionBase(BaseModel):
-    name: str
-    email: str
-    message: str
-
-class ContactSubmissionCreate(ContactSubmissionBase):
-    pass
-
-class ContactSubmission(ContactSubmissionBase):
-    id: int
-    created_at: Optional[datetime] = None
-
-    model_config = ConfigDict(from_attributes=True)
-
-# Film Submission schemas
-class FilmSubmissionBase(BaseModel):
-    title: str
-    director: str
-    duration: Optional[str] = None
-    link: str
-    synopsis: Optional[str] = None
-    email: str
-
-class FilmSubmissionCreate(FilmSubmissionBase):
-    pass
-
-class FilmSubmission(FilmSubmissionBase):
-    id: int
-    created_at: Optional[datetime] = None
-
-    model_config = ConfigDict(from_attributes=True)
-
-# User Reflection schemas
-class UserReflectionBase(BaseModel):
-    capsule_id: int
-    email: Optional[str] = None
-    answers: str
-    submitted_to_lgn: bool = False
-
-class UserReflectionCreate(UserReflectionBase):
-    pass
-
-class UserReflection(UserReflectionBase):
-    id: int
-    created_at: Optional[datetime] = None
-
-    model_config = ConfigDict(from_attributes=True)
-
 # Storyboard Submission schemas
 # Storyboard
 #
@@ -328,6 +281,17 @@ StoryboardStatus = Literal["pending", "approved", "declined"]
 # A base64 photo of a 320px JPEG is ~27 KB; this leaves generous headroom while
 # keeping a public endpoint from accepting arbitrary payloads.
 MAX_PHOTO_BASE64_CHARS = 200_000
+
+
+Engagement = Literal["watch", "reflect", "practice"]
+
+
+class TaggedFilm(BaseModel):
+    """Another film a Storyboard story refers to: one of LGN's (capsule_id)
+    or a title the author typed."""
+    title: str = Field(min_length=1, max_length=200)
+    year: Optional[str] = Field(None, max_length=10)
+    capsule_id: Optional[int] = None
 
 
 class StoryboardSubmissionCreate(BaseModel):
@@ -343,6 +307,12 @@ class StoryboardSubmissionCreate(BaseModel):
     """
     capsule_id: int
     content: str = Field(..., min_length=1, max_length=5000)
+    # Optional tags the author may add (Figma "Add to the Storyboard"): the
+    # level of engagement, the focus (Self / Neighbor / World; the reviewer
+    # can still change it) and up to four more films.
+    engagement: Optional[Engagement] = None
+    dimension: Optional[Dimension] = None
+    extra_films: List["TaggedFilm"] = Field(default_factory=list, max_length=4)
     author_name: Optional[str] = Field(None, max_length=60)
     author_location: Optional[str] = Field(None, max_length=80)
     # Optional, only for asking the author about edits; never shown publicly.
@@ -376,6 +346,8 @@ class StoryboardStory(BaseModel):
     photo_url: Optional[str] = None
     created_at: Optional[datetime] = None
     dimension: Optional[Dimension] = None
+    engagement: Optional[Engagement] = None
+    extra_films: List[TaggedFilm] = []
 
 
 class StoryboardResponse(BaseModel):
@@ -404,6 +376,8 @@ class StoryboardAdminItem(BaseModel):
     created_at: Optional[datetime] = None
     reviewed_at: Optional[datetime] = None
     dimension: Optional[Dimension] = None
+    engagement: Optional[Engagement] = None
+    extra_films: List[TaggedFilm] = []
     author_email: Optional[str] = None
     # Plain-language reasons it might be spam (links, repeats, ...). Empty when
     # nothing looks off. A hint for the reviewer, never an automatic decline.
@@ -429,3 +403,102 @@ class AdminLoginResponse(BaseModel):
 class AdminSessionResponse(BaseModel):
     valid: bool
 
+
+
+# About pages (admin-editable). The four pages of the About menu; FAQs holds
+# question/answer sections and "credits" the small print under them.
+AboutPage = Literal["life-numbers", "lgn-cinema", "faqs", "credits"]
+PersonCategory = Literal["team", "board", "advisory"]
+
+
+class AboutSectionBase(BaseModel):
+    heading: Optional[str] = Field(None, max_length=500)
+    body: Optional[str] = Field(None, max_length=20000)
+
+class AboutSectionCreate(AboutSectionBase):
+    page: AboutPage
+
+class AboutSectionUpdate(AboutSectionBase):
+    position: Optional[int] = None
+
+class AboutSection(AboutSectionBase):
+    id: int
+    page: AboutPage
+    position: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PersonBase(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    role: Optional[str] = Field(None, max_length=200)
+    bio: Optional[str] = Field(None, max_length=5000)
+    film_lead: Optional[str] = Field(None, max_length=200)
+    film_title: Optional[str] = Field(None, max_length=300)
+    film_year: Optional[str] = Field(None, max_length=20)
+    film_url: Optional[str] = Field(None, max_length=500)
+
+class PersonCreate(PersonBase):
+    category: PersonCategory
+
+class PersonUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    role: Optional[str] = Field(None, max_length=200)
+    bio: Optional[str] = Field(None, max_length=5000)
+    film_lead: Optional[str] = Field(None, max_length=200)
+    film_title: Optional[str] = Field(None, max_length=300)
+    film_year: Optional[str] = Field(None, max_length=20)
+    film_url: Optional[str] = Field(None, max_length=500)
+    position: Optional[int] = None
+
+class Person(PersonBase):
+    id: int
+    category: PersonCategory
+    position: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AboutContent(BaseModel):
+    sections: List[AboutSection] = []
+    people: List[Person] = []
+
+
+# For Filmmakers: claim a guide, or (cast and crew) share how a film was made.
+FilmmakerRole = Literal["director", "writer", "producer", "cast-crew"]
+FilmmakerRequestStatus = Literal["new", "replied", "closed"]
+
+
+class FilmmakerRequestCreate(BaseModel):
+    film_title: str = Field(min_length=1, max_length=300)
+    film_year: Optional[str] = Field(None, max_length=10)
+    capsule_id: Optional[int] = None
+    role: FilmmakerRole
+    name: str = Field(min_length=1, max_length=200)
+    email: str = Field(min_length=3, max_length=320)
+    work_link: Optional[str] = Field(None, max_length=1000)
+    message: Optional[str] = Field(None, max_length=5000)
+    # Bot trap: a hidden field people never fill in.
+    website: Optional[str] = None
+
+
+class FilmmakerRequestUpdate(BaseModel):
+    status: Optional[FilmmakerRequestStatus] = None
+    admin_note: Optional[str] = Field(None, max_length=5000)
+
+
+class FilmmakerRequest(BaseModel):
+    id: int
+    film_title: str
+    film_year: Optional[str] = None
+    capsule_id: Optional[int] = None
+    role: FilmmakerRole
+    name: str
+    email: str
+    work_link: Optional[str] = None
+    message: Optional[str] = None
+    status: FilmmakerRequestStatus = "new"
+    admin_note: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)

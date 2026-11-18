@@ -1,0 +1,269 @@
+/* The About pages. Figma "ABOUT—*", at 1920 (with UX's smaller type):
+   - the menu at x=40, its first line ~210 down; the current page "> " and
+     black, the others grey;
+   - the text column from the 660 line (measured from the page's centre),
+     up to ~760 wide; section headings in the 48 size (now 36px);
+   - the photo: 291 wide at the right margin (Life > Numbers 291x385, LGN
+     Cinema 291x218), or under the menu on People (291x320, y=540);
+   - People: Team / Board of Directors / Advisory Council, each a heading
+     over a rule, then a row per person -- name and grey role on the left,
+     bio on the right (x=970), a rule between rows;
+   - FAQs: ruled question rows like Self / Neighbor / World, then Credits. */
+
+.about {
+  display: grid;
+  grid-template-columns: max(220px, calc(50% - 300 * var(--dp))) minmax(0, 1fr) auto;
+  align-items: start;
+  padding: calc(190 * var(--vdp)) var(--grid-margin) calc(120 * var(--vdp));
+  color: var(--primary);
+}
+
+.about-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.1em;
+  padding-top: 6px;
+}
+
+.about-menu-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-grey);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.about-menu-link:hover,
+.about-menu-link.is-current {
+  color: var(--primary);
+}
+
+.about-menu-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.about-main {
+  min-width: 0;
+}
+
+/* Prose stops at ~760 (x 660..1420); People's rows and the FAQ rules run on
+   to the right margin, where there's no photo. */
+.about-section,
+.about-credits {
+  max-width: calc(760 * var(--dp) + 40px);
+}
+
+.about--people .about-main,
+.about--faqs .about-main {
+  grid-column: 2 / -1;
+}
+
+.about-note {
+  color: var(--text-grey);
+}
+
+/* ---------------------------------------------------------------- photos */
+
+.about-photo {
+  display: block;
+  width: calc(291 * var(--dp));
+  object-fit: cover;
+  margin-left: calc(40 * var(--dp));
+}
+
+.about-photo--tall {
+  aspect-ratio: 291 / 385;
+  margin-top: calc(-20 * var(--vdp));
+}
+
+.about-photo--wide {
+  aspect-ratio: 291 / 218;
+  margin-top: 4px;
+}
+
+/* On People the photo sits in the menu column, ~300px under the menu. */
+.about-photo--menu {
+  aspect-ratio: 291 / 320;
+  margin: calc(250 * var(--vdp)) 0 0;
+}
+
+/* ----------------------------------------------------------- sections */
+
+.about-wordmark img {
+  display: block;
+  width: calc(604 * var(--dp));
+  max-width: 100%;
+  height: auto;
+}
+
+.about-wordmark + .about-section {
+  margin-top: calc(170 * var(--vdp));
+}
+
+.about-section + .about-section {
+  margin-top: calc(88 * var(--vdp));
+}
+
+.about-heading {
+  font-size: var(--text-48);
+  letter-spacing: var(--track-48);
+  font-weight: var(--weight-display);
+  line-height: var(--leading);
+}
+
+.about-body {
+  margin-top: 12px;
+}
+
+.about-body p + p {
+  margin-top: 1.1em;
+}
+
+.about-body strong {
+  font-weight: var(--weight-display);
+}
+
+.rich-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.about-cta {
+  margin-top: calc(100 * var(--vdp));
+}
+
+/* ---------------------------------------------------------------- people */
+
+.about-people + .about-people {
+  margin-top: calc(80 * var(--vdp));
+}
+
+.about-people-heading {
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--text-48);
+  letter-spacing: var(--track-48);
+  font-weight: var(--weight-display);
+  line-height: var(--leading);
+}
+
+.about-person {
+  display: grid;
+  grid-template-columns: calc(310 * var(--dp)) minmax(0, 1fr);
+  padding: 22px 0 40px;
+}
+
+.about-person + .about-person {
+  border-top: 1px solid var(--rule);
+}
+
+.about-person-name {
+  font-size: inherit;
+  font-weight: 400;
+}
+
+.about-person-role {
+  margin-top: 1.1em;
+  color: var(--text-grey);
+  max-width: 180px;
+}
+
+.about-person-text .about-body {
+  margin-top: 0;
+  max-width: calc(910 * var(--dp));
+}
+
+.about-person-film {
+  margin-top: 1.1em;
+}
+
+.about-person-text .about-body + .about-person-film {
+  margin-top: 1.1em;
+}
+
+/* ------------------------------------------------------------------ faqs */
+
+.about-faq {
+  border-top: 1px solid var(--rule);
+}
+
+.about-faq-q {
+  font-size: var(--text-48);
+  letter-spacing: var(--track-48);
+  font-weight: var(--weight-display);
+  line-height: var(--leading);
+}
+
+.about-faq-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  padding: 2px 0 calc(32 * var(--vdp));
+  border: none;
+  background: none;
+  color: var(--primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.about-faq-toggle:disabled {
+  cursor: default;
+}
+
+.about-faq-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* 14px like every ">" (UX). */
+.about-faq-caret {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 14px;
+  margin-top: 8px;
+}
+
+.about-faq-a {
+  max-width: 440px;
+  margin: 0 0 calc(40 * var(--vdp));
+}
+
+.about-credits {
+  margin-top: calc(100 * var(--vdp));
+}
+
+.about-credits-heading {
+  font-size: inherit;
+  font-weight: 400;
+}
+
+.about-credits .about-body {
+  max-width: 440px;
+  margin-top: 1.6em;
+}
+
+@media (max-width: 1024px) {
+  .about {
+    grid-template-columns: 1fr;
+    row-gap: 32px;
+  }
+
+  .about-photo {
+    margin: 0;
+    width: 260px;
+  }
+
+  .about-person {
+    grid-template-columns: 1fr;
+    row-gap: 12px;
+  }
+}

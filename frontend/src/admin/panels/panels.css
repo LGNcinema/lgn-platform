@@ -929,3 +929,20 @@
     flex-direction: column;
   }
 }
+
+/* A request's details (Filmmaker requests): label column and value. */
+.admin-portal .apnl-dl {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 6px 12px;
+  margin: 8px 0 14px;
+}
+
+.admin-portal .apnl-dl dt {
+  color: var(--admin-muted, #6b6b6b);
+}
+
+.admin-portal .apnl-dl dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}

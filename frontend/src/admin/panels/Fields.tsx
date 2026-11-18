@@ -696,11 +696,11 @@ function ItemCard<T extends { id: number }, D extends Record<string, string>>({
 }
 
 interface NewItemProps<D extends Record<string, string>> {
-  capsuleId: number;
+  /** Where a new item is POSTed: the story's collection unless overridden. */
+  createPath: string;
   fields: ListFieldSpec<D>[];
   blank: D;
   singular: string;
-  collection: string;
   onSaved: PanelProps['onSaved'];
   /** Sent with every new item but not edited: e.g. its Self / Neighbor /
    *  World group, or a title the form doesn't ask for. */
@@ -708,11 +708,10 @@ interface NewItemProps<D extends Record<string, string>> {
 }
 
 function NewItem<D extends Record<string, string>>({
-  capsuleId,
+  createPath,
   fields,
   blank,
   singular,
-  collection,
   onSaved,
   fixedBody,
 }: NewItemProps<D>) {
@@ -739,7 +738,7 @@ function NewItem<D extends Record<string, string>>({
       return;
     }
     void save.run(async () => {
-      await adminFetch(`/api/admin/capsules/${capsuleId}/${collection}`, {
+      await adminFetch(createPath, {
         method: 'POST',
         body: { ...fixedBody, ...toBody(fields, draft) },
       });
@@ -814,7 +813,10 @@ export interface ListPanelProps<T extends { id: number }, D extends Record<strin
   /** Omit for a list nested inside another panel (no heading of its own). */
   title?: string;
   description?: ReactNode;
-  capsuleId: number;
+  /** The story the items belong to. Omit for site-wide lists, with createPath. */
+  capsuleId?: number;
+  /** Overrides where new items are POSTed (default: the story's collection). */
+  createPath?: string;
   items: T[];
   /** Lowercase noun, e.g. "reflection". Used in buttons and confirmations. */
   singular: string;
@@ -845,6 +847,7 @@ export function ListPanel<T extends { id: number }, D extends Record<string, str
   title,
   description,
   capsuleId,
+  createPath,
   items,
   singular,
   collection,
@@ -886,11 +889,10 @@ export function ListPanel<T extends { id: number }, D extends Record<string, str
       <div className="apnl-list">
         {canAdd ? (
           <NewItem
-            capsuleId={capsuleId}
+            createPath={createPath ?? `/api/admin/capsules/${capsuleId}/${collection}`}
             fields={fields}
             blank={blank}
             singular={singular}
-            collection={collection}
             onSaved={onSaved}
             fixedBody={fixedBody}
           />

@@ -1,35 +1,48 @@
-/* Reflect's open circle. Figma v3 "Campfire—reflect", at 1920: the
-   question (20px) 2px in from the column; the answer box 58px under it,
-   full width, 109 tall, a grey 1px outline with a grey hint inset ~10px;
-   "Save my answer", a 202x33 outlined button, 15px under the box. */
+/* Reflect's open circle. Figma "REFLECT", at 1920: the question 2px in from
+   the column; the answer box ~25px under it, full width, ~109 tall, a grey
+   1px outline with a grey hint; "Copy >" ~14px under the box, which turns
+   into the unboxed-caret "Copied! Paste it somewhere safe—" (popup 9). */
 
 .reflect-questions {
-  list-style: none;
   margin: 0;
   padding: 0 0 0 2px;
   line-height: var(--leading);
 }
 
-.reflect-questions li + li {
+.reflect-questions p + p {
   margin-top: 1.1em;
 }
 
 .reflect-field {
   height: 109px;
   min-height: 109px;
-  margin-top: calc(58.3 * var(--vdp));
-  padding: 13px 10px;
+  margin-top: calc(25 * var(--vdp));
+  padding: 10px;
 }
 
 .reflect-actions {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-top: 15px;
+  margin-top: 14px;
 }
 
 .reflect-save {
-  height: 33px;
+  min-width: 120px;
+}
+
+/* The copied state: the same box, without the ">". */
+.reflect-copied {
+  cursor: default;
+}
+
+.reflect-copied::after {
+  content: none;
+}
+
+.reflect-copied:hover {
+  background: transparent;
+  color: var(--primary);
 }
 
 .reflect-status {

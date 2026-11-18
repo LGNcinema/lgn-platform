@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import './SiteFooter.css';
-import type { SiteView } from './SiteHeader';
+import type { AboutSubView, SiteView } from './SiteHeader';
 import { MAILCHIMP_BOT_FIELD, subscribeEmail } from './mailchimp';
 
 type JoinState =
@@ -12,19 +12,22 @@ type JoinState =
 interface Props {
   theme: 'light' | 'dark';
   onNavigate: (view: SiteView) => void;
+  /** Opens one of the About pages (FAQs + Credits is one of them). */
+  onOpenAbout: (sub: AboutSubView) => void;
 }
 
 const CONTACT_EMAIL = 'info@lgncinema.org';
 
 /**
- * Global footer. Figma v3: the bottom of every frame -- a 1px rule across the
- * page, then four columns: the logo, Navigate, Contact and Join, with a
- * bottom row of small print under them.
+ * Global footer. Figma "FOOTER V3": a 1px rule across the page, then three
+ * columns on the 40 / 660 / 1280 lines -- links; contact and address; Join
+ * us -- and a bottom row of the wordmark, the EIN and the copyright.
  *
  * Where it deliberately does NOT follow the frame: the frame spells the
- * social link "Youtube"; the brand is "YouTube".
+ * social link "Youtube"; the brand is "YouTube". "Privacy, terms,
+ * accessibility" is plain text until those pages exist.
  */
-export function SiteFooter({ theme, onNavigate }: Props) {
+export function SiteFooter({ theme, onNavigate, onOpenAbout }: Props) {
   const [join, setJoin] = useState<JoinState>({ kind: 'idle' });
 
   const handleJoin = async (e: FormEvent<HTMLFormElement>) => {
@@ -46,9 +49,9 @@ export function SiteFooter({ theme, onNavigate }: Props) {
     }
   };
 
-  const nav = (view: SiteView, label: string) => (
+  const link = (label: string, onClick: () => void) => (
     <li>
-      <button type="button" className="lgn-link" onClick={() => onNavigate(view)}>
+      <button type="button" className="lgn-link" onClick={onClick}>
         {label}
       </button>
     </li>
@@ -57,33 +60,24 @@ export function SiteFooter({ theme, onNavigate }: Props) {
   return (
     <footer className="lgn-footer">
       <div className="footer-grid">
-        <div className="footer-col col-logo">
-          <img
-            className="footer-logo"
-            src={theme === 'dark' ? '/images/lgn-logo-registered-white.svg' : '/images/lgn-logo-registered.svg'}
-            alt="Life is Greater than Numbers"
-          />
-          <p className="footer-bottom">501(c)(3) EIN: 33-2376438</p>
-        </div>
-
-        <nav className="footer-col col-nav" aria-labelledby="footer-nav-heading">
-          <h2 id="footer-nav-heading" className="footer-heading">Navigate</h2>
+        <nav className="footer-col col-nav" aria-label="Footer">
           <ul className="footer-list">
-            {nav('campfire', 'Go Beyond')}
-            {nav('invest', 'Invest')}
-            {nav('about', 'About')}
-            {nav('storyboard', 'Storyboard')}
-            {nav('submit-film', 'Submit a film')}
+            {link('About', () => onOpenAbout('life-numbers'))}
+            {link('Invest', () => onNavigate('invest'))}
+            {link('For filmmakers', () => onNavigate('for-filmmakers'))}
+            {link('FAQs + Credits', () => onOpenAbout('faqs'))}
           </ul>
-          <p className="footer-bottom">
-            <button type="button" className="lgn-link" onClick={() => onNavigate('timeline')}>
-              A witness through time
-            </button>
-          </p>
+          <ul className="footer-list footer-list--gap">
+            {link('A witness through time', () => onNavigate('timeline'))}
+            <li>
+              <a className="lgn-link" href="https://www.youtube.com/@lgncinema" target="_blank" rel="noopener noreferrer">
+                YouTube
+              </a>
+            </li>
+          </ul>
         </nav>
 
         <div className="footer-col col-contact">
-          <h2 className="footer-heading">Contact</h2>
           <p className="footer-text">
             <a className="lgn-link" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
           </p>
@@ -94,15 +88,11 @@ export function SiteFooter({ theme, onNavigate }: Props) {
             <br />
             Anaheim, CA 92801
           </address>
-          <p className="footer-bottom">
-            <a className="lgn-link" href="https://www.youtube.com/@lgncinema" target="_blank" rel="noopener noreferrer">
-              YouTube
-            </a>
-          </p>
+          <p className="footer-text">Privacy, terms, accessibility</p>
         </div>
 
         <div className="footer-col col-join">
-          <h2 className="footer-heading">Join</h2>
+          <h2 className="footer-heading">Join us</h2>
           {/* Mailchimp signup in our own markup, sent in the background (see
               mailchimp.ts) with the result shown here. The hidden field is
               Mailchimp's bot trap. */}
@@ -138,8 +128,15 @@ export function SiteFooter({ theme, onNavigate }: Props) {
               {join.kind === 'error' && join.message}
             </p>
           </form>
-          <p className="footer-bottom">&copy;{new Date().getFullYear()} Life is Greater than Numbers, Inc.</p>
         </div>
+
+        <img
+          className="footer-logo"
+          src={theme === 'dark' ? '/images/lgn-logo-registered-white.svg' : '/images/lgn-logo-registered.svg'}
+          alt="Life is Greater than Numbers"
+        />
+        <p className="footer-bottom">501(c)(3) EIN: 33-2376438</p>
+        <p className="footer-bottom">&copy;{new Date().getFullYear()} Life is Greater than Numbers, Inc.</p>
       </div>
     </footer>
   );

@@ -24,9 +24,8 @@
  * -- that is how the editor confirms the right film is attached.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { API_URL } from '../../api';
 import { hasBehindTheScenes } from '../../components/campfire/StoryBehind';
-import type { CapsuleDetail, CapsuleSummary } from '../../types';
+import type { CapsuleDetail } from '../../types';
 import { PREVIEW_READY, type PreviewMessage } from '../PreviewFrame';
 import { formatLocal, localTimeLabel, parseNaiveUtc, publicationState } from '../publishing';
 import { StatusPill } from '../StatusPill';
@@ -37,38 +36,8 @@ import type { PanelProps } from './Fields';
 const FRAME_W = 1920;
 const FRAME_H = 1080;
 
-/**
- * The "Story No." this capsule will carry on the public site.
- *
- * The site numbers stories by their place among PUBLISHED stories in month
- * order. For a published capsule that is exact. For a draft or scheduled one it
- * is the number it will get when it goes live, assuming nothing earlier is
- * published first -- which is the useful answer for a preview.
- */
-function useStoryNumber(capsuleId: number, month: string): number {
-  const [number, setNumber] = useState(1);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch(`${API_URL}/api/capsules`, { signal: controller.signal })
-      .then((res) => (res.ok ? (res.json() as Promise<CapsuleSummary[]>) : []))
-      .then((published) => {
-        const earlier = published.filter((c) => c.id !== capsuleId && c.month < month).length;
-        setNumber(earlier + 1);
-      })
-      .catch(() => {
-        // Aborted, or offline: keep the fallback. A wrong story number is a
-        // cosmetic miss in a preview, not worth an error on the panel.
-      });
-    return () => controller.abort();
-  }, [capsuleId, month]);
-
-  return number;
-}
-
 interface WindowProps {
   capsule: CapsuleDetail;
-  storyNumber: number;
   /** Which page the frame opens on: the story page, or Behind the Film. */
   page: 'story' | 'behind';
   label: string;
@@ -80,7 +49,7 @@ interface WindowProps {
  * The same element inline and expanded, so the frame is never reloaded and
  * keeps whichever section and scroll position the editor is on.
  */
-function PreviewWindow({ capsule, storyNumber, page, label, stateLine }: WindowProps) {
+function PreviewWindow({ capsule, page, label, stateLine }: WindowProps) {
   const [expanded, setExpanded] = useState(false);
   const [scale, setScale] = useState(0);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -89,9 +58,9 @@ function PreviewWindow({ capsule, storyNumber, page, label, stateLine }: WindowP
   // Send the story to the frame. Again whenever it is saved, and whenever the
   // frame says it is (re)loaded and listening.
   const post = useCallback(() => {
-    const message: PreviewMessage = { type: 'lgn-preview', capsule, storyNumber };
+    const message: PreviewMessage = { type: 'lgn-preview', capsule };
     frameRef.current?.contentWindow?.postMessage(message, window.location.origin);
-  }, [capsule, storyNumber]);
+  }, [capsule]);
 
   useEffect(post, [post]);
 
@@ -163,7 +132,6 @@ function PreviewWindow({ capsule, storyNumber, page, label, stateLine }: WindowP
 }
 
 export function PreviewPanel({ capsule }: PanelProps) {
-  const storyNumber = useStoryNumber(capsule.id, capsule.month);
   const state = publicationState(capsule);
   const scheduledAt = parseNaiveUtc(capsule.publish_at);
 
@@ -204,10 +172,10 @@ export function PreviewPanel({ capsule }: PanelProps) {
         </Note>
       ) : null}
 
-      <PreviewWindow capsule={capsule} storyNumber={storyNumber} page="story" label="Story page" stateLine={stateLine} />
+      <PreviewWindow capsule={capsule} page="story" label="Story page" stateLine={stateLine} />
 
       {hasBehindTheScenes(capsule) ? (
-        <PreviewWindow capsule={capsule} storyNumber={storyNumber} page="behind" label="Behind the Film" stateLine={stateLine} />
+        <PreviewWindow capsule={capsule} page="behind" label="Behind the Film" stateLine={stateLine} />
       ) : (
         <Note>
           This story has no Behind the Film page yet, so Watch shows no &ldquo;How this film was made&rdquo;

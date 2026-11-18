@@ -17,7 +17,12 @@ licensed font files (see Fonts).
 - **Cloud sessions (claude.ai/code)** have no Docker daemon, so run the stack
   bare: `cd backend && uv sync && ENV=development uv run uvicorn app.main:app
   --port 8000 --reload` (SQLite, schema built on startup) and Vite on :5173
-  with `/api` proxied to :8000 so Justin's remote preview works. Run
+  with `/api` proxied to :8000 so Justin's remote preview works (a local,
+  git-excluded `vite.cloud.config.ts` that merges `vite.config.ts` with that
+  proxy and `define: { 'import.meta.env.VITE_API_URL': 'window.location.origin' }`;
+  a bare `localhost:8000` API base breaks through the remote preview). The
+  container can't reach Neon's Postgres port; `tools/pull-neon`'s
+  `pull_neon.py` copies a Neon dev branch into SQLite over HTTPS instead. Run
   `npm run fetch-fonts` first (`BLOB_READ_WRITE_TOKEN` is set in the cloud
   environment). Review with 1920px screenshots. The container is ephemeral:
   anything uncommitted is lost when the session ends, so say so before it does.
@@ -35,8 +40,17 @@ licensed font files (see Fonts).
 - Text and buttons use fixed Figma px at every width; only layout and images
   scale, via `--dp` (100vw/1920, clamped 0.75–1px) across and `--vdp` down.
   Never put `clamp(..vw..)` or `calc(N * var(--dp))` on font sizes.
-- Type sizes 12/20/36/48 with the frames' tracking (`--track-*` in index.css).
-  Panels `--panel: #ededed` (the frames' grey; don't deepen it).
+- Type: UX scaled the frames' 12/20/36/48 down. The tokens keep the frame
+  names (`--text-20` is now 14px, `--text-36` 24px, `--text-48` 36px; 12
+  stays, in Medium). Tracking is -4% on every element (`--track`, applied per
+  element so em resolves against each size). Boxed buttons and fields are
+  `--control-height` (28px); every ">" is 14px. Panels `--panel: #ededed`
+  (the frames' grey; don't deepen it).
+- Navigation (UX's mock): the landing page is Go Beyond (`campfire` view, the
+  bare URL; the old intro home page is gone). Header: the logo, "Give"
+  (Invest) and "Add to Storyboard" (opens the Storyboard's form). Everything
+  else is in the footer ("FOOTER V3"). Dropdowns all start closed; text
+  fields show focus by the caret alone; back links are a bare "<".
 - Columns are measured from the page centre: header links, the home logo's
   "L", About/Invest body text and search fields start on the 660 line
   (`50% - 300 * var(--dp)`); `#root` is capped at 1920 and centred.
@@ -81,14 +95,25 @@ licensed font files (see Fonts).
 
 ## Features at a glance
 
-- **Story page:** Watch / Reflect / Practice; Reflect and Practice are organised
-  as Self / Neighbor / World. Reflect answers stay on the visitor's device;
-  "Save my answer" also copies a formatted version to the clipboard.
+- **Story page:** Watch / Reflect / Practice tabs; Reflect and Practice are
+  organised as Self / Neighbor / World. The panel's labels: tier dots
+  (LGN Presents stories are 4, LGN + Filmmaker), and popups for How these
+  guides are made, Share, Need support? and + Cast and Crew. Reflect answers
+  are never stored or sent (the copy promises "nothing you write is saved"):
+  memory only, and "Copy" puts one on the clipboard. Practice has Add to
+  Calendar (.ics / Google, nothing sent to LGN).
+- **About pages** (Life > Numbers, LGN Cinema, People, FAQs + Credits): text
+  edited in the admin's Site pages > About pages (`about_sections`, `people`);
+  layout and photos fixed. Bodies take `**bold lead.**` and `[text](url)`.
+- **For Filmmakers:** claim-a-guide requests (`filmmaker_requests`), reviewed
+  in the admin's Site pages > Filmmaker requests.
 - **Behind the Film** ("How this film was made", `?section=making`): large
   picture, credits ("Role: Name, Name" lines), a 3x3 gallery and reorderable
   written sections; edited on the admin's Behind the Film tab.
 - **Storyboard:** open to read; submissions need admin approval; the admin has
   a Storyboard page (sidebar) for every story, with rule-based spam hints.
+  The form and reader are right-hand drawers; authors may add an engagement
+  tag, a focus tag (`dimension`) and up to four more films (`extra_films`).
 - **Admin** (`/admin`, one shared password, `ADMIN_PASSWORD` in `backend/.env`):
   tabs Watch, Reflect, Practice, Behind the Film, Details, Preview, Storyboard.
   Preview renders the real page in a 1920x1080 iframe.
@@ -101,7 +126,24 @@ licensed font files (see Fonts).
   written approval before turning on publicly. Raised: TMDB search can return
   adult titles despite `include_adult=false`.
 - Vercel Hobby is non-commercial-use only; LGN probably needs Pro. Undecided.
-- V3 frames relabel the story panel "STORY NO. 1 / [MONTH] / HOW THESE GUIDES
-  ARE MADE"; not implemented (awaiting Justin).
+- Held migration -- add it to `backend/migrations/` only once the 2026-11
+  design update is live in production (old code still reads these), and
+  export anything worth keeping from the three tables first:
+  ```sql
+  ALTER TABLE capsules DROP COLUMN IF EXISTS reflect_intro, DROP COLUMN IF EXISTS practice_title;
+  ALTER TABLE reflections DROP COLUMN IF EXISTS introduction;
+  DROP TABLE IF EXISTS contact_submissions, film_submissions, user_reflections;
+  ```
+  (Submit a film and Contact are retired -- For Filmmakers replaces them;
+  `user_reflections` was never called and contradicts "nothing is saved".)
+- Placeholders on screen until real copy: Invest's Build and two Give lines
+  (in code), People bios and one FAQ answer (admin-editable).
+- Practice: displayed as the instruction (first line, black) and "For
+  example:" options (the rest, grey, lettered) until UX settles the model --
+  per Karson, every film gets a universal option plus one at its tier.
+- Waiting on `beyond-the-screen` (Cooper): the searched-film popups and entry
+  points (Improve this page / this question / this section, the contribute
+  form, Where to watch, "Not the right film?"). No Privacy / terms /
+  accessibility page yet (footer text only).
 - Deferred: film submissions section, desktop/mobile preview toggle, poster
   upload, Spark link placement, Geme's return.

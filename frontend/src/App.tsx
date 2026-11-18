@@ -1,17 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { GemeTuningPanel } from './components/GemeTuningPanel';
-import { SiteHeader, type SiteView } from './components/chrome/SiteHeader';
+import { SiteHeader, type AboutSubView, type SiteView } from './components/chrome/SiteHeader';
+import { AboutPage } from './components/about/AboutPage';
+import { InvestPage } from './components/invest/InvestPage';
+import { FilmmakersPage } from './components/filmmakers/FilmmakersPage';
 import { SiteFooter } from './components/chrome/SiteFooter';
 import { CampfireHome } from './components/campfire/CampfireHome';
-import { StoryShell } from './components/campfire/StoryShell';
+import { StoryFoot, StoryShell } from './components/campfire/StoryShell';
 import { StoryWatch } from './components/campfire/StoryWatch';
 import { hasBehindTheScenes, StoryBehind } from './components/campfire/StoryBehind';
 import { WatchMode } from './components/campfire/WatchMode';
 import { StoryReflect } from './components/campfire/StoryReflect';
 import { StoryPractice } from './components/campfire/StoryPractice';
 import { Storyboard } from './components/campfire/Storyboard';
-import { VALID_STORY_SECTIONS, formatStoryMonth, storyNumber, type StorySection } from './components/campfire/campfire';
+import { VALID_STORY_SECTIONS, type StorySection } from './components/campfire/campfire';
 import type { CapsuleDetail, CapsuleSummary, GemeTuning } from './types';
 import { API_URL } from './api';
 
@@ -134,30 +137,8 @@ const GridOverlay = ({ cols, rows }: { cols: number; rows: number }) => (
 
 // `capsule` is a single story's page; `campfire` is the hub listing them. The
 // backend still calls stories capsules, and so does this view name.
-/**
- * A film link as typed -> a full web address, or null if it isn't one.
- * Accepts bare addresses ("youtube.com/watch?v=...", "www.vimeo.com/123") by
- * adding https://, and rejects things that clearly aren't links: spaces, no
- * domain dot, or a scheme other than http(s).
- */
-function normalizeFilmLink(raw: string): string | null {
-  const text = raw.trim();
-  if (!text || /\s/.test(text)) return null;
-  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(text) ? text : `https://${text}`;
-  try {
-    const url = new URL(withScheme);
-    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
-    if (!url.hostname.includes('.') || url.hostname.startsWith('.') || url.hostname.endsWith('.')) return null;
-    return withScheme;
-  } catch {
-    return null;
-  }
-}
-
-const FILM_LINK_INVALID = 'Please enter a link to your film, like youtube.com/watch?v=… or vimeo.com/123456.';
-
-const VALID_VIEWS = ['campfire', 'capsule', 'watch', 'storyboard', 'timeline', 'about', 'invest', 'contact', 'submit-film'] as const;
-const VALID_ABOUT_SUBVIEWS = ['purpose', 'mission-vision', 'board-staff'] as const;
+const VALID_VIEWS = ['campfire', 'capsule', 'watch', 'storyboard', 'timeline', 'about', 'invest', 'for-filmmakers'] as const;
+const VALID_ABOUT_SUBVIEWS = ['life-numbers', 'lgn-cinema', 'people', 'faqs'] as const;
 
 /**
  * Views that open in a theme other than light. Everything absent from this map
@@ -180,9 +161,9 @@ function App() {
     const viewParam = new URLSearchParams(window.location.search).get('view');
     return (VALID_VIEWS as readonly string[]).includes(viewParam || '') ? (viewParam as typeof VALID_VIEWS[number]) : 'campfire';
   });
-  const [aboutSubView, setAboutSubView] = useState<'purpose' | 'mission-vision' | 'board-staff'>(() => {
+  const [aboutSubView, setAboutSubView] = useState<AboutSubView>(() => {
     const subParam = new URLSearchParams(window.location.search).get('sub');
-    return (VALID_ABOUT_SUBVIEWS as readonly string[]).includes(subParam || '') ? (subParam as typeof VALID_ABOUT_SUBVIEWS[number]) : 'mission-vision';
+    return (VALID_ABOUT_SUBVIEWS as readonly string[]).includes(subParam || '') ? (subParam as typeof VALID_ABOUT_SUBVIEWS[number]) : 'life-numbers';
   });
 
   // Database API States
@@ -202,26 +183,7 @@ function App() {
 
   // Tabbed Navigation state for Capsule view is managed in parent/components
 
-  // Form states
-  const [contactName, setContactName] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
-  const [contactMessage, setContactMessage] = useState('');
-  const [contactSuccess, setContactSuccess] = useState(false);
-  const [contactSubmitting, setContactSubmitting] = useState(false);
-
-  const [filmTitle, setFilmTitle] = useState('');
-  const [filmDirector, setFilmDirector] = useState('');
-  const [filmDuration, setFilmDuration] = useState('');
-  const [filmLink, setFilmLink] = useState('');
-  const [filmSynopsis, setFilmSynopsis] = useState('');
-  const [filmEmail, setFilmEmail] = useState('');
-  // The submitter confirms the film is their own. Required to submit.
-  const [filmIsOwn, setFilmIsOwn] = useState(false);
-  const [filmSuccess, setFilmSuccess] = useState(false);
-  const [filmSubmitting, setFilmSubmitting] = useState(false);
-
   const [activeTimelineEra, setActiveTimelineEra] = useState<string>('Before The Common Era');
-  const [investExpandedRow, setInvestExpandedRow] = useState<string | null>(null);
   // Which section of a story page is showing. ?section= sets it for QA; the old
   // ?action= is still read, and its retired values (discuss, gather) fall back
   // to Watch rather than to a section that no longer exists.
@@ -435,68 +397,6 @@ function App() {
     setCurrentView('capsule');
   };
 
-  // Submissions handlers
-  const handleContactSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!contactName || !contactEmail || !contactMessage) return;
-    setContactSubmitting(true);
-    try {
-      const res = await fetch(`${API_URL}/api/submissions/contact`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: contactName,
-          email: contactEmail,
-          message: contactMessage,
-        }),
-      });
-      if (res.ok) {
-        setContactSuccess(true);
-        setContactName('');
-        setContactEmail('');
-        setContactMessage('');
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setContactSubmitting(false);
-    }
-  };
-
-  const handleFilmSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const link = normalizeFilmLink(filmLink);
-    if (!filmTitle || !filmDirector || !link || !filmEmail || !filmIsOwn) return;
-    setFilmSubmitting(true);
-    try {
-      const res = await fetch(`${API_URL}/api/submissions/film`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: filmTitle,
-          director: filmDirector,
-          duration: filmDuration || null,
-          link,
-          synopsis: filmSynopsis || null,
-          email: filmEmail,
-        }),
-      });
-      if (res.ok) {
-        setFilmSuccess(true);
-        setFilmTitle('');
-        setFilmDirector('');
-        setFilmDuration('');
-        setFilmLink('');
-        setFilmSynopsis('');
-        setFilmEmail('');
-        setFilmIsOwn(false);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setFilmSubmitting(false);
-    }
-  };
 
 
 
@@ -526,34 +426,39 @@ function App() {
 
     switch (currentView) {
       case 'campfire':
-        return <CampfireHome stories={allCapsules} theme={theme} onOpenStory={(id) => openStory(id)} />;
+        return (
+          <CampfireHome
+            stories={allCapsules}
+            theme={theme}
+            onOpenStory={(id) => openStory(id)}
+            onOpenFilmmakers={() => setCurrentView('for-filmmakers')}
+            onOpenAboutCinema={() => {
+              setAboutSubView('lgn-cinema');
+              setCurrentView('about');
+            }}
+          />
+        );
 
       case 'capsule': {
         if (storySection === 'making') {
           return <StoryBehind capsule={activeCapsule} onBack={() => setStorySection('watch')} />;
         }
-        const number = storyNumber(activeCapsule.id, allCapsules);
         return (
           <StoryShell
             capsule={activeCapsule}
-            labels={['LGN', `Story No. ${number}`, formatStoryMonth(activeCapsule.month)]}
             section={storySection}
             onSelectSection={setStorySection}
             onBackToCampfire={() => setCurrentView('campfire')}
             gemeTuning={gemeTuning}
             gemeTuningVersion={gemeTuningVersion}
+            onOpenFilmmakers={() => setCurrentView('for-filmmakers')}
             leftFoot={
-              storySection === 'watch' ? (
-                hasBehindTheScenes(activeCapsule) ? (
-                  <button type="button" className="lgn-btn" onClick={() => setStorySection('making')}>
-                    How this film was made
-                  </button>
-                ) : undefined
-              ) : (
-                <button type="button" className="lgn-btn" onClick={openStoryboardForm}>
-                  Add to the storyboard
-                </button>
-              )
+              <StoryFoot
+                capsule={activeCapsule}
+                section={storySection}
+                onOpenMaking={hasBehindTheScenes(activeCapsule) ? () => setStorySection('making') : undefined}
+                onAddToStoryboard={openStoryboardForm}
+              />
             }
           >
             {storySection === 'watch' && (
@@ -681,321 +586,14 @@ function App() {
         );
       }
 
-      case 'about': {
-        const aboutTab = (sub: typeof aboutSubView, label: string) => (
-          <button
-            type="button"
-            className={`lgn-link${aboutSubView === sub ? ' active' : ''}`}
-            aria-current={aboutSubView === sub ? 'page' : undefined}
-            onClick={() => setAboutSubView(sub)}
-          >
-            {label}
-          </button>
-        );
-        const LOREM = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vitae consequat lectus. Morbi pulvinar mauris nec leo ultricies rutrum.';
-        const person = (name: string, title: string, bio = LOREM) => (
-          <div className="team-list-item" key={name + title}>
-            <h3 className="person-name">{name}</h3>
-            <p className="person-title">{title}</p>
-            <p className="person-bio">{bio}</p>
-          </div>
-        );
-        return (
-          <div className="about-container">
-            {/* Figma v3 About: the menu on the left; on Board + Staff a photo
-                sits under it, on the other two a photo sits on the right. The
-                photos are fixed artwork from the frames. */}
-            <nav className="about-sidebar" aria-label="About">
-              {aboutTab('mission-vision', 'Mission + Vision')}
-              {aboutTab('purpose', 'Purpose')}
-              {aboutTab('board-staff', 'Board + Staff')}
-              {aboutSubView === 'board-staff' && (
-                <img className="about-photo about-photo--left" src="/images/about-board-staff.jpg" alt="" />
-              )}
-            </nav>
+      case 'for-filmmakers':
+        return <FilmmakersPage films={allCapsules} />;
 
-            <div className="about-content">
-              {aboutSubView === 'mission-vision' && (
-                <>
-                  <section className="about-block">
-                    <h1 className="about-title">Mission</h1>
-                    <p className="about-statement">To equip short films with pathways for reflection, discussion, and practice.</p>
-                  </section>
-                  <section className="about-block">
-                    <h2 className="about-title">Vision</h2>
-                    <p className="about-statement">A culture of common ground, where life is greater than numbers.</p>
-                  </section>
-                </>
-              )}
+      case 'about':
+        return <AboutPage sub={aboutSubView} onSelect={setAboutSubView} theme={theme} />;
 
-              {aboutSubView === 'purpose' && (
-                <>
-                  <h1 className="about-title">Purpose</h1>
-                  <p className="about-purpose-text">LGN stands for Life &gt; Numbers—a reminder that people are more than metrics, outcomes, opinions, identities, and categories.</p>
-                  <p className="about-purpose-text">We gather people around great stories that help us see life more fully. Each month, LGN offers one film as common ground, with simple pathways for reflection, discussion, and practice that help the story move beyond the screen and into greater living.</p>
-                </>
-              )}
-
-              {aboutSubView === 'board-staff' && (
-                <>
-                  <section className="team-section">
-                    <h1 className="team-label">Board</h1>
-                    <div className="team-list-layout">
-                      {person('Kirk Utzinger', 'Board Chair')}
-                      {person('Dean Kato', 'Director of Board Development')}
-                      {person('Ann Swann', 'Secretary')}
-                      {person('Lorem Ipsum', 'Director of Community Engagement')}
-                    </div>
-                  </section>
-                  <section className="team-section">
-                    <h2 className="team-label">Staff</h2>
-                    <div className="team-list-layout">
-                      {person('Karson Utzinger', 'Founder and Executive Director')}
-                      {person('Stephen Brown', 'Pipeline Producer')}
-                      {person('Joëlle Utzinger', 'Brand Designer')}
-                    </div>
-                  </section>
-                </>
-              )}
-            </div>
-
-            {aboutSubView === 'mission-vision' && <img className="about-photo" src="/images/about-mission-vision.jpg" alt="" />}
-            {aboutSubView === 'purpose' && <img className="about-photo" src="/images/about-purpose.jpg" alt="" />}
-          </div>
-        );
-      }
-
-      case 'invest': {
-        const investRow = (key: string, title: string, body: React.ReactNode) => {
-          const open = investExpandedRow === key;
-          return (
-            <button
-              type="button"
-              className={`invest-accordion-row${open ? ' open' : ''}`}
-              aria-expanded={open}
-              onClick={() => setInvestExpandedRow(open ? null : key)}
-            >
-              <span className="invest-row-title">{title}</span>
-              <span className="invest-row-content">{open && body}</span>
-              <span className="invest-row-icon" aria-hidden="true">{open ? 'v' : '>'}</span>
-            </button>
-          );
-        };
-        return (
-          <div className="invest-container">
-            <div className="invest-sidebar">
-              <h1 className="invest-title">How you can invest<br />in this vision</h1>
-              <img className="about-photo about-photo--left" src="/images/invest.jpg" alt="" />
-            </div>
-            <div className="invest-content">
-              <div className="invest-accordion">
-                {investRow('time', 'Time', (
-                  <ol className="invest-steps">
-                    <li>Share this vision with your network</li>
-                    <li>Join the LGN discourse (in beta)</li>
-                    <li>Partner with us to kickstart a peer-to-peer fundraising campaign</li>
-                  </ol>
-                ))}
-                {investRow('talent', 'Talent', 'Contribute your skills to our platform. We are currently seeking volunteers with experience in web development, design, and content writing.')}
-                {investRow('treasure', 'Treasure', 'Your financial support helps us license great films, maintain the platform, and grow the community.')}
-              </div>
-
-              {/* Stripe-hosted donation page, in a new tab so the visitor keeps their place here. */}
-              <a className="lgn-btn invest-give-btn" id="btn-give-treasure" href="https://donate.stripe.com/cNi9AT2g6fxc6j1bs4cjS00" target="_blank" rel="noopener noreferrer">Give Here</a>
-
-              <p className="invest-footer-info">As a registered 501(c)(3), donations to Life is Greater than Numbers, Inc. are tax-deductible to the fullest extent allowed by law. Charitable disclosure &amp; state registration info will be added here as we complete our national registration process. This page is not intended as a solicitation in jurisdictions where Life is Greater than Numbers, Inc. is not yet registered or exempt from registration.</p>
-            </div>
-          </div>
-        );
-      }
-
-
-      case 'contact':
-        return (
-          <div className="form-view-wrapper animate-fade">
-            <h1 className="about-title">Contact LGN Cinema</h1>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '32px', maxWidth: '600px' }}>
-              Have questions, ideas, or feedback? Send us a message and our team will get back to you shortly.
-            </p>
-
-            {contactSuccess ? (
-              <div className="form-success-card">
-                <h3>✓ Message Sent</h3>
-                <p>Thank you for reaching out. We have logged your submission successfully.</p>
-                <button className="lgn-btn" onClick={() => setContactSuccess(false)} style={{ marginTop: '16px' }}>
-                  Send Another Message
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleContactSubmit} className="interactive-form-grid">
-                <div className="form-group">
-                  <label htmlFor="contact-name">Name</label>
-                  <input
-                    id="contact-name"
-                    type="text"
-                    className="form-input"
-                    value={contactName}
-                    onChange={(e) => setContactName(e.target.value)}
-                    required
-                    placeholder="Enter your name"
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="contact-email">Email</label>
-                  <input
-                    id="contact-email"
-                    type="email"
-                    className="form-input"
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
-                    required
-                    placeholder="name@example.com"
-                  />
-                </div>
-                <div className="form-group full-width">
-                  <label htmlFor="contact-message">Message</label>
-                  <textarea
-                    id="contact-message"
-                    className="form-input"
-                    value={contactMessage}
-                    onChange={(e) => setContactMessage(e.target.value)}
-                    required
-                    placeholder="Write your message here..."
-                    style={{ minHeight: '150px' }}
-                  />
-                </div>
-                <button type="submit" className="lgn-btn" style={{ marginTop: '8px' }} disabled={contactSubmitting} id="btn-submit-contact">
-                  {contactSubmitting ? 'Sending...' : 'Send Message'}
-                </button>
-              </form>
-            )}
-          </div>
-        );
-
-      case 'submit-film':
-        return (
-          <div className="form-view-wrapper animate-fade">
-            <span className="panel-category">Share Your Story</span>
-            <h1 className="about-title" style={{ marginTop: '8px' }}>Submit a Short Film</h1>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '32px', maxWidth: '600px' }}>
-              We curate independent short films (typically under 20 minutes) that inspire reflection, conversation, and physical action. Submit your story.
-            </p>
-
-            {filmSuccess ? (
-              <div className="form-success-card">
-                <h3>✓ Film Submitted Successfully</h3>
-                <p>We have received your submission details. Our curation panel reviews all films for the monthly highlights slot.</p>
-                <button className="lgn-btn" onClick={() => setFilmSuccess(false)} style={{ marginTop: '16px' }}>
-                  Submit Another Film
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleFilmSubmit} className="interactive-form-grid">
-                <div className="form-group">
-                  <label htmlFor="film-title">Film Title</label>
-                  <input
-                    id="film-title"
-                    type="text"
-                    className="form-input"
-                    value={filmTitle}
-                    onChange={(e) => setFilmTitle(e.target.value)}
-                    required
-                    placeholder="Title of the short film"
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="film-director">Director</label>
-                  <input
-                    id="film-director"
-                    type="text"
-                    className="form-input"
-                    value={filmDirector}
-                    onChange={(e) => setFilmDirector(e.target.value)}
-                    required
-                    placeholder="Director's name"
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="film-duration">Duration (e.g. 15 mins)</label>
-                  <input
-                    id="film-duration"
-                    type="text"
-                    className="form-input"
-                    value={filmDuration}
-                    onChange={(e) => setFilmDuration(e.target.value)}
-                    placeholder="Runtime duration"
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="film-link">Video Link (Vimeo / YouTube / GDrive)</label>
-                  <input
-                    id="film-link"
-                    // Text, not type="url": the browser's URL check rejects bare
-                    // addresses like "youtube.com". normalizeFilmLink accepts
-                    // those and adds https://; the custom validity below keeps
-                    // non-links from submitting.
-                    type="text"
-                    inputMode="url"
-                    autoComplete="url"
-                    spellCheck={false}
-                    className="form-input"
-                    value={filmLink}
-                    onChange={(e) => {
-                      setFilmLink(e.target.value);
-                      e.target.setCustomValidity(
-                        !e.target.value.trim() || normalizeFilmLink(e.target.value) ? '' : FILM_LINK_INVALID,
-                      );
-                    }}
-                    onBlur={(e) => {
-                      // Show the full address once they leave the field.
-                      const link = normalizeFilmLink(e.target.value);
-                      if (link && link !== e.target.value) setFilmLink(link);
-                    }}
-                    required
-                    placeholder="vimeo.com/... or youtube.com/..."
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="film-email">Contact Email</label>
-                  <input
-                    id="film-email"
-                    type="email"
-                    className="form-input"
-                    value={filmEmail}
-                    onChange={(e) => setFilmEmail(e.target.value)}
-                    required
-                    placeholder="filmmaker@example.com"
-                  />
-                </div>
-                <div className="form-group full-width">
-                  <label htmlFor="film-synopsis">Brief Synopsis</label>
-                  <textarea
-                    id="film-synopsis"
-                    className="form-input"
-                    value={filmSynopsis}
-                    onChange={(e) => setFilmSynopsis(e.target.value)}
-                    placeholder="Provide a short summary and credits..."
-                    style={{ minHeight: '100px' }}
-                  />
-                </div>
-                <div className="form-group full-width form-check">
-                  {/* Required: the browser won't submit until it's ticked. */}
-                  <input
-                    id="film-is-own"
-                    type="checkbox"
-                    required
-                    checked={filmIsOwn}
-                    onChange={(e) => setFilmIsOwn(e.target.checked)}
-                  />
-                  <label htmlFor="film-is-own">This is YOUR film</label>
-                </div>
-                <button type="submit" className="lgn-btn" style={{ marginTop: '8px' }} disabled={filmSubmitting} id="btn-submit-film">
-                  {filmSubmitting ? 'Submitting...' : 'Submit Film Details'}
-                </button>
-              </form>
-            )}
-          </div>
-        );
+      case 'invest':
+        return <InvestPage onOpenStoryboard={() => setCurrentView('storyboard')} />;
     }
   };
 
@@ -1012,11 +610,18 @@ function App() {
       )}
 
       <div className="page-body" style={{ position: 'relative', flexGrow: 1 }}>
-      <main className={['campfire', 'capsule', 'watch', 'storyboard', 'invest', 'timeline', 'about'].includes(currentView) ? '' : 'container'}>
+      <main className={['campfire', 'capsule', 'watch', 'storyboard', 'invest', 'timeline', 'about', 'for-filmmakers'].includes(currentView) ? '' : 'container'}>
         {renderActiveView()}
       </main>
 
-      <SiteFooter theme={theme} onNavigate={setCurrentView} />
+      <SiteFooter
+        theme={theme}
+        onNavigate={setCurrentView}
+        onOpenAbout={(sub) => {
+          setAboutSubView(sub);
+          setCurrentView('about');
+        }}
+      />
 
       {showGridOverlay && <GridOverlay cols={6} rows={3} />}
       </div>

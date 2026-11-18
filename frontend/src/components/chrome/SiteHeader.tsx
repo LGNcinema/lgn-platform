@@ -3,9 +3,9 @@ import './SiteHeader.css';
 
 export type SiteView =
   | 'campfire' | 'capsule' | 'watch' | 'storyboard'
-  | 'timeline' | 'about' | 'invest' | 'contact' | 'submit-film';
+  | 'timeline' | 'about' | 'invest' | 'for-filmmakers';
 
-export type AboutSubView = 'purpose' | 'mission-vision' | 'board-staff';
+export type AboutSubView = 'life-numbers' | 'lgn-cinema' | 'people' | 'faqs';
 
 interface Props {
   currentView: SiteView;

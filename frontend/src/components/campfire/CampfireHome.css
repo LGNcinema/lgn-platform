@@ -32,8 +32,57 @@
   height: auto;
 }
 
-.cf-hero-tagline {
+/* "Watch. Reflect. Practice." and its hover panel, centred under it. */
+.cf-wrp {
+  position: relative;
   margin-top: calc(24 * var(--vdp));
+}
+
+.cf-hero-tagline {
+  cursor: default;
+}
+
+.cf-hero-tagline:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.cf-wrp-pop {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 50%;
+  z-index: 20;
+  width: 560px;
+  padding: 22px 24px 24px;
+  background: var(--panel);
+  text-align: left;
+  transform: translateX(-50%);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s, visibility 0.15s;
+}
+
+.cf-wrp:hover .cf-wrp-pop,
+.cf-hero-tagline:focus-visible + .cf-wrp-pop {
+  opacity: 1;
+  visibility: visible;
+}
+
+.cf-wrp-lead {
+  margin-top: 18px;
+}
+
+.cf-wrp-steps {
+  margin: 1.1em 0 0;
+  padding-left: 22px;
+}
+
+.cf-wrp-steps li + li {
+  margin-top: 1.1em;
+}
+
+.cf-wrp-pop strong {
+  font-weight: var(--weight-display);
 }
 
 .cf-search {
@@ -87,13 +136,28 @@
 
 /* -------------------------------------------------------------- presents */
 
+/* The heading across the top; under it the two lines on the left and the
+   carousel from the 660 line (measured from the page's centre), both
+   starting level, as in the frame. */
 .cf-presents {
   display: grid;
-  /* The carousel starts on the 660 line, measured from the page's centre. */
   grid-template-columns: calc(50% - 300 * var(--dp)) minmax(0, 1fr);
+  grid-template-areas:
+    "heading heading"
+    "text cards";
+  align-items: start;
   margin-top: calc(220 * var(--vdp));
   padding-top: 14px;
   border-top: 1px solid var(--rule);
+}
+
+.cf-presents > .cf-heading {
+  grid-area: heading;
+}
+
+.cf-presents > .cf-carousel,
+.cf-presents > .cf-empty {
+  grid-area: cards;
 }
 
 .cf-heading {
@@ -104,7 +168,8 @@
 }
 
 .cf-presents-text {
-  margin-top: 18px;
+  grid-area: text;
+  margin-top: calc(44.5 * var(--vdp));
 }
 
 .cf-empty {
@@ -113,53 +178,62 @@
 
 /* -------------------------------------------------------------- carousel */
 
+/* Figma "HOME", at 1920: the month's card 642x825 with its left edge at
+   x=649 (11px before the 660 line where this column starts), a ">" in the
+   78px gap after it, and the next card 512 wide (x 1369..1881), centred on
+   the first's height. A previous card sits the same distance to the left.
+   Sizes scale with --dp; the carets are 14px like every ">" (UX). */
 .cf-carousel {
-  --card-w: calc(560 * var(--dp));
-  --card-h: calc(var(--card-w) * 825 / 642);
-  --gap: calc(36 * var(--dp));
-  --side-scale: 0.8;
-  margin-top: calc(28 * var(--vdp));
-}
-
-/* The row clips sideways only, so a card's hover growth isn't cut off. */
-.cf-carousel-track {
+  --card-w: calc(642 * var(--dp));
+  --card-h: calc(825 * var(--dp));
+  --gap: calc(78 * var(--dp));
+  --side-scale: calc(512 / 642);
+  /* The centred card's middle, from this column's left edge. */
+  --centre: calc(-11 * var(--dp) + var(--card-w) / 2);
   position: relative;
   height: var(--card-h);
-  overflow-x: clip;
-  /* The neighbours fade out at the row's ends rather than being cut. */
-  mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+  margin-top: calc(44.5 * var(--vdp));
 }
 
-/* Each card sits at the centre and is moved out by its offset from the
-   active card: the neighbour's centre is 0.9 card widths + a gap away (half
-   the active card + half a scaled one), the next one 0.8 further. */
+.cf-carousel-track {
+  position: absolute;
+  inset: 0;
+}
+
+/* Each card is moved out from the centre slot by its offset: a neighbour's
+   middle is half the centred card + the gap + half a scaled card away. */
 .cf-slide {
   --abs: max(var(--offset), calc(var(--offset) * -1));
   --sign: clamp(-1, var(--offset), 1);
-  --dist: calc(var(--sign) * (min(var(--abs), 1) * 0.9 + max(var(--abs) - 1, 0) * 0.8) * var(--card-w) + var(--offset) * var(--gap));
+  --step: calc(var(--card-w) / 2 + var(--gap) + var(--card-w) * var(--side-scale) / 2);
+  --dist: calc(var(--sign) * (min(var(--abs), 1) * var(--step) + max(var(--abs) - 1, 0) * (var(--card-w) * var(--side-scale) + var(--gap))));
   position: absolute;
   top: 0;
-  left: 50%;
+  left: var(--centre);
   width: var(--card-w);
   height: var(--card-h);
   transform: translateX(calc(-50% + var(--dist))) scale(var(--side-scale));
   transition:
     transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1),
     opacity 0.5s;
-  opacity: 0.55;
 }
 
 .cf-slide.is-active {
   transform: translateX(-50%) scale(1);
-  opacity: 1;
   z-index: 1;
 }
 
-.cf-slide:not(.is-active):hover {
-  opacity: 0.85;
+.cf-slide.is-hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
-/* The centred card grows a touch on hover: a cue that it opens. */
+/* Hover: a neighbour grows a little before it slides in; the centred card
+   grows a touch too -- the cue that each card opens. */
+.cf-slide:not(.is-active):not(.is-hidden):hover {
+  transform: translateX(calc(-50% + var(--dist))) scale(calc(var(--side-scale) * 1.03));
+}
+
 .cf-slide.is-active:hover {
   transform: translateX(-50%) scale(1.025);
 }
@@ -176,20 +250,24 @@
   background: var(--panel);
 }
 
+/* The month's card: padding 22; the labels' baselines 30 from its top, the
+   title's 287, the credit's first 340; the still 595 wide, 22 from the
+   bottom. */
 .cf-card--film {
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 22px;
+  padding: 18.6px calc(24 * var(--dp)) calc(22 * var(--dp)) 22px;
   cursor: pointer;
 }
 
-.cf-card-month {
-  margin-top: calc(var(--card-h) * 0.2);
+.cf-card-labels {
+  display: grid;
+  grid-template-columns: calc(312 * var(--dp)) auto;
 }
 
 .cf-card-title {
-  margin-top: 16px;
+  margin-top: calc(210.6 * var(--dp));
   font-size: var(--text-48);
   letter-spacing: var(--track-48);
   font-weight: var(--weight-display);
@@ -223,8 +301,8 @@
 }
 
 .cf-card-credit {
-  max-width: 440px;
-  margin-top: 28px;
+  max-width: 500px;
+  margin-top: calc(32.6 * var(--dp));
 }
 
 /* The frame's credit is all one weight. */
@@ -234,9 +312,11 @@
 
 .cf-card-still {
   display: block;
-  width: 100%;
+  width: calc(595 * var(--dp));
+  max-width: 100%;
   aspect-ratio: 595 / 335;
   margin-top: auto;
+  margin-left: 1px;
   object-fit: cover;
   background: var(--placeholder-box);
 }
@@ -262,43 +342,35 @@ button.cf-card--coming {
   gap: 14px;
 }
 
-/* "<  JANUARY 2027  >" under the centred card. */
-.cf-carousel-nav {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  margin-top: 20px;
-}
-
-.cf-carousel-month {
-  min-width: 120px;
-  text-align: center;
-}
-
-/* 14px like every ">" (UX), with a larger hit area than the glyph. */
-.cf-arrow {
-  padding: 8px 12px;
+/* The carets: centred in the gaps either side of the centred card. */
+.cf-caret {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  padding: 8px 10px;
   border: none;
   background: none;
   color: var(--primary);
   font-size: 14px;
   line-height: 1;
+  transform: translate(-50%, -50%);
   cursor: pointer;
   transition: color 0.15s;
 }
 
-.cf-arrow:hover:not(:disabled) {
+.cf-caret--next {
+  left: calc(var(--centre) + var(--card-w) / 2 + var(--gap) / 2);
+}
+
+.cf-caret--prev {
+  left: calc(var(--centre) - var(--card-w) / 2 - var(--gap) / 2);
+}
+
+.cf-caret:hover {
   color: var(--text-grey);
 }
 
-.cf-arrow:disabled {
-  color: var(--text-grey);
-  opacity: 0.4;
-  cursor: default;
-}
-
-.cf-arrow:focus-visible {
+.cf-caret:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
@@ -320,14 +392,25 @@ button.cf-card--coming {
   font-weight: var(--weight-display);
 }
 
+.presents-dialog-lead {
+  margin-bottom: 1.6em;
+}
+
+.presents-dialog-more {
+  margin-top: 1.8em;
+}
+
 /* Below desktop: the intro above the carousel, the cards wider. */
 @media (max-width: 1024px) {
   .cf-presents {
     grid-template-columns: 1fr;
+    grid-template-areas: "heading" "text" "cards";
   }
 
   .cf-carousel {
     --card-w: min(70vw, 480px);
+    --card-h: calc(var(--card-w) * 825 / 642);
+    --centre: 50%;
   }
 
   .cf-search {

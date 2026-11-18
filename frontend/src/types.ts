@@ -8,6 +8,8 @@ export interface Film {
   title: string;
   director: string;
   duration?: string;
+  /** The year it came out, e.g. "2012". */
+  release_year?: string | null;
   thumbnail_url?: string;
   description?: string;
   theme?: string;
@@ -128,9 +130,41 @@ export interface CapsuleSummary {
   id: number;
   month: string;
   title: string;
+  description?: string | null;
   is_active: boolean;
   /** Scheduled go-live time, ISO-8601 **naive UTC** (no `Z`, no offset). */
   publish_at?: string | null;
   /** Server-derived, read-only: `is_active OR publish_at <= utcnow()`. */
   is_published?: boolean;
+}
+
+/** About pages (admin-editable). */
+export type AboutPageKey = 'life-numbers' | 'lgn-cinema' | 'faqs' | 'credits';
+export type PersonCategory = 'team' | 'board' | 'advisory';
+
+export interface AboutSection {
+  id: number;
+  page: AboutPageKey;
+  heading: string | null;
+  body: string | null;
+  position: number;
+}
+
+export interface Person {
+  id: number;
+  category: PersonCategory;
+  name: string;
+  role: string | null;
+  bio: string | null;
+  /** "A film that moved him" -- the words before the colon. */
+  film_lead: string | null;
+  film_title: string | null;
+  film_year: string | null;
+  film_url: string | null;
+  position: number;
+}
+
+export interface AboutContent {
+  sections: AboutSection[];
+  people: Person[];
 }

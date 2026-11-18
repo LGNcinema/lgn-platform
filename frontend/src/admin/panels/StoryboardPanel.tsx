@@ -37,6 +37,9 @@ interface Submission {
   created_at: string | null;
   reviewed_at: string | null;
   dimension: Dimension | null;
+  /** The author's optional tags (watch / reflect / practice; other films). */
+  engagement: 'watch' | 'reflect' | 'practice' | null;
+  extra_films: { title: string; year?: string | null; capsule_id?: number | null }[];
   spam_reasons: string[];
 }
 
@@ -347,6 +350,20 @@ export function StoryboardPanel({ capsuleId, pendingCounts = {}, onReviewed }: P
                         {item.author_email && (
                           <p className="apnl-sb-when">
                             <a href={`mailto:${item.author_email}`}>{item.author_email}</a> (private, for edits)
+                          </p>
+                        )}
+                        {(item.engagement || item.extra_films.length > 0) && (
+                          <p className="apnl-sb-when">
+                            {item.engagement && <>Engagement: {item.engagement[0].toUpperCase() + item.engagement.slice(1)}</>}
+                            {item.engagement && item.extra_films.length > 0 && <> &middot; </>}
+                            {item.extra_films.length > 0 && (
+                              <>
+                                Also tagged:{' '}
+                                {item.extra_films
+                                  .map((f) => `${f.title}${f.year ? ` (${f.year})` : ''}${f.capsule_id ? '' : ' (typed)'}`)
+                                  .join(', ')}
+                              </>
+                            )}
                           </p>
                         )}
                       </div>
