@@ -1,6 +1,6 @@
 /* "How these guides are made". Figma popup 2: a 630px panel; the intro, the
-   four tiers each with its dots, "Help grow the Library" and its list, the
-   note on affiliation, then "Made a film?" and "For Filmmakers >". */
+   four tiers each with its dots, the note on affiliation, then "Made a
+   film?" and "For Filmmakers >". */
 .guides-dialog {
   width: 630px;
   max-height: 90vh;
@@ -41,12 +41,6 @@
 .guides-dialog-dots {
   font-size: 9px;
   letter-spacing: 2px;
-}
-
-.guides-dialog-list {
-  margin-bottom: 0;
-  padding-left: 18px;
-  list-style: square;
 }
 
 .guides-dialog-cta {

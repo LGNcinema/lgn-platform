@@ -44,12 +44,6 @@ export function GuidesDialog({ open, onClose, onOpenFilmmakers }: Props) {
             </li>
           ))}
         </ul>
-        <p>Help grow the Library. On any film’s guide, you can:</p>
-        <ul className="guides-dialog-list">
-          <li>Suggest a question or practice for that film, to help others take it beyond the screen.</li>
-          <li>Share what you know about who made the film, why they made it, and how.</li>
-          <li>Claim the guide, if you made the film.</li>
-        </ul>
         <p>
           Our hope is for every film here to be claimed by the people who made it. No one knows a film better than they
           do, and a guide shaped by its makers is the truest one we can offer.
