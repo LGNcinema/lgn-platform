@@ -46,11 +46,12 @@ licensed font files (see Fonts).
   element so em resolves against each size). Boxed buttons and fields are
   `--control-height` (28px); every ">" is 14px. Panels `--panel: #ededed`
   (the frames' grey; don't deepen it).
-- Navigation (UX's mock): the landing page is Go Beyond (`campfire` view, the
-  bare URL; the old intro home page is gone). Header: the logo, "Give"
-  (Invest) and "Add to Storyboard" (opens the Storyboard's form). Everything
-  else is in the footer ("FOOTER V3"). Dropdowns all start closed; text
-  fields show focus by the caret alone; back links are a bare "<".
+- Navigation: the landing page is Go Beyond (`campfire` view, the bare URL;
+  the old intro home page is gone). Header (latest Figma, not UX's earlier
+  Give / Add to Storyboard mock): the logo, then About, Invest and Storyboard
+  as text links at the top right, the current page underlined. The rest is
+  in the footer ("FOOTER V3"). Dropdowns all start closed; text fields show
+  focus by the caret alone; back links are a bare "<".
 - Columns are measured from the page centre: header links, the home logo's
   "L", About/Invest body text and search fields start on the 660 line
   (`50% - 300 * var(--dp)`); `#root` is capped at 1920 and centred.

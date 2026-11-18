@@ -11,17 +11,15 @@ interface Props {
   currentView: SiteView;
   theme: 'light' | 'dark';
   onNavigate: (view: SiteView) => void;
-  /** Opens the Storyboard with its form up. */
-  onAddToStoryboard: () => void;
 }
 
 /**
- * Global header (UX's mock, 2026-11: simplified navigation). The LGN icon on
- * the left margin takes you to the landing page (Go Beyond); on the right
- * margin, two boxed buttons: "Give" (the Invest page) and "Add to
- * Storyboard" (the Storyboard's form). Everything else is in the footer.
+ * Global header. Figma V3 (latest export), the top of every frame: the LGN
+ * icon on the left margin, back to the landing page (Go Beyond); About,
+ * Invest and Storyboard as plain text links ending on the right margin, the
+ * current page underlined.
  */
-export function SiteHeader({ currentView, theme, onNavigate, onAddToStoryboard }: Props) {
+export function SiteHeader({ currentView, theme, onNavigate }: Props) {
   const headerRef = useRef<HTMLElement>(null);
 
   // Publish where this header ends, as --header-bottom, for the pages that
@@ -41,23 +39,29 @@ export function SiteHeader({ currentView, theme, onNavigate, onAddToStoryboard }
     };
   }, []);
 
+  const link = (view: SiteView, label: string) => {
+    const active = currentView === view;
+    return (
+      <button
+        type="button"
+        className={`lgn-link site-header-link${active ? ' active' : ''}`}
+        aria-current={active ? 'page' : undefined}
+        onClick={() => onNavigate(view)}
+      >
+        {label}
+      </button>
+    );
+  };
+
   return (
     <header ref={headerRef} className="site-header">
       <button type="button" className="site-header-logo" onClick={() => onNavigate('campfire')}>
         <img src={theme === 'dark' ? '/images/lgn-icon-white.svg' : '/images/lgn-icon-black.svg'} alt="LGN home" />
       </button>
       <nav className="site-header-nav" aria-label="Main">
-        <button
-          type="button"
-          className="lgn-btn site-header-btn"
-          aria-current={currentView === 'invest' ? 'page' : undefined}
-          onClick={() => onNavigate('invest')}
-        >
-          Give
-        </button>
-        <button type="button" className="lgn-btn site-header-btn" onClick={onAddToStoryboard}>
-          Add to Storyboard
-        </button>
+        {link('about', 'About')}
+        {link('invest', 'Invest')}
+        {link('storyboard', 'Storyboard')}
       </nav>
     </header>
   );

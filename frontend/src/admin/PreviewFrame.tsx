@@ -103,7 +103,7 @@ export function PreviewFrame() {
 
   return (
     <>
-      <SiteHeader currentView="capsule" theme="light" onNavigate={noop} onAddToStoryboard={noop} />
+      <SiteHeader currentView="capsule" theme="light" onNavigate={noop} />
       <div className="page-body" style={{ position: 'relative', flexGrow: 1 }}>
         <main>
           {/* An unpublished story's photos aren't public: fetch them with the

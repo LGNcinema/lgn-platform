@@ -1,7 +1,8 @@
-/* Global header (UX, 2026-11: simplified navigation), at 1920:
+/* Global header. Figma V3 (latest export), at 1920:
    - the LGN icon, 40x41 at (40, 39), back to the landing page;
-   - two boxed buttons, "Give" and "Add to Storyboard", ending on the right
-     margin (x = 1880), centred on the icon's height (UX's mock).
+   - About, Invest and Storyboard as plain text links ending on the right
+     margin (x = 1880), their caps level with the icon's top; the frame's
+     ~46px gaps around 20px text, scaled with the type (UX: 14px).
    The header is the logo's box: 41px tall from --header-top, which is what
    --header-bottom reports to the pages below. */
 
@@ -41,9 +42,11 @@
 .site-header-nav {
   display: flex;
   gap: 32px;
+  align-self: flex-start;
+  margin-top: 2px;
 }
 
-.site-header-btn {
-  min-width: 112px;
+.site-header-link {
+  white-space: nowrap;
   pointer-events: auto;
 }

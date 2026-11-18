@@ -371,7 +371,7 @@ function App() {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  // "Add to Storyboard" (the header; Reflect and Practice) opens the
+  // "Add to the storyboard" (Reflect and Practice) opens the
   // Storyboard with its form already up; any other way onto the Storyboard
   // opens it plain. Each request remounts the board, so it also works when
   // the visitor is already on it.
@@ -605,7 +605,6 @@ function App() {
           currentView={currentView}
           theme={theme}
           onNavigate={setCurrentView}
-          onAddToStoryboard={openStoryboardForm}
         />
       )}
 
