@@ -105,7 +105,12 @@ licensed font files (see Fonts).
   Calendar (.ics / Google, nothing sent to LGN).
 - **About pages** (Life > Numbers, LGN Cinema, People, FAQs + Credits): text
   edited in the admin's Site pages > About pages (`about_sections`, `people`);
-  layout and photos fixed. Bodies take `**bold lead.**` and `[text](url)`.
+  layout and photos fixed. Bodies take `**bold lead.**` and `[text](url)`
+  (a `/...` url links within the site). Edits are a draft: the admin
+  previews them on the real page and presses Publish; the public pages serve
+  the snapshot in `about_published` (Discard resets the draft to it).
+- **Invest:** the Givebutter donation widget (`<givebutter-widget>`, script
+  in `index.html`; edited in Givebutter, not here) under the title.
 - **For Filmmakers:** claim-a-guide requests (`filmmaker_requests`), reviewed
   in the admin's Site pages > Filmmaker requests.
 - **Behind the Film** ("How this film was made", `?section=making`): large
@@ -137,8 +142,8 @@ licensed font files (see Fonts).
   ```
   (Submit a film and Contact are retired -- For Filmmakers replaces them;
   `user_reflections` was never called and contradicts "nothing is saved".)
-- Placeholders on screen until real copy: Invest's Build and two Give lines
-  (in code), People bios and one FAQ answer (admin-editable).
+- Placeholders on screen until real copy: two Invest Give lines (in code),
+  People bios and one FAQ answer (admin-editable).
 - Practice: displayed as the instruction (first line, black) and "For
   example:" options (the rest, grey, lettered) until UX settles the model --
   per Karson, every film gets a universal option plus one at its tier.

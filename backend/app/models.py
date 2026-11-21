@@ -291,3 +291,15 @@ class FilmmakerRequest(Base):
     status = Column(String, nullable=False, default="new")
     admin_note = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class AboutPublished(Base):
+    """What the public About pages show: a snapshot of `about_sections` and
+    `people` (schemas.AboutContent as JSON), taken when an admin presses
+    Publish. Edits change those tables only -- the working copy the admin
+    previews -- until the next publish. One row (id 1)."""
+    __tablename__ = "about_published"
+
+    id = Column(Integer, primary_key=True)
+    content = Column(Text, nullable=False)
+    published_at = Column(DateTime, nullable=False, default=datetime.utcnow)

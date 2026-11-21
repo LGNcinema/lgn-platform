@@ -23,9 +23,8 @@
  * Pressing the film still opens the real immersive player, and it really plays
  * -- that is how the editor confirms the right film is attached.
  */
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { hasBehindTheScenes } from '../../components/campfire/StoryBehind';
-import type { CapsuleDetail } from '../../types';
 import { PREVIEW_READY, type PreviewMessage } from '../PreviewFrame';
 import { formatLocal, localTimeLabel, parseNaiveUtc, publicationState } from '../publishing';
 import { StatusPill } from '../StatusPill';
@@ -37,10 +36,13 @@ const FRAME_W = 1920;
 const FRAME_H = 1080;
 
 interface WindowProps {
-  capsule: CapsuleDetail;
-  /** Which page the frame opens on: the story page, or Behind the Film. */
-  page: 'story' | 'behind';
+  /** What the frame should render (see PreviewFrame), re-sent when it changes. */
+  message: PreviewMessage;
+  /** The frame's URL: /admin/preview-frame, with ?section=making for Behind the Film. */
+  src: string;
   label: string;
+  /** Left of the status text: e.g. the story's publication pill. */
+  status?: ReactNode;
   stateLine: string;
 }
 
@@ -49,18 +51,17 @@ interface WindowProps {
  * The same element inline and expanded, so the frame is never reloaded and
  * keeps whichever section and scroll position the editor is on.
  */
-function PreviewWindow({ capsule, page, label, stateLine }: WindowProps) {
+export function PreviewWindow({ message, src, label, status, stateLine }: WindowProps) {
   const [expanded, setExpanded] = useState(false);
   const [scale, setScale] = useState(0);
   const viewportRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
 
-  // Send the story to the frame. Again whenever it is saved, and whenever the
-  // frame says it is (re)loaded and listening.
+  // Send the content to the frame. Again whenever it is saved, and whenever
+  // the frame says it is (re)loaded and listening.
   const post = useCallback(() => {
-    const message: PreviewMessage = { type: 'lgn-preview', capsule };
     frameRef.current?.contentWindow?.postMessage(message, window.location.origin);
-  }, [capsule]);
+  }, [message]);
 
   useEffect(post, [post]);
 
@@ -104,7 +105,7 @@ function PreviewWindow({ capsule, page, label, stateLine }: WindowProps) {
     <figure className={`apnl-preview-frame${expanded ? ' is-expanded' : ''}`} aria-label={`Preview: ${label}`}>
       <figcaption className="apnl-preview-chrome">
         <span className="apnl-preview-badge">{label}</span>
-        <StatusPill state={publicationState(capsule)} />
+        {status}
         <span className="apnl-preview-chrome-text">
           {stateLine} Shown as on a {FRAME_W} &times; {FRAME_H} screen
           {scale > 0 ? `, at ${Math.round(scale * 100)}%` : ''}.
@@ -119,7 +120,7 @@ function PreviewWindow({ capsule, page, label, stateLine }: WindowProps) {
           <iframe
             ref={frameRef}
             className="apnl-preview-iframe"
-            src={page === 'behind' ? '/admin/preview-frame?section=making' : '/admin/preview-frame'}
+            src={src}
             title={`Public page preview: ${label}`}
             width={FRAME_W}
             height={FRAME_H}
@@ -133,6 +134,8 @@ function PreviewWindow({ capsule, page, label, stateLine }: WindowProps) {
 
 export function PreviewPanel({ capsule }: PanelProps) {
   const state = publicationState(capsule);
+  // One message object per saved story, so the frames re-render only on a save.
+  const message = useMemo<PreviewMessage>(() => ({ type: 'lgn-preview', capsule }), [capsule]);
   const scheduledAt = parseNaiveUtc(capsule.publish_at);
 
   const stateLine = (() => {
@@ -172,10 +175,22 @@ export function PreviewPanel({ capsule }: PanelProps) {
         </Note>
       ) : null}
 
-      <PreviewWindow capsule={capsule} page="story" label="Story page" stateLine={stateLine} />
+      <PreviewWindow
+        message={message}
+        src="/admin/preview-frame"
+        label="Story page"
+        status={<StatusPill state={state} />}
+        stateLine={stateLine}
+      />
 
       {hasBehindTheScenes(capsule) ? (
-        <PreviewWindow capsule={capsule} page="behind" label="Behind the Film" stateLine={stateLine} />
+        <PreviewWindow
+          message={message}
+          src="/admin/preview-frame?section=making"
+          label="Behind the Film"
+          status={<StatusPill state={state} />}
+          stateLine={stateLine}
+        />
       ) : (
         <Note>
           This story has no Behind the Film page yet, so Watch shows no &ldquo;How this film was made&rdquo;

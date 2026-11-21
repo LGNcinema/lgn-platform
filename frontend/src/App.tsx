@@ -593,7 +593,12 @@ function App() {
         return <AboutPage sub={aboutSubView} onSelect={setAboutSubView} theme={theme} />;
 
       case 'invest':
-        return <InvestPage onOpenStoryboard={() => setCurrentView('storyboard')} />;
+        return (
+          <InvestPage
+            onOpenStoryboard={() => setCurrentView('storyboard')}
+            onOpenFilmmakers={() => setCurrentView('for-filmmakers')}
+          />
+        );
     }
   };
 

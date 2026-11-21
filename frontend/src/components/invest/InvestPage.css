@@ -1,6 +1,7 @@
 /* Invest. Figma "INVEST", at 1920:
-   - left (x=40): "Invest" in the 48 size (now 36px); the giving details
-     (~340 wide) and the grey small print under them;
+   - left (x=40): "Invest" in the 48 size (now 36px); ~95px under it the
+     Givebutter widget, 358 wide; ~80px under that the giving details (~340
+     wide) and the grey small print;
    - right (from the 660 line): the two-line intro, then Build / Share / Give
      as ruled rows with names in the 48 size and a 14px caret; an open row's
      copy, bullet list and button below its name. */
@@ -19,6 +20,12 @@
   letter-spacing: var(--track-48);
   font-weight: var(--weight-display);
   line-height: var(--leading);
+}
+
+.invest-widget {
+  width: calc(358 * var(--dp));
+  min-width: 300px;
+  margin-top: calc(95 * var(--vdp));
 }
 
 .invest-side-text {

@@ -946,3 +946,38 @@
   margin: 0;
   overflow-wrap: anywhere;
 }
+
+/* About pages: the draft / publish bar under the heading. Amber edge while
+   the working copy differs from what the site shows. */
+.admin-portal .apnl-publish {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--admin-border, #e2e2e2);
+  border-left: 4px solid #2e7d32;
+  border-radius: 12px;
+  background: var(--admin-card, #fff);
+}
+
+.admin-portal .apnl-publish.is-dirty {
+  border-left-color: #c77700;
+}
+
+.admin-portal .apnl-publish-text {
+  margin: 0;
+}
+
+.admin-portal .apnl-publish-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-portal .apnl-publish + .apnl-preview-frame {
+  margin-bottom: 18px;
+}

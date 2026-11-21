@@ -9,6 +9,9 @@ interface Props {
   sub: AboutSubView;
   onSelect: (sub: AboutSubView) => void;
   theme: 'light' | 'dark';
+  /** Render this content instead of fetching the published pages (the
+   *  admin's preview of the working copy). */
+  content?: AboutContent;
 }
 
 const MENU: { key: AboutSubView; label: string }[] = [
@@ -35,22 +38,24 @@ type Load = { state: 'loading' } | { state: 'failed' } | { state: 'ready'; conte
  * The text is edited in the admin's About pages (sections and people), so
  * it is fetched; the layout, menu and photos are fixed.
  */
-export function AboutPage({ sub, onSelect, theme }: Props) {
-  const [load, setLoad] = useState<Load>({ state: 'loading' });
+export function AboutPage({ sub, onSelect, theme, content }: Props) {
+  const [fetched, setFetched] = useState<Load>({ state: 'loading' });
 
   useEffect(() => {
+    if (content) return;
     const controller = new AbortController();
     fetch(`${API_URL}/api/about`, { signal: controller.signal })
       .then((res) => {
         if (!res.ok) throw new Error(String(res.status));
         return res.json() as Promise<AboutContent>;
       })
-      .then((content) => setLoad({ state: 'ready', content }))
+      .then((data) => setFetched({ state: 'ready', content: data }))
       .catch(() => {
-        if (!controller.signal.aborted) setLoad({ state: 'failed' });
+        if (!controller.signal.aborted) setFetched({ state: 'failed' });
       });
     return () => controller.abort();
-  }, []);
+  }, [content]);
+  const load: Load = content ? { state: 'ready', content } : fetched;
 
   useEffect(() => {
     window.scrollTo(0, 0);

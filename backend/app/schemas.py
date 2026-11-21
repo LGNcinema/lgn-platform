@@ -464,6 +464,14 @@ class AboutContent(BaseModel):
     people: List[Person] = []
 
 
+class AdminAboutContent(AboutContent):
+    """The working copy, and how it stands against what the site shows."""
+    # Null until the About pages are first published.
+    published_at: Optional[datetime] = None
+    # The working copy differs from the published snapshot.
+    has_unpublished_changes: bool = False
+
+
 # For Filmmakers: claim a guide, or (cast and crew) share how a film was made.
 FilmmakerRole = Literal["director", "writer", "producer", "cast-crew"]
 FilmmakerRequestStatus = Literal["new", "replied", "closed"]

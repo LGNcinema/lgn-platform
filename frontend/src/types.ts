@@ -168,3 +168,11 @@ export interface AboutContent {
   sections: AboutSection[];
   people: Person[];
 }
+
+/** The About pages' working copy in the admin, and how it stands against
+ *  what the site shows. */
+export interface AdminAboutContent extends AboutContent {
+  /** Null until the About pages are first published. */
+  published_at: string | null;
+  has_unpublished_changes: boolean;
+}

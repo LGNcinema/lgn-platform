@@ -4,19 +4,24 @@ import './InvestPage.css';
 interface Props {
   /** "Storyboard >" under Share. */
   onOpenStoryboard: () => void;
+  /** "For Filmmakers >" under Build. */
+  onOpenFilmmakers: () => void;
 }
+
+/** The Givebutter donation widget's id (edited in Givebutter). */
+const GIVEBUTTER_WIDGET_ID = 'Lyl381';
 
 const GIVE_URL = 'https://donate.stripe.com/cNi9AT2g6fxc6j1bs4cjS00';
 
 type Row = { key: string; title: string; body?: ReactNode };
 
 /**
- * Invest. Figma "INVEST": "Invest" and the giving details on the left (the
- * frame's donation widget is a placeholder, left out until a provider is
- * chosen); on the right an intro and three ruled rows -- Build, Share, Give --
- * all closed to start (UX). Build and two Give lines are placeholders.
+ * Invest. Figma "INVEST": "Invest", the Givebutter donation widget and the
+ * giving details on the left; on the right an intro and three ruled rows --
+ * Build, Share, Give -- all closed to start (UX). Two Give lines are
+ * placeholders.
  */
-export function InvestPage({ onOpenStoryboard }: Props) {
+export function InvestPage({ onOpenStoryboard, onOpenFilmmakers }: Props) {
   const [open, setOpen] = useState<string | null>(null);
   const ids = useId();
 
@@ -26,12 +31,15 @@ export function InvestPage({ onOpenStoryboard }: Props) {
       title: 'Build',
       body: (
         <>
-          <p>Placeholder copy. Lend what you’re good at. You can:</p>
+          <p>Help grow the Library. On any film’s guide, you can:</p>
           <ul className="invest-list">
-            <li>Placeholder: volunteer a skill, such as design, writing, or engineering.</li>
-            <li>Placeholder: help a film’s guide grow by suggesting questions and practices.</li>
-            <li>Placeholder: partner with us as a school, church, or community group.</li>
+            <li>Suggest a question or practice for that film, to help others take it beyond the screen.</li>
+            <li>Share what you know about who made the film, why they made it, and how.</li>
+            <li>Claim the guide, if you made the film.</li>
           </ul>
+          <button type="button" className="lgn-btn invest-btn" onClick={onOpenFilmmakers}>
+            For Filmmakers
+          </button>
         </>
       ),
     },
@@ -75,6 +83,10 @@ export function InvestPage({ onOpenStoryboard }: Props) {
     <div className="invest">
       <aside className="invest-side">
         <h1 className="invest-title">Invest</h1>
+        {/* Givebutter's script (index.html) fills this in. */}
+        <div className="invest-widget">
+          <givebutter-widget id={GIVEBUTTER_WIDGET_ID}></givebutter-widget>
+        </div>
         <div className="invest-side-text">
           <p>Gifts to Life is Greater than Numbers, Inc. are charitable contributions.</p>
           <p>501(c)(3) EIN: 33-2376438.</p>

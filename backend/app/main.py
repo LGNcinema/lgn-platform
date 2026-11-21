@@ -1084,17 +1084,70 @@ def _about_content(db: Session) -> schemas.AboutContent:
     return schemas.AboutContent(sections=sections, people=people)
 
 
+def _about_snapshot_json(content: schemas.AboutContent) -> str:
+    """The snapshot as stored (compared as parsed content, never as text)."""
+    return json.dumps(content.model_dump(mode="json"), sort_keys=True, ensure_ascii=False)
+
+
+def _about_admin(db: Session) -> schemas.AdminAboutContent:
+    working = _about_content(db)
+    published = db.get(models.AboutPublished, 1)
+    return schemas.AdminAboutContent(
+        **working.model_dump(),
+        published_at=published.published_at if published else None,
+        has_unpublished_changes=published is None
+        or schemas.AboutContent.model_validate_json(published.content).model_dump() != working.model_dump(),
+    )
+
+
 @app.get("/api/about", response_model=schemas.AboutContent)
 def get_about(response: Response, db: Session = Depends(get_db)):
-    """The About pages' editable text: every page's sections and the people."""
-    # Short CDN cache: edits show within a minute without hitting the DB per view.
+    """The About pages' text as last published (see AboutPublished). Before
+    the first publish there is no snapshot, and the working copy is served."""
+    # Short CDN cache: a publish shows within a minute without a DB read per view.
     response.headers["Cache-Control"] = "public, s-maxage=60, stale-while-revalidate=300"
-    return _about_content(db)
+    published = db.get(models.AboutPublished, 1)
+    if published is None:
+        return _about_content(db)
+    return schemas.AboutContent.model_validate_json(published.content)
 
 
-@app.get("/api/admin/about", response_model=schemas.AboutContent)
+@app.get("/api/admin/about", response_model=schemas.AdminAboutContent)
 def admin_get_about(db: Session = Depends(get_db), _: bool = Depends(require_admin)):
-    return _about_content(db)
+    """The working copy (what the admin edits and previews) and its status."""
+    return _about_admin(db)
+
+
+@app.post("/api/admin/about/publish", response_model=schemas.AdminAboutContent)
+def admin_publish_about(db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    """Make the working copy what the public About pages show."""
+    snapshot = _about_snapshot_json(_about_content(db))
+    published = db.get(models.AboutPublished, 1)
+    if published is None:
+        db.add(models.AboutPublished(id=1, content=snapshot, published_at=datetime.utcnow()))
+    else:
+        published.content = snapshot
+        published.published_at = datetime.utcnow()
+    db.commit()
+    return _about_admin(db)
+
+
+@app.post("/api/admin/about/discard", response_model=schemas.AdminAboutContent)
+def admin_discard_about(db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    """Throw away unpublished edits: put the working copy back to the
+    published snapshot (same ids, so nothing else needs to change)."""
+    published = db.get(models.AboutPublished, 1)
+    if published is None:
+        raise HTTPException(status_code=409, detail="The About pages haven't been published yet, so there's nothing to go back to.")
+    content = schemas.AboutContent.model_validate_json(published.content)
+    db.query(models.AboutSection).delete()
+    db.query(models.Person).delete()
+    for s in content.sections:
+        db.add(models.AboutSection(**s.model_dump()))
+    for p in content.people:
+        db.add(models.Person(**p.model_dump()))
+    db.commit()
+    return _about_admin(db)
 
 
 @app.post("/api/admin/about/sections", response_model=schemas.AboutSection, status_code=status.HTTP_201_CREATED)

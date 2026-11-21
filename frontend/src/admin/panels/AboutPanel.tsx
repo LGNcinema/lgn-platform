@@ -3,11 +3,18 @@
  * FAQs + Credits. Each page is a list of sections (a heading and its
  * paragraphs) in order; People is three lists (Team, Board of Directors,
  * Advisory Council). The page layout, menu and photos stay fixed.
+ *
+ * Edits change a working copy only. The bar at the top says whether it
+ * differs from what the site shows, previews it on the real page, and
+ * publishes it (or discards it, back to the published version).
  */
-import { useCallback, useEffect, useState } from 'react';
-import type { AboutContent, AboutPageKey, AboutSection, Person, PersonCategory } from '../../types';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { AboutPageKey, AboutSection, AdminAboutContent, Person, PersonCategory } from '../../types';
+import type { PreviewMessage } from '../PreviewFrame';
+import { formatLocal, parseNaiveUtc } from '../publishing';
+import { PreviewWindow } from './PreviewPanel';
 import { adminFetch } from '../adminClient';
-import { Alert, ListPanel, Note, PanelHead, Section } from './Fields';
+import { Alert, DeleteControl, ListPanel, Note, PanelHead, Section } from './Fields';
 import type { ListFieldSpec } from './Fields';
 import { str } from './formState';
 
@@ -83,18 +90,43 @@ const GROUPS: { key: PersonCategory; label: string; singular: string }[] = [
 ];
 
 export function AboutPanel() {
-  const [content, setContent] = useState<AboutContent | null>(null);
+  const [content, setContent] = useState<AdminAboutContent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('life-numbers');
+  const [previewing, setPreviewing] = useState(false);
+  const [busy, setBusy] = useState<'publish' | 'discard' | null>(null);
 
   const load = useCallback(async () => {
     try {
-      setContent(await adminFetch<AboutContent>('/api/admin/about'));
+      setContent(await adminFetch<AdminAboutContent>('/api/admin/about'));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'The About pages could not be loaded.');
     }
   }, []);
+
+  const act = async (action: 'publish' | 'discard') => {
+    setBusy(action);
+    try {
+      setContent(await adminFetch<AdminAboutContent>(`/api/admin/about/${action}`, { method: 'POST' }));
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `The About pages could not be ${action === 'publish' ? 'published' : 'reset'}.`);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // The working copy as the preview frame takes it; a new object only when
+  // the content or page changes, so the frame re-renders on a save.
+  const previewMessage = useMemo<PreviewMessage | null>(
+    () =>
+      content
+        ? { type: 'lgn-preview-about', content: { sections: content.sections, people: content.people }, sub: tab }
+        : null,
+    [content, tab],
+  );
+  const publishedAt = parseNaiveUtc(content?.published_at);
 
   useEffect(() => {
     void load();
@@ -125,11 +157,54 @@ export function AboutPanel() {
         title="About pages"
         description={
           <>
-            The text of the four About pages, in the order it appears. Changes show on the site within a
-            minute. <a href={`/?view=about&sub=${tab}`} target="_blank" rel="noreferrer">View this page</a>
+            The text of the four About pages, in the order it appears. Your edits are saved as a draft:
+            preview them on the real page, then publish to update the site.{' '}
+            <a href={`/?view=about&sub=${tab}`} target="_blank" rel="noreferrer">
+              View the live page
+            </a>
           </>
         }
       />
+
+      {content && (
+        <div className={`apnl-publish${content.has_unpublished_changes ? ' is-dirty' : ''}`} role="status">
+          <p className="apnl-publish-text">
+            {content.has_unpublished_changes ? (
+              <>
+                <strong>Unpublished changes.</strong> The site still shows the version published{' '}
+                {publishedAt ? formatLocal(publishedAt) : 'before'}.
+              </>
+            ) : (
+              <>
+                <strong>Published.</strong> The site shows exactly this
+                {publishedAt ? ` (published ${formatLocal(publishedAt)})` : ''}.
+              </>
+            )}
+          </p>
+          <div className="apnl-publish-actions">
+            <button type="button" className="apnl-btn" onClick={() => setPreviewing((v) => !v)}>
+              {previewing ? 'Hide preview' : 'Preview'}
+            </button>
+            <button
+              type="button"
+              className="apnl-btn apnl-btn--primary"
+              disabled={!content.has_unpublished_changes || busy !== null}
+              onClick={() => void act('publish')}
+            >
+              {busy === 'publish' ? 'Publishing...' : 'Publish'}
+            </button>
+            {content.has_unpublished_changes && content.published_at && (
+              <DeleteControl
+                label="Discard changes"
+                question="Discard every unpublished change, back to the published version?"
+                busy={busy !== null}
+                onConfirm={() => void act('discard')}
+              />
+            )}
+          </div>
+        </div>
+      )}
+
 
       <div className="admin-tabs" role="tablist" aria-label="About pages">
         {TABS.map((t) => (
@@ -145,6 +220,19 @@ export function AboutPanel() {
           </button>
         ))}
       </div>
+
+      {previewing && previewMessage && (
+        <PreviewWindow
+          message={previewMessage}
+          src="/admin/preview-frame"
+          label={TABS.find((t) => t.id === tab)?.label ?? 'About'}
+          stateLine={
+            content?.has_unpublished_changes
+              ? 'Draft -- your saved edits, not yet on the site.'
+              : 'Published -- this is what visitors see now.'
+          }
+        />
+      )}
 
       {error ? <Alert>{error}</Alert> : null}
       {!content && !error ? <Note>Loading...</Note> : null}
