@@ -8,6 +8,8 @@ export interface Film {
   title: string;
   director: string;
   duration?: string;
+  /** The year it came out, e.g. "2012". */
+  release_year?: string | null;
   thumbnail_url?: string;
   description?: string;
   theme?: string;
@@ -30,7 +32,6 @@ export interface Reflection {
   id: number;
   capsule_id: number;
   title: string;
-  introduction?: string;
   content: string;
   author?: string;
   created_at: string;
@@ -77,10 +78,6 @@ export interface CapsuleDetail {
   is_published?: boolean;
   pre_watch_prompt?: string;
   pre_watch_supporting_text?: string;
-  /** One introduction for the whole Reflect tab (V3). */
-  reflect_intro?: string | null;
-  /** The Practice tab's title / intro line (V3). */
-  practice_title?: string | null;
   /** The story's LGN Spark: its YouTube interview. Public placement TBD. */
   spark_url?: string | null;
   /** The behind-the-scenes page ("How this film was made"). Photo `url`s are
@@ -133,9 +130,49 @@ export interface CapsuleSummary {
   id: number;
   month: string;
   title: string;
+  description?: string | null;
   is_active: boolean;
   /** Scheduled go-live time, ISO-8601 **naive UTC** (no `Z`, no offset). */
   publish_at?: string | null;
   /** Server-derived, read-only: `is_active OR publish_at <= utcnow()`. */
   is_published?: boolean;
+}
+
+/** About pages (admin-editable). */
+export type AboutPageKey = 'life-numbers' | 'lgn-cinema' | 'faqs' | 'credits';
+export type PersonCategory = 'team' | 'board' | 'advisory';
+
+export interface AboutSection {
+  id: number;
+  page: AboutPageKey;
+  heading: string | null;
+  body: string | null;
+  position: number;
+}
+
+export interface Person {
+  id: number;
+  category: PersonCategory;
+  name: string;
+  role: string | null;
+  bio: string | null;
+  /** "A film that moved him" -- the words before the colon. */
+  film_lead: string | null;
+  film_title: string | null;
+  film_year: string | null;
+  film_url: string | null;
+  position: number;
+}
+
+export interface AboutContent {
+  sections: AboutSection[];
+  people: Person[];
+}
+
+/** The About pages' working copy in the admin, and how it stands against
+ *  what the site shows. */
+export interface AdminAboutContent extends AboutContent {
+  /** Null until the About pages are first published. */
+  published_at: string | null;
+  has_unpublished_changes: boolean;
 }

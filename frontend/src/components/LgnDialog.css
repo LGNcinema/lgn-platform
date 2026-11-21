@@ -54,3 +54,17 @@
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
+
+/* The drawer variant (Figma "STORYBOARD—ADD"): the panel down the right of
+   the window, full height, instead of centred. */
+.lgn-dialog.lgn-dialog--drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(680px, 100vw);
+  height: 100vh;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  overflow-y: auto;
+}

@@ -42,6 +42,7 @@ type FilmDraft = {
   title: string;
   director: string;
   duration: string;
+  release_year: string;
   description: string;
   theme: string;
   thumbnail_url: string;
@@ -86,6 +87,7 @@ function toDraft(film: Film | undefined): FilmDraft {
     title: str(film?.title),
     director: str(film?.director),
     duration: str(film?.duration),
+    release_year: str(film?.release_year),
     description: str(film?.description),
     theme: str(film?.theme),
     thumbnail_url: str(film?.thumbnail_url),
@@ -207,6 +209,7 @@ export function FilmPanel({ capsule, onSaved }: PanelProps) {
           title: draft.title,
           director: draft.director,
           duration: orNull(draft.duration),
+          release_year: orNull(draft.release_year),
           description: orNull(draft.description),
           theme: orNull(draft.theme),
           thumbnail_url: orNull(draft.thumbnail_url),
@@ -400,6 +403,14 @@ export function FilmPanel({ capsule, onSaved }: PanelProps) {
             placeholder="10 min"
             onChange={(value) => set('duration', value)}
             help="The label shown next to the film, written how you want it read."
+          />
+          <TextField
+            label="Release year"
+            value={draft.release_year}
+            disabled={save.saving}
+            placeholder="2012"
+            onChange={(value) => set('release_year', value)}
+            help="Shown with the director and runtime on the film page."
           />
           <TextField
             label="Theme"

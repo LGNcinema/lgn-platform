@@ -221,8 +221,6 @@ def _capsule_detail(capsule: models.Capsule) -> schemas.CapsuleDetail:
         is_published=_is_published(capsule),
         pre_watch_prompt=capsule.pre_watch_prompt,
         pre_watch_supporting_text=capsule.pre_watch_supporting_text,
-        reflect_intro=capsule.reflect_intro,
-        practice_title=capsule.practice_title,
         spark_url=capsule.spark_url,
         bts_copyright=capsule.bts_copyright,
         bts_credits=capsule.bts_credits,
@@ -468,43 +466,6 @@ def add_practice(
     db.refresh(db_practice)
     return db_practice
 
-@app.post("/api/submissions/contact", response_model=schemas.ContactSubmission, status_code=status.HTTP_201_CREATED)
-def submit_contact(submission: schemas.ContactSubmissionCreate, db: Session = Depends(get_db)):
-    """
-    Submit a contact message/inquiry.
-    """
-    db_submission = models.ContactSubmission(**submission.model_dump())
-    db.add(db_submission)
-    db.commit()
-    db.refresh(db_submission)
-    return db_submission
-
-@app.post("/api/submissions/film", response_model=schemas.FilmSubmission, status_code=status.HTTP_201_CREATED)
-def submit_film(submission: schemas.FilmSubmissionCreate, db: Session = Depends(get_db)):
-    """
-    Submit a short film for consideration.
-    """
-    db_submission = models.FilmSubmission(**submission.model_dump())
-    db.add(db_submission)
-    db.commit()
-    db.refresh(db_submission)
-    return db_submission
-
-@app.post("/api/submissions/reflection", response_model=schemas.UserReflection, status_code=status.HTTP_201_CREATED)
-def submit_reflection(submission: schemas.UserReflectionCreate, db: Session = Depends(get_db)):
-    """
-    Submit a user's private/public capsule reflection answers.
-    """
-    capsule = db.query(models.Capsule).filter(models.Capsule.id == submission.capsule_id).first()
-    if not capsule:
-        raise HTTPException(status_code=404, detail="Capsule not found")
-        
-    db_reflection = models.UserReflection(**submission.model_dump())
-    db.add(db_reflection)
-    db.commit()
-    db.refresh(db_reflection)
-    return db_reflection
-
 def _decode_photo(data: Optional[str]) -> Optional[bytes]:
     """A submitted photo, as bytes -- or None when there isn't one.
 
@@ -540,6 +501,14 @@ def _clean(value: Optional[str]) -> Optional[str]:
     return value or None
 
 
+def _tagged_films(row: models.StoryboardSubmission) -> List[schemas.TaggedFilm]:
+    """A story's extra film tags (stored as JSON). Bad data reads as none."""
+    try:
+        return [schemas.TaggedFilm(**f) for f in json.loads(row.extra_films or "[]")]
+    except (ValueError, TypeError):
+        return []
+
+
 @app.post("/api/submissions/storyboard", response_model=schemas.StoryboardSubmitted, status_code=status.HTTP_201_CREATED)
 def submit_storyboard(submission: schemas.StoryboardSubmissionCreate, db: Session = Depends(get_db)):
     """Add a story to a campfire's storyboard.
@@ -563,9 +532,25 @@ def submit_storyboard(submission: schemas.StoryboardSubmissionCreate, db: Sessio
     email = _clean(submission.author_email)
     if email and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
         raise HTTPException(status_code=422, detail="That email address doesn't look right.")
+    # Extra tags: LGN films must be published ones (else kept as typed titles).
+    published_ids = {
+        cid for (cid,) in db.query(models.Capsule.id).filter(_published_filter()).all()
+    }
+    extra_films = [
+        {
+            "title": f.title.strip(),
+            "year": _clean(f.year),
+            "capsule_id": f.capsule_id if f.capsule_id in published_ids and f.capsule_id != capsule.id else None,
+        }
+        for f in submission.extra_films
+        if f.capsule_id != capsule.id
+    ]
     db_submission = models.StoryboardSubmission(
         capsule_id=capsule.id,
         content=submission.content.strip(),
+        engagement=submission.engagement,
+        dimension=submission.dimension,
+        extra_films=json.dumps(extra_films) if extra_films else None,
         author_name=name,
         author_location=_clean(submission.author_location),
         author_email=email,
@@ -644,6 +629,8 @@ def get_storyboard(capsule_id: int, db: Session = Depends(get_db)):
             photo_url=f"/api/storyboard/photos/{row.id}" if has_photo else None,
             created_at=row.created_at,
             dimension=row.dimension,
+            engagement=row.engagement,
+            extra_films=_tagged_films(row),
         )
         for row, has_photo in rows
     ]
@@ -1009,6 +996,232 @@ def admin_delete_bts_section(
     return None
 
 
+# --- For Filmmakers: claim requests -------------------------------------------
+
+_EMAIL_RE = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
+
+
+@app.post("/api/submissions/filmmaker-request", status_code=status.HTTP_201_CREATED)
+def submit_filmmaker_request(request: schemas.FilmmakerRequestCreate, db: Session = Depends(get_db)):
+    """A request from the For Filmmakers page. Directors, writers and producers
+    send a link to their work on the film (required); cast and crew send what
+    they'd like to share (required). Nothing is public: it waits for an admin."""
+    if _clean(request.website):
+        # The bot trap was filled in: look successful, store nothing.
+        return {"ok": True}
+    email = request.email.strip()
+    if not _EMAIL_RE.fullmatch(email):
+        raise HTTPException(status_code=422, detail="That email address doesn't look right.")
+    link = _clean(request.work_link)
+    message = _clean(request.message)
+    if request.role == "cast-crew" and not message:
+        raise HTTPException(status_code=422, detail="Tell us what you'd like to share.")
+    if request.role != "cast-crew" and not link:
+        raise HTTPException(status_code=422, detail="Add a link to your work on the film.")
+    capsule_id = None
+    if request.capsule_id is not None:
+        published = db.query(models.Capsule.id).filter(
+            models.Capsule.id == request.capsule_id, _published_filter()
+        ).first()
+        capsule_id = published[0] if published else None
+    item = models.FilmmakerRequest(
+        film_title=request.film_title.strip(),
+        film_year=_clean(request.film_year),
+        capsule_id=capsule_id,
+        role=request.role,
+        name=request.name.strip(),
+        email=email,
+        work_link=link,
+        message=message,
+    )
+    db.add(item)
+    db.commit()
+    return {"ok": True}
+
+
+@app.get("/api/admin/filmmaker-requests", response_model=List[schemas.FilmmakerRequest])
+def admin_list_filmmaker_requests(db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    return db.query(models.FilmmakerRequest).order_by(models.FilmmakerRequest.created_at.desc()).all()
+
+
+@app.get("/api/admin/filmmaker-requests/waiting")
+def admin_filmmaker_requests_waiting(db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    waiting = db.query(func.count(models.FilmmakerRequest.id)).filter(models.FilmmakerRequest.status == "new").scalar()
+    return {"waiting": waiting or 0}
+
+
+@app.patch("/api/admin/filmmaker-requests/{item_id}", response_model=schemas.FilmmakerRequest)
+def admin_update_filmmaker_request(
+    item_id: int,
+    updates: schemas.FilmmakerRequestUpdate,
+    db: Session = Depends(get_db),
+    _: bool = Depends(require_admin),
+):
+    item = _get_or_404(db, models.FilmmakerRequest, item_id, "Request")
+    for field, value in updates.model_dump(exclude_unset=True).items():
+        setattr(item, field, value)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@app.delete("/api/admin/filmmaker-requests/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def admin_delete_filmmaker_request(item_id: int, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    db.delete(_get_or_404(db, models.FilmmakerRequest, item_id, "Request"))
+    db.commit()
+    return None
+
+
+# --- About pages -----------------------------------------------------------
+
+def _about_content(db: Session) -> schemas.AboutContent:
+    sections = db.query(models.AboutSection).order_by(
+        models.AboutSection.page, models.AboutSection.position, models.AboutSection.id
+    ).all()
+    people = db.query(models.Person).order_by(
+        models.Person.category, models.Person.position, models.Person.id
+    ).all()
+    return schemas.AboutContent(sections=sections, people=people)
+
+
+def _about_snapshot_json(content: schemas.AboutContent) -> str:
+    """The snapshot as stored (compared as parsed content, never as text)."""
+    return json.dumps(content.model_dump(mode="json"), sort_keys=True, ensure_ascii=False)
+
+
+def _about_admin(db: Session) -> schemas.AdminAboutContent:
+    working = _about_content(db)
+    published = db.get(models.AboutPublished, 1)
+    return schemas.AdminAboutContent(
+        **working.model_dump(),
+        published_at=published.published_at if published else None,
+        has_unpublished_changes=published is None
+        or schemas.AboutContent.model_validate_json(published.content).model_dump() != working.model_dump(),
+    )
+
+
+@app.get("/api/about", response_model=schemas.AboutContent)
+def get_about(response: Response, db: Session = Depends(get_db)):
+    """The About pages' text as last published (see AboutPublished). Before
+    the first publish there is no snapshot, and the working copy is served."""
+    # Short CDN cache: a publish shows within a minute without a DB read per view.
+    response.headers["Cache-Control"] = "public, s-maxage=60, stale-while-revalidate=300"
+    published = db.get(models.AboutPublished, 1)
+    if published is None:
+        return _about_content(db)
+    return schemas.AboutContent.model_validate_json(published.content)
+
+
+@app.get("/api/admin/about", response_model=schemas.AdminAboutContent)
+def admin_get_about(db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    """The working copy (what the admin edits and previews) and its status."""
+    return _about_admin(db)
+
+
+@app.post("/api/admin/about/publish", response_model=schemas.AdminAboutContent)
+def admin_publish_about(db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    """Make the working copy what the public About pages show."""
+    snapshot = _about_snapshot_json(_about_content(db))
+    published = db.get(models.AboutPublished, 1)
+    if published is None:
+        db.add(models.AboutPublished(id=1, content=snapshot, published_at=datetime.utcnow()))
+    else:
+        published.content = snapshot
+        published.published_at = datetime.utcnow()
+    db.commit()
+    return _about_admin(db)
+
+
+@app.post("/api/admin/about/discard", response_model=schemas.AdminAboutContent)
+def admin_discard_about(db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    """Throw away unpublished edits: put the working copy back to the
+    published snapshot (same ids, so nothing else needs to change)."""
+    published = db.get(models.AboutPublished, 1)
+    if published is None:
+        raise HTTPException(status_code=409, detail="The About pages haven't been published yet, so there's nothing to go back to.")
+    content = schemas.AboutContent.model_validate_json(published.content)
+    db.query(models.AboutSection).delete()
+    db.query(models.Person).delete()
+    for s in content.sections:
+        db.add(models.AboutSection(**s.model_dump()))
+    for p in content.people:
+        db.add(models.Person(**p.model_dump()))
+    db.commit()
+    return _about_admin(db)
+
+
+@app.post("/api/admin/about/sections", response_model=schemas.AboutSection, status_code=status.HTTP_201_CREATED)
+def admin_create_about_section(
+    section: schemas.AboutSectionCreate,
+    db: Session = Depends(get_db),
+    _: bool = Depends(require_admin),
+):
+    last = db.query(func.max(models.AboutSection.position)).filter(models.AboutSection.page == section.page).scalar()
+    item = models.AboutSection(**section.model_dump(), position=(last or 0) + 1)
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@app.patch("/api/admin/about_sections/{item_id}", response_model=schemas.AboutSection)
+def admin_update_about_section(
+    item_id: int,
+    updates: schemas.AboutSectionUpdate,
+    db: Session = Depends(get_db),
+    _: bool = Depends(require_admin),
+):
+    item = _get_or_404(db, models.AboutSection, item_id, "Section")
+    for field, value in updates.model_dump(exclude_unset=True).items():
+        setattr(item, field, value)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@app.delete("/api/admin/about_sections/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def admin_delete_about_section(item_id: int, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    db.delete(_get_or_404(db, models.AboutSection, item_id, "Section"))
+    db.commit()
+    return None
+
+
+@app.post("/api/admin/about/people", response_model=schemas.Person, status_code=status.HTTP_201_CREATED)
+def admin_create_person(
+    person: schemas.PersonCreate,
+    db: Session = Depends(get_db),
+    _: bool = Depends(require_admin),
+):
+    last = db.query(func.max(models.Person.position)).filter(models.Person.category == person.category).scalar()
+    item = models.Person(**person.model_dump(), position=(last or 0) + 1)
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@app.patch("/api/admin/people/{item_id}", response_model=schemas.Person)
+def admin_update_person(
+    item_id: int,
+    updates: schemas.PersonUpdate,
+    db: Session = Depends(get_db),
+    _: bool = Depends(require_admin),
+):
+    item = _get_or_404(db, models.Person, item_id, "Person")
+    for field, value in updates.model_dump(exclude_unset=True).items():
+        setattr(item, field, value)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@app.delete("/api/admin/people/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def admin_delete_person(item_id: int, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    db.delete(_get_or_404(db, models.Person, item_id, "Person"))
+    db.commit()
+    return None
+
+
 # --- Reflections -----------------------------------------------------------
 
 @app.post(
@@ -1085,6 +1298,8 @@ def _admin_item(
         created_at=row.created_at,
         reviewed_at=row.reviewed_at,
         dimension=row.dimension,
+        engagement=row.engagement,
+        extra_films=_tagged_films(row),
         author_email=row.author_email,
         spam_reasons=spam.reasons(row) if spam else [],
     )

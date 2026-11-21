@@ -8,7 +8,6 @@ import { DIMENSIONS } from '../../components/campfire/campfire';
 import { ListPanel, PanelHead, Section } from './Fields';
 import type { ListFieldSpec, PanelProps } from './Fields';
 import { str } from './formState';
-import { StoryFieldsForm } from './StoryFieldsForm';
 
 type PracticeDraft = { steps: string; tips: string };
 
@@ -41,21 +40,7 @@ export function PracticePanel({ capsule, onSaved }: PanelProps) {
     <div className="apnl">
       <PanelHead
         title="Practice"
-        description="One practice for each of Self, Neighbor and World. Self opens first on the site."
-      />
-
-      <StoryFieldsForm
-        capsule={capsule}
-        onSaved={onSaved}
-        title="Practice title"
-        fields={[
-          {
-            key: 'practice_title',
-            label: 'Title',
-            rows: 3,
-            help: 'Shown above Self / Neighbor / World. Blank shows the standard line, "A weekly exercise in rooting..."',
-          },
-        ]}
+        description="One practice for each of Self, Neighbor and World. On the site all three start closed."
       />
 
       {DIMENSIONS.map(({ key, label }) => (

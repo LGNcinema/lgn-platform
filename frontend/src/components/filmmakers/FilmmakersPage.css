@@ -1,0 +1,103 @@
+/* For Filmmakers. Figma "FOR FILMMAKERS" / "—CAST/CREW", at 1920:
+   - left (x=40): "For / Filmmakers" in the 48 size (now 36px), the three
+     short paragraphs ~340px wide, then the photo, 291x385, ~45px under;
+   - right (from the 660 line): the intro to ~1010 wide, then sections each
+     under a rule with a 48-size heading: Film, Your Role, Information;
+   - fields in the grey (quiet) style; the button and "*REQUIRED FIELD". */
+
+.filmmakers {
+  display: grid;
+  grid-template-columns: calc(50% - 300 * var(--dp)) minmax(0, 1fr);
+  align-items: start;
+  padding: calc(190 * var(--vdp)) var(--grid-margin) calc(120 * var(--vdp));
+  color: var(--primary);
+}
+
+.filmmakers-title,
+.filmmakers-heading {
+  font-size: var(--text-48);
+  letter-spacing: var(--track-48);
+  font-weight: var(--weight-display);
+  line-height: var(--leading);
+}
+
+.filmmakers-side-text {
+  max-width: 270px;
+  margin-top: calc(56 * var(--vdp));
+}
+
+.filmmakers-side-text p + p {
+  margin-top: 1.1em;
+}
+
+.filmmakers-photo {
+  display: block;
+  width: calc(291 * var(--dp));
+  aspect-ratio: 291 / 385;
+  object-fit: cover;
+  margin-top: calc(78 * var(--vdp));
+}
+
+.filmmakers-main {
+  min-width: 0;
+}
+
+.filmmakers-intro {
+  max-width: calc(1010 * var(--dp));
+}
+
+.filmmakers-section {
+  margin-top: 14px;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
+}
+
+.filmmakers-section + .filmmakers-section {
+  margin-top: calc(72 * var(--vdp));
+}
+
+.filmmakers-section .form-prompt {
+  margin-top: calc(28 * var(--vdp));
+}
+
+.filmmakers-section .form-prompt + * {
+  margin-top: 16px;
+}
+
+/* Information has no rule of its own in the cast/crew frame. */
+.filmmakers-section--info:has(> .filmmakers-note:first-child) {
+  border-top: none;
+}
+
+.filmmakers-note {
+  max-width: calc(1010 * var(--dp));
+}
+
+.filmmakers-gap {
+  margin-top: calc(40 * var(--vdp)) !important;
+}
+
+.filmmakers-link {
+  max-width: calc(600 * var(--dp));
+}
+
+.filmmakers-confirm {
+  margin-top: calc(72 * var(--vdp));
+}
+
+.filmmakers-send {
+  margin-top: calc(28 * var(--vdp));
+  min-width: 120px;
+}
+
+.form-trap {
+  position: absolute;
+  left: -5000px;
+}
+
+@media (max-width: 1024px) {
+  .filmmakers {
+    grid-template-columns: 1fr;
+    row-gap: 40px;
+  }
+}

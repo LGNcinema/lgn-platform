@@ -1,0 +1,64 @@
+/* Shared form pieces for the V3 forms (For Filmmakers, the Storyboard's
+   form): small caps section labels over a rule, prompts, choice chips. */
+
+.form-section + .form-section {
+  margin-top: calc(56 * var(--vdp));
+}
+
+/* "FILM TAG", "YOUR INFO": 12px caps over a 1px rule. */
+.form-section-label {
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.form-prompt {
+  display: block;
+  margin-top: 14px;
+}
+
+.form-prompt + * {
+  margin-top: 14px;
+}
+
+.form-hint {
+  margin-top: 8px;
+  color: var(--text-grey);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.form-error {
+  margin-top: 12px;
+  color: #b3261e; /* no error token exists */
+}
+
+.form-required {
+  margin-top: 18px;
+}
+
+.film-picker-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) auto;
+  gap: 12px;
+}
+
+.film-picker-btn {
+  min-width: 112px;
+}
+
+.film-picker-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 12px;
+}

@@ -23,10 +23,8 @@
  * Pressing the film still opens the real immersive player, and it really plays
  * -- that is how the editor confirms the right film is attached.
  */
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { API_URL } from '../../api';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { hasBehindTheScenes } from '../../components/campfire/StoryBehind';
-import type { CapsuleDetail, CapsuleSummary } from '../../types';
 import { PREVIEW_READY, type PreviewMessage } from '../PreviewFrame';
 import { formatLocal, localTimeLabel, parseNaiveUtc, publicationState } from '../publishing';
 import { StatusPill } from '../StatusPill';
@@ -37,41 +35,14 @@ import type { PanelProps } from './Fields';
 const FRAME_W = 1920;
 const FRAME_H = 1080;
 
-/**
- * The "Story No." this capsule will carry on the public site.
- *
- * The site numbers stories by their place among PUBLISHED stories in month
- * order. For a published capsule that is exact. For a draft or scheduled one it
- * is the number it will get when it goes live, assuming nothing earlier is
- * published first -- which is the useful answer for a preview.
- */
-function useStoryNumber(capsuleId: number, month: string): number {
-  const [number, setNumber] = useState(1);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch(`${API_URL}/api/capsules`, { signal: controller.signal })
-      .then((res) => (res.ok ? (res.json() as Promise<CapsuleSummary[]>) : []))
-      .then((published) => {
-        const earlier = published.filter((c) => c.id !== capsuleId && c.month < month).length;
-        setNumber(earlier + 1);
-      })
-      .catch(() => {
-        // Aborted, or offline: keep the fallback. A wrong story number is a
-        // cosmetic miss in a preview, not worth an error on the panel.
-      });
-    return () => controller.abort();
-  }, [capsuleId, month]);
-
-  return number;
-}
-
 interface WindowProps {
-  capsule: CapsuleDetail;
-  storyNumber: number;
-  /** Which page the frame opens on: the story page, or Behind the Film. */
-  page: 'story' | 'behind';
+  /** What the frame should render (see PreviewFrame), re-sent when it changes. */
+  message: PreviewMessage;
+  /** The frame's URL: /admin/preview-frame, with ?section=making for Behind the Film. */
+  src: string;
   label: string;
+  /** Left of the status text: e.g. the story's publication pill. */
+  status?: ReactNode;
   stateLine: string;
 }
 
@@ -80,18 +51,17 @@ interface WindowProps {
  * The same element inline and expanded, so the frame is never reloaded and
  * keeps whichever section and scroll position the editor is on.
  */
-function PreviewWindow({ capsule, storyNumber, page, label, stateLine }: WindowProps) {
+export function PreviewWindow({ message, src, label, status, stateLine }: WindowProps) {
   const [expanded, setExpanded] = useState(false);
   const [scale, setScale] = useState(0);
   const viewportRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
 
-  // Send the story to the frame. Again whenever it is saved, and whenever the
-  // frame says it is (re)loaded and listening.
+  // Send the content to the frame. Again whenever it is saved, and whenever
+  // the frame says it is (re)loaded and listening.
   const post = useCallback(() => {
-    const message: PreviewMessage = { type: 'lgn-preview', capsule, storyNumber };
     frameRef.current?.contentWindow?.postMessage(message, window.location.origin);
-  }, [capsule, storyNumber]);
+  }, [message]);
 
   useEffect(post, [post]);
 
@@ -135,7 +105,7 @@ function PreviewWindow({ capsule, storyNumber, page, label, stateLine }: WindowP
     <figure className={`apnl-preview-frame${expanded ? ' is-expanded' : ''}`} aria-label={`Preview: ${label}`}>
       <figcaption className="apnl-preview-chrome">
         <span className="apnl-preview-badge">{label}</span>
-        <StatusPill state={publicationState(capsule)} />
+        {status}
         <span className="apnl-preview-chrome-text">
           {stateLine} Shown as on a {FRAME_W} &times; {FRAME_H} screen
           {scale > 0 ? `, at ${Math.round(scale * 100)}%` : ''}.
@@ -150,7 +120,7 @@ function PreviewWindow({ capsule, storyNumber, page, label, stateLine }: WindowP
           <iframe
             ref={frameRef}
             className="apnl-preview-iframe"
-            src={page === 'behind' ? '/admin/preview-frame?section=making' : '/admin/preview-frame'}
+            src={src}
             title={`Public page preview: ${label}`}
             width={FRAME_W}
             height={FRAME_H}
@@ -163,8 +133,9 @@ function PreviewWindow({ capsule, storyNumber, page, label, stateLine }: WindowP
 }
 
 export function PreviewPanel({ capsule }: PanelProps) {
-  const storyNumber = useStoryNumber(capsule.id, capsule.month);
   const state = publicationState(capsule);
+  // One message object per saved story, so the frames re-render only on a save.
+  const message = useMemo<PreviewMessage>(() => ({ type: 'lgn-preview', capsule }), [capsule]);
   const scheduledAt = parseNaiveUtc(capsule.publish_at);
 
   const stateLine = (() => {
@@ -204,10 +175,22 @@ export function PreviewPanel({ capsule }: PanelProps) {
         </Note>
       ) : null}
 
-      <PreviewWindow capsule={capsule} storyNumber={storyNumber} page="story" label="Story page" stateLine={stateLine} />
+      <PreviewWindow
+        message={message}
+        src="/admin/preview-frame"
+        label="Story page"
+        status={<StatusPill state={state} />}
+        stateLine={stateLine}
+      />
 
       {hasBehindTheScenes(capsule) ? (
-        <PreviewWindow capsule={capsule} storyNumber={storyNumber} page="behind" label="Behind the Film" stateLine={stateLine} />
+        <PreviewWindow
+          message={message}
+          src="/admin/preview-frame?section=making"
+          label="Behind the Film"
+          status={<StatusPill state={state} />}
+          stateLine={stateLine}
+        />
       ) : (
         <Note>
           This story has no Behind the Film page yet, so Watch shows no &ldquo;How this film was made&rdquo;

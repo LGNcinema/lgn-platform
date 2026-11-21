@@ -2,10 +2,10 @@ import { useLayoutEffect, useRef } from 'react';
 import './SiteHeader.css';
 
 export type SiteView =
-  | 'home' | 'campfire' | 'capsule' | 'watch' | 'storyboard'
-  | 'timeline' | 'about' | 'invest' | 'contact' | 'submit-film';
+  | 'campfire' | 'capsule' | 'watch' | 'storyboard'
+  | 'timeline' | 'about' | 'invest' | 'for-filmmakers';
 
-export type AboutSubView = 'purpose' | 'mission-vision' | 'board-staff';
+export type AboutSubView = 'life-numbers' | 'lgn-cinema' | 'people' | 'faqs';
 
 interface Props {
   currentView: SiteView;
@@ -13,16 +13,11 @@ interface Props {
   onNavigate: (view: SiteView) => void;
 }
 
-/** The views that belong to the Campfire, so its link reads as current on all of them. */
-const CAMPFIRE_VIEWS: SiteView[] = ['campfire', 'capsule'];
-
 /**
- * Global header. Figma v3: the top of every frame.
- *
- * The logo (home) on the left margin; Campfire, About and Invest set at fixed
- * points across the page (x = 660 / 815 / 970 at 1920); Storyboard on the
- * right margin. Plain 20px text, the current page underlined. The About
- * dropdown of V2 is gone: the About page has its own side menu.
+ * Global header. Figma V3 (latest export), the top of every frame: the LGN
+ * icon on the left margin, back to the landing page (Go Beyond); About,
+ * Invest and Storyboard as plain text links ending on the right margin, the
+ * current page underlined.
  */
 export function SiteHeader({ currentView, theme, onNavigate }: Props) {
   const headerRef = useRef<HTMLElement>(null);
@@ -44,29 +39,29 @@ export function SiteHeader({ currentView, theme, onNavigate }: Props) {
     };
   }, []);
 
-  const link = (view: SiteView, label: string, active: boolean, className: string) => (
-    <button
-      type="button"
-      className={`lgn-link site-header-link ${className}${active ? ' active' : ''}`}
-      aria-current={active ? 'page' : undefined}
-      onClick={() => onNavigate(view)}
-    >
-      {label}
-    </button>
-  );
+  const link = (view: SiteView, label: string) => {
+    const active = currentView === view;
+    return (
+      <button
+        type="button"
+        className={`lgn-link site-header-link${active ? ' active' : ''}`}
+        aria-current={active ? 'page' : undefined}
+        onClick={() => onNavigate(view)}
+      >
+        {label}
+      </button>
+    );
+  };
 
   return (
     <header ref={headerRef} className="site-header">
-      <button type="button" className="site-header-logo" onClick={() => onNavigate('home')}>
+      <button type="button" className="site-header-logo" onClick={() => onNavigate('campfire')}>
         <img src={theme === 'dark' ? '/images/lgn-icon-white.svg' : '/images/lgn-icon-black.svg'} alt="LGN home" />
       </button>
       <nav className="site-header-nav" aria-label="Main">
-        <div className="site-header-main">
-          {link('campfire', 'Go Beyond', CAMPFIRE_VIEWS.includes(currentView), 'site-header-link--campfire')}
-          {link('about', 'About', currentView === 'about', 'site-header-link--about')}
-          {link('invest', 'Invest', currentView === 'invest', 'site-header-link--invest')}
-        </div>
-        {link('storyboard', 'Storyboard', currentView === 'storyboard', 'site-header-link--storyboard')}
+        {link('about', 'About')}
+        {link('invest', 'Invest')}
+        {link('storyboard', 'Storyboard')}
       </nav>
     </header>
   );

@@ -1,32 +1,23 @@
-/* Practice's open circle. Figma v3 "Campfire—practice", at 1920: a
-   numbered list, 20px on 22px, one line between steps; the numbers at
-   x=674 and the text at x=691 (31px in from the column). */
+/* Practice's open circle. Figma "PRACTICE", at 1920: the instruction in
+   black; ~40px under it, "For example:" and its lettered options in grey,
+   the letters indented ~20px. */
 
-.practice-steps {
+.practice-instruction {
+  line-height: var(--leading);
+}
+
+.practice-examples {
+  margin-top: calc(40 * var(--vdp));
+  color: var(--text-grey);
+}
+
+.practice-examples ol {
   margin: 0;
-  padding-left: 31px;
-  line-height: 22px;
-}
-
-.practice-steps li {
-  padding-left: 1px;
-}
-
-.practice-steps li + li {
-  margin-top: 22px;
-}
-
-.practice-steps li::marker {
-  font-variant-numeric: tabular-nums;
+  padding-left: 34px;
 }
 
 .practice-steps-empty {
   color: var(--text-grey);
-}
-
-/* The admin's title for the tab, which may run several lines. */
-.practice-intro {
-  white-space: pre-line;
 }
 
 /* Tips (not in the frames): under the steps, in the label style, the text
@@ -40,4 +31,10 @@
   margin-top: 8px;
   color: var(--text-grey);
   white-space: pre-line;
+}
+
+/* "Add to Calendar >" under the practice (Figma "PRACTICE"). */
+.practice-calendar {
+  margin-top: 24px;
+  min-width: 160px;
 }

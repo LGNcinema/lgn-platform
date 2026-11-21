@@ -37,10 +37,8 @@ class Capsule(Base):
     publish_at = Column(DateTime, nullable=True)
     pre_watch_prompt = Column(String, nullable=True)
     pre_watch_supporting_text = Column(Text, nullable=True)
-    # V3 (migrations/20261027120000_v3_stories_admin.sql): one introduction for
-    # Reflect, the Practice tab's title, and the story's LGN Spark link.
-    reflect_intro = Column(Text, nullable=True)
-    practice_title = Column(Text, nullable=True)
+    # V3 (migrations/20261027120000_v3_stories_admin.sql): the story's LGN
+    # Spark link.
     spark_url = Column(Text, nullable=True)
     # Behind-the-scenes page (migrations/20261028130000_bts_page.sql). Credits
     # are one "Role: Name, Name" per line; a blank line starts a new group.
@@ -110,6 +108,8 @@ class Film(Base):
     title = Column(String, nullable=False)
     director = Column(String, nullable=False)
     duration = Column(String, nullable=True)
+    # The year it came out, shown on the film page (V3 frames: "2012").
+    release_year = Column(String, nullable=True)
     # Legacy / `file` provider playback URL. Nullable: a Vimeo-hosted film is
     # fully described by video_provider + video_id + video_hash.
     video_url = Column(String, nullable=True)
@@ -135,7 +135,6 @@ class Reflection(Base):
     id = Column(Integer, primary_key=True, index=True)
     capsule_id = Column(Integer, ForeignKey("capsules.id"), nullable=False)
     title = Column(String, nullable=False)
-    introduction = Column(Text, nullable=True)
     content = Column(Text, nullable=False) # Supports markdown (e.g. questions)
     author = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -157,37 +156,6 @@ class Practice(Base):
     tips = Column(Text, nullable=True)
 
     capsule = relationship("Capsule", back_populates="practices")
-
-class ContactSubmission(Base):
-    __tablename__ = "contact_submissions"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    email = Column(String, nullable=False)
-    message = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-class FilmSubmission(Base):
-    __tablename__ = "film_submissions"
-
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, nullable=False)
-    director = Column(String, nullable=False)
-    duration = Column(String, nullable=True)
-    link = Column(String, nullable=False)
-    synopsis = Column(Text, nullable=True)
-    email = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-class UserReflection(Base):
-    __tablename__ = "user_reflections"
-
-    id = Column(Integer, primary_key=True, index=True)
-    capsule_id = Column(Integer, ForeignKey("capsules.id"), nullable=False)
-    email = Column(String, nullable=True)
-    answers = Column(Text, nullable=False) # JSON-stringified or block text of answers
-    submitted_to_lgn = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
 
 class StoryboardSubmission(Base):
     __tablename__ = "storyboard_submissions"
@@ -221,7 +189,12 @@ class StoryboardSubmission(Base):
     # email for questions about edits -- never public.
     dimension = Column(String(16), nullable=True)
     author_email = Column(String(254), nullable=True)
-    # migrations/20261027120000_v3_stories_admin.sql
+    # migrations/20261118160000_storyboard_tags.sql
+    # The author's optional engagement tag (watch / reflect / practice), and
+    # any other films they tagged: a JSON list of {"title", "year",
+    # "capsule_id"} -- typed titles have no capsule_id until reviewed.
+    engagement = Column(String(16), nullable=True)
+    extra_films = Column(Text, nullable=True)
 
     @property
     def review_status(self) -> str:
@@ -261,3 +234,72 @@ class CapsulePhoto(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     capsule = relationship("Capsule", back_populates="photos")
+
+
+class AboutSection(Base):
+    """One section of an About page: a heading and its paragraphs, edited in
+    the admin's About pages. `page` is one of ABOUT_PAGES (schemas.py); on
+    FAQs the heading is the question and the body its answer."""
+    __tablename__ = "about_sections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    page = Column(String, nullable=False)
+    heading = Column(Text, nullable=True)
+    body = Column(Text, nullable=True)
+    position = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Person(Base):
+    """Someone on the About page's People list: the team, the board or the
+    advisory council (`category`), with an optional bio and "A film that moved
+    them" line."""
+    __tablename__ = "people"
+
+    id = Column(Integer, primary_key=True, index=True)
+    category = Column(String, nullable=False)
+    name = Column(Text, nullable=False)
+    role = Column(Text, nullable=True)
+    bio = Column(Text, nullable=True)
+    film_lead = Column(Text, nullable=True)
+    film_title = Column(Text, nullable=True)
+    film_year = Column(Text, nullable=True)
+    film_url = Column(Text, nullable=True)
+    position = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class FilmmakerRequest(Base):
+    """A request from the For Filmmakers page: someone who worked on a film
+    asking to claim its guide (director / writer / producer, with a link to
+    their work) or to share how it was made (cast or crew, with a message).
+    Reviewed in the admin's Filmmaker requests; nothing changes on the site
+    until LGN has confirmed who they are."""
+    __tablename__ = "filmmaker_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    film_title = Column(Text, nullable=False)
+    film_year = Column(Text, nullable=True)
+    # The published story they picked from the search, when it was one.
+    capsule_id = Column(Integer, ForeignKey("capsules.id", ondelete="SET NULL"), nullable=True)
+    role = Column(String, nullable=False)
+    name = Column(Text, nullable=False)
+    email = Column(Text, nullable=False)
+    work_link = Column(Text, nullable=True)
+    message = Column(Text, nullable=True)
+    # new -> replied -> closed
+    status = Column(String, nullable=False, default="new")
+    admin_note = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class AboutPublished(Base):
+    """What the public About pages show: a snapshot of `about_sections` and
+    `people` (schemas.AboutContent as JSON), taken when an admin presses
+    Publish. Edits change those tables only -- the working copy the admin
+    previews -- until the next publish. One row (id 1)."""
+    __tablename__ = "about_published"
+
+    id = Column(Integer, primary_key=True)
+    content = Column(Text, nullable=False)
+    published_at = Column(DateTime, nullable=False, default=datetime.utcnow)

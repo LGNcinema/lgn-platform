@@ -14,6 +14,9 @@ import {
 import { AdminLogin } from './AdminLogin';
 import { CapsulePicker } from './CapsulePicker';
 import { StoryboardNav } from './StoryboardNav';
+import { SiteNav, type SitePage } from './SiteNav';
+import { AboutPanel } from './panels/AboutPanel';
+import { FilmmakerRequestsPanel } from './panels/FilmmakerRequestsPanel';
 import {
   BtsPanel,
   DetailsPanel,
@@ -115,6 +118,8 @@ export function AdminApp() {
   const [pendingNav, setPendingNav] = useState<PendingNav | null>(null);
   /** Storyboard submissions waiting for review, by capsule id. */
   const [pendingCounts, setPendingCounts] = useState<Record<number, number>>({});
+  /** Filmmaker claim requests not yet answered. */
+  const [waitingRequests, setWaitingRequests] = useState(0);
 
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const stayRef = useRef<HTMLButtonElement | null>(null);
@@ -130,6 +135,10 @@ export function AdminApp() {
   const capsuleOnlyMatch = useMatch('/admin/capsules/:capsuleId');
   /** Every story's storyboard submissions in one place. */
   const reviewAll = useMatch('/admin/storyboard') !== null;
+  /** A site page (not a story): the About pages or filmmaker requests. */
+  const aboutMatch = useMatch('/admin/about');
+  const requestsMatch = useMatch('/admin/requests');
+  const sitePage: SitePage | null = aboutMatch ? 'about' : requestsMatch ? 'requests' : null;
 
   const routeCapsuleId = tabMatch?.params.capsuleId ?? capsuleOnlyMatch?.params.capsuleId;
   const parsedId = routeCapsuleId ? Number(routeCapsuleId) : NaN;
@@ -198,6 +207,8 @@ export function AdminApp() {
     try {
       const counts = await adminFetch<Record<string, number>>('/api/admin/storyboard/pending-counts');
       setPendingCounts(Object.fromEntries(Object.entries(counts).map(([id, n]) => [Number(id), n])));
+      const requests = await adminFetch<{ waiting: number }>('/api/admin/filmmaker-requests/waiting');
+      setWaitingRequests(requests.waiting);
     } catch {
       // Badges are a convenience; the Storyboard tab itself still loads.
     }
@@ -542,11 +553,29 @@ export function AdminApp() {
                 });
               }}
             />
+            <SiteNav
+              active={sitePage}
+              waitingRequests={waitingRequests}
+              onOpen={(page) => {
+                if (sitePage === page) return;
+                runGuarded('Leaving this page will discard them.', () => {
+                  navigate(`/admin/${page}`);
+                });
+              }}
+            />
           </aside>
 
           <main className="admin-main">
             {reviewAll ? (
               <StoryboardPanel capsuleId={null} pendingCounts={pendingCounts} onReviewed={() => void refreshCounts()} />
+            ) : sitePage === 'about' ? (
+              <div className="admin-panel">
+                <AboutPanel />
+              </div>
+            ) : sitePage === 'requests' ? (
+              <div className="admin-panel">
+                <FilmmakerRequestsPanel onReviewed={() => void refreshCounts()} />
+              </div>
             ) : capsuleId === null ? (
               <div className="admin-card admin-empty">
                 <h2 className="admin-section-title">No story selected</h2>

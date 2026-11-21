@@ -8,31 +8,32 @@
  * renders the story the way App does -- header, story page, footer -- so vw,
  * media queries and `document` all mean what they mean on the real site.
  *
- * It holds no data of its own and fetches nothing. The admin tab posts it the
- * saved story over postMessage, and only a same-origin parent is listened to,
- * so opening /admin/preview-frame directly shows an empty page: an unpublished
- * film is never exposed by this route.
+ * It holds no data of its own and fetches nothing. The admin posts it the
+ * saved story -- or the About pages' working copy -- over postMessage, and
+ * only a same-origin parent is listened to, so opening /admin/preview-frame
+ * directly shows an empty page: nothing unpublished is exposed by this route.
  */
 import { useEffect, useState } from 'react';
 import { hasBehindTheScenes, StoryBehind } from '../components/campfire/StoryBehind';
 import { PhotoLoaderContext } from '../components/campfire/StoryPhoto';
 import { StoryPractice } from '../components/campfire/StoryPractice';
 import { StoryReflect } from '../components/campfire/StoryReflect';
-import { StoryShell } from '../components/campfire/StoryShell';
+import { StoryFoot, StoryShell } from '../components/campfire/StoryShell';
 import { StoryWatch } from '../components/campfire/StoryWatch';
 import { WatchMode } from '../components/campfire/WatchMode';
-import { formatStoryMonth, type StorySection } from '../components/campfire/campfire';
+import type { StorySection } from '../components/campfire/campfire';
 import { SiteFooter } from '../components/chrome/SiteFooter';
 import { SiteHeader } from '../components/chrome/SiteHeader';
-import type { CapsuleDetail, CapsulePhoto } from '../types';
+import type { AboutContent, CapsuleDetail, CapsulePhoto } from '../types';
+import { AboutPage } from '../components/about/AboutPage';
+import type { AboutSubView } from '../components/chrome/SiteHeader';
 import { API_URL, getToken } from './adminClient';
 
-/** What the Preview tab sends. */
-export interface PreviewMessage {
-  type: 'lgn-preview';
-  capsule: CapsuleDetail;
-  storyNumber: number;
-}
+/** What the admin sends: a story (the Preview tab), or an About page's
+ *  working copy (About pages > Preview). */
+export type PreviewMessage =
+  | { type: 'lgn-preview'; capsule: CapsuleDetail }
+  | { type: 'lgn-preview-about'; content: AboutContent; sub: AboutSubView };
 
 /** What this page sends once it is listening, so the tab knows to post. */
 export const PREVIEW_READY = 'lgn-preview-ready';
@@ -59,7 +60,7 @@ export function PreviewFrame() {
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin || event.source !== window.parent) return;
       const msg = event.data as PreviewMessage | undefined;
-      if (msg?.type === 'lgn-preview') setData(msg);
+      if (msg?.type === 'lgn-preview' || msg?.type === 'lgn-preview-about') setData(msg);
     };
     window.addEventListener('message', onMessage);
     if (window.parent !== window) window.parent.postMessage({ type: PREVIEW_READY }, window.location.origin);
@@ -71,7 +72,8 @@ export function PreviewFrame() {
   }, []);
 
   if (!data) return null;
-  const { capsule, storyNumber } = data;
+  if (data.type === 'lgn-preview-about') return <AboutPreview content={data.content} sub={data.sub} />;
+  const { capsule } = data;
 
   // Watch is immersive on the site too: no header or footer.
   if (watching) return <WatchMode capsule={capsule} onExit={() => setWatching(false)} />;
@@ -82,18 +84,18 @@ export function PreviewFrame() {
     ) : (
       <StoryShell
         capsule={capsule}
-        labels={['LGN', `Story No. ${storyNumber}`, formatStoryMonth(capsule.month)]}
         section={section}
         onSelectSection={setSection}
         onBackToCampfire={noop}
         gemeTuning={null}
         gemeTuningVersion={0}
         leftFoot={
-          section === 'watch' && hasBehindTheScenes(capsule) ? (
-            <button type="button" className="lgn-btn" onClick={() => setSection('making')}>
-              How this film was made
-            </button>
-          ) : undefined
+          <StoryFoot
+            capsule={capsule}
+            section={section}
+            onOpenMaking={hasBehindTheScenes(capsule) ? () => setSection('making') : undefined}
+            onAddToStoryboard={noop}
+          />
         }
       >
         {section === 'watch' && <StoryWatch capsule={capsule} onEnterWatch={() => setWatching(true)} />}
@@ -111,7 +113,25 @@ export function PreviewFrame() {
               admin token instead. */}
           <PhotoLoaderContext.Provider value={loadAdminPhoto}>{page}</PhotoLoaderContext.Provider>
         </main>
-        <SiteFooter theme="light" onNavigate={noop} />
+        <SiteFooter theme="light" onNavigate={noop} onOpenAbout={noop} />
+      </div>
+    </>
+  );
+}
+
+/** An About page as the site renders it, from the working copy. The menu
+ *  works inside the frame; the admin's page tabs choose where it starts. */
+function AboutPreview({ content, sub }: { content: AboutContent; sub: AboutSubView }) {
+  const [page, setPage] = useState(sub);
+  useEffect(() => setPage(sub), [sub]);
+  return (
+    <>
+      <SiteHeader currentView="about" theme="light" onNavigate={noop} />
+      <div className="page-body" style={{ position: 'relative', flexGrow: 1 }}>
+        <main>
+          <AboutPage sub={page} onSelect={setPage} theme="light" content={content} />
+        </main>
+        <SiteFooter theme="light" onNavigate={noop} onOpenAbout={setPage} />
       </div>
     </>
   );

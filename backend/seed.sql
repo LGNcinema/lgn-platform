@@ -66,14 +66,13 @@ INSERT INTO films (
     theme = EXCLUDED.theme;
 
 -- Seed Reflections
--- Copy follows the Campfire REFLECT frame (design/exports/2026-09-28). The page
--- takes its heading from the first reflection's `introduction` and numbers one
+-- Copy follows the Campfire REFLECT frame (design/exports/2026-09-28): one
 -- prompt per reflection's `content`. The frame lists a third question, but it
 -- is a verbatim repeat of the second -- a copy-paste slip -- so only the two
 -- distinct questions are seeded.
-INSERT INTO reflections (capsule_id, title, introduction, content) VALUES
-(1, 'Reflection 1', 'Something about reflections—', 'What moment in the film stayed with you the longest?'),
-(1, 'Reflection 2', NULL, 'Is there a grief or loss you’ve been walking with?');
+INSERT INTO reflections (capsule_id, title, content) VALUES
+(1, 'Reflection 1', 'What moment in the film stayed with you the longest?'),
+(1, 'Reflection 2', 'Is there a grief or loss you’ve been walking with?');
 
 -- Seed Practices
 INSERT INTO practices (capsule_id, title, description, steps) VALUES

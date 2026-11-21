@@ -2,15 +2,18 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import './Storyboard.css';
 import type { CapsuleDetail, CapsuleSummary, Dimension } from '../../types';
 import { LgnDialog } from '../LgnDialog';
+import { FilmPicker, type PickedFilm } from '../forms/FilmPicker';
 import { subscribeEmail } from '../chrome/mailchimp';
 import {
   DIMENSIONS,
+  ENGAGEMENTS,
   fetchOwnStoryStatus,
   fetchStoryboard,
   shrinkPhoto,
   storiesInOrder,
   storyPhotoSrc,
   submitStory,
+  type Engagement,
   type StoryboardStory,
   type StoryStatus,
 } from './campfire';
@@ -22,6 +25,8 @@ interface Props {
   films: CapsuleSummary[];
   /** "Watch with us": open a film's page. */
   onOpenFilm: (capsuleId: number) => void;
+  /** Arrived from a film's "Add to the storyboard": open the form at once. */
+  startWithForm?: boolean;
 }
 
 /** The form's limit ("UP TO 500 WORDS"); the server's own cap is 5,000 characters. */
@@ -95,6 +100,9 @@ interface BoardStory {
   photo: string | null;
   created_at: string | null;
   dimension: Dimension | null;
+  engagement: Engagement | null;
+  /** Titles of the other films the author tagged. */
+  extra: string[];
   /** Set on the visitor's own stories only. */
   status?: StoryStatus;
 }
@@ -130,9 +138,11 @@ function byline(s: Pick<BoardStory, 'author_name' | 'author_location'>): string 
   return s.author_location ? `${s.author_name}, ${s.author_location}` : s.author_name;
 }
 
+/** "LIGHTPOLES, PAST LIVES, PRACTICE, NEIGHBOR": the films, then the tags. */
 function tagLine(s: BoardStory): string {
+  const engagement = ENGAGEMENTS.find((e) => e.key === s.engagement)?.label;
   const dim = DIMENSIONS.find((d) => d.key === s.dimension)?.label;
-  return dim ? `${s.filmTitle}, ${dim}` : s.filmTitle;
+  return [s.filmTitle, ...s.extra, engagement, dim].filter(Boolean).join(', ');
 }
 
 const STATUS_LABEL: Record<StoryStatus, string> = {
@@ -143,13 +153,6 @@ const STATUS_LABEL: Record<StoryStatus, string> = {
 
 const wordCount = (text: string) => (text.trim() ? text.trim().split(/\s+/).length : 0);
 
-/** "Hana, Irvine" -> name "Hana", city "Irvine". The frame asks for both in one
- *  field; the server keeps them apart. */
-function splitNameCity(value: string): { name?: string; city?: string } {
-  const [name, ...rest] = value.split(',');
-  const city = rest.join(',').trim();
-  return { name: name.trim() || undefined, city: city || undefined };
-}
 
 type Load = { state: 'loading' } | { state: 'error' } | { state: 'ready'; stories: BoardStory[] };
 
@@ -166,7 +169,7 @@ type Load = { state: 'loading' } | { state: 'error' } | { state: 'ready'; storie
  * appears; the visitor's own show in the meantime, marked with where they
  * stand.
  */
-export function Storyboard({ capsule, films, onOpenFilm }: Props) {
+export function Storyboard({ capsule, films, onOpenFilm, startWithForm = false }: Props) {
   const ordered = useMemo(() => storiesInOrder(films), [films]);
   const filmIds = ordered.map((f) => f.id).join(',');
   const titleOf = useMemo(() => new Map(ordered.map((f) => [f.id, f.title])), [ordered]);
@@ -178,7 +181,7 @@ export function Storyboard({ capsule, films, onOpenFilm }: Props) {
   const [newestFirst, setNewestFirst] = useState(true);
   const [pages, setPages] = useState<Record<string, number>>({});
   const [reading, setReading] = useState<string | null>(null);
-  const [formOpen, setFormOpen] = useState(OPEN_FORM_ON_LOAD);
+  const [formOpen, setFormOpen] = useState(OPEN_FORM_ON_LOAD || startWithForm);
   const [formFilm, setFormFilm] = useState(capsule.id);
   const [thanks, setThanks] = useState(false);
 
@@ -207,6 +210,8 @@ export function Storyboard({ capsule, films, onOpenFilm }: Props) {
                 photo: s.photo_url ? storyPhotoSrc(s.photo_url) : null,
                 created_at: s.created_at,
                 dimension: s.dimension ?? null,
+                engagement: s.engagement ?? null,
+                extra: (s.extra_films ?? []).map((f) => f.title),
               }))
             : [],
         );
@@ -269,6 +274,8 @@ export function Storyboard({ capsule, films, onOpenFilm }: Props) {
           photo: m.photo,
           created_at: m.created_at,
           dimension: null,
+          engagement: null,
+          extra: [],
           status: m.status,
         })),
     );
@@ -320,7 +327,7 @@ export function Storyboard({ capsule, films, onOpenFilm }: Props) {
         <input
           className="lgn-field storyboard-search"
           type="search"
-          placeholder="Search by Film"
+          placeholder="What film did you just watch?"
           aria-label="Search by film"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -412,6 +419,7 @@ export function Storyboard({ capsule, films, onOpenFilm }: Props) {
 
       <StoryReader
         story={readingStory}
+        filmDescription={readingStory ? films.find((f) => f.id === readingStory.capsuleId)?.description : null}
         onClose={() => setReading(null)}
         onNext={readingIndex >= 0 && readingIndex < visible.length - 1 ? () => setReading(visible[readingIndex + 1].key) : undefined}
         onPrevious={readingIndex > 0 ? () => setReading(visible[readingIndex - 1].key) : undefined}
@@ -480,6 +488,7 @@ function StoryCard({ story, onOpen, onRemove }: { story: BoardStory; onOpen: () 
 /** A story in full, in a panel from the right. Figma: "Storyboard—read". */
 function StoryReader({
   story,
+  filmDescription,
   onClose,
   onNext,
   onPrevious,
@@ -492,6 +501,8 @@ function StoryReader({
   onPrevious?: () => void;
   onOpenFilm: (capsuleId: number) => void;
   onAdd: (capsuleId: number) => void;
+  /** The story's film's one-line description, under its title. */
+  filmDescription?: string | null;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const open = Boolean(story);
@@ -532,7 +543,12 @@ function StoryReader({
           ) : (
             <div className="storyboard-reader-photo" aria-hidden="true" />
           )}
-          <p className="storyboard-reader-tag lgn-label">{tagLine(story)}</p>
+          <a
+            className="storyboard-reader-report lgn-label"
+            href={`mailto:info@lgncinema.org?subject=${encodeURIComponent(`Report a storyboard story (#${story.id})`)}`}
+          >
+            Report this story
+          </a>
 
           <p className="storyboard-reader-text">{story.content}</p>
           <p className="storyboard-reader-byline lgn-label">
@@ -546,25 +562,28 @@ function StoryReader({
               </>
             )}
           </p>
+          <p className="storyboard-reader-tag lgn-label">{tagLine(story)}</p>
 
-          <div className="storyboard-reader-film">
-            <div className="storyboard-reader-film-bar lgn-label">
-              <span>The film behind this story</span>
-              <button type="button" className="storyboard-reader-watch" onClick={() => onOpenFilm(story.capsuleId)}>
+          <section className="storyboard-reader-block">
+            <p className="form-section-label lgn-label">Want to contribute?</p>
+            <div className="storyboard-reader-row">
+              <p>Share your experience with others. How did you take it beyond the screen?</p>
+              <button type="button" className="lgn-btn" onClick={() => onAdd(story.capsuleId)}>
+                Add your story
+              </button>
+            </div>
+          </section>
+
+          <section className="storyboard-reader-block">
+            <p className="form-section-label lgn-label">The film behind this story</p>
+            <div className="storyboard-reader-row">
+              <p className="storyboard-reader-film-title">{story.filmTitle}</p>
+              <button type="button" className="lgn-btn" onClick={() => onOpenFilm(story.capsuleId)}>
                 Watch with us
               </button>
             </div>
-            <p className="storyboard-reader-film-title">{story.filmTitle}</p>
-            <button type="button" className="lgn-btn storyboard-reader-add" onClick={() => onAdd(story.capsuleId)}>
-              Add your own story
-            </button>
-            <a
-              className="storyboard-reader-report lgn-label"
-              href={`mailto:info@lgncinema.org?subject=${encodeURIComponent(`Report a storyboard story (#${story.id})`)}`}
-            >
-              Report this story
-            </a>
-          </div>
+            {filmDescription && <p className="storyboard-reader-film-text">{filmDescription}</p>}
+          </section>
         </div>
       )}
     </dialog>
@@ -581,12 +600,21 @@ interface AddProps {
   onShared: (filmId: number, entry: MyStory) => void;
 }
 
-/** "Add to the Storyboard". Figma: "Storyboard—add". */
+/**
+ * "Add to the Storyboard". Figma "STORYBOARD—ADD": a drawer on the right,
+ * in sections -- the film tag (the story's LGN film, plus any others), the
+ * optional engagement and focus tags, the entry itself, and the author's info.
+ */
 function AddStoryDialog({ open, films, initialFilm, onClose, onShared }: AddProps) {
+  // The story's own LGN film, and any other films tagged.
   const [filmId, setFilmId] = useState<number | null>(initialFilm);
-  const [choosingFilm, setChoosingFilm] = useState(false);
+  const [others, setOthers] = useState<PickedFilm[]>([]);
+  const [picking, setPicking] = useState(false);
+  const [engagement, setEngagement] = useState<Engagement | null>(null);
+  const [focus, setFocus] = useState<Dimension | null>(null);
   const [draft, setDraft] = useState('');
-  const [nameCity, setNameCity] = useState('');
+  const [name, setName] = useState('');
+  const [city, setCity] = useState('');
   const [email, setEmail] = useState('');
   const [monthly, setMonthly] = useState(false);
   const [agreed, setAgreed] = useState(false);
@@ -602,13 +630,24 @@ function AddStoryDialog({ open, films, initialFilm, onClose, onShared }: AddProp
   useEffect(() => {
     if (open) {
       setFilmId(initialFilm);
-      setChoosingFilm(false);
+      setOthers([]);
+      setPicking(false);
       setHint(null);
     }
   }, [open, initialFilm]);
 
   const words = wordCount(draft);
   const film = films.find((f) => f.id === filmId);
+
+  const pick = (picked: PickedFilm) => {
+    setPicking(false);
+    // The first LGN film becomes the story's own; everything else is a tag.
+    if (!film && picked.capsuleId) return setFilmId(picked.capsuleId);
+    if (picked.capsuleId === filmId) return;
+    setOthers((prev) =>
+      prev.some((o) => o.title === picked.title && o.capsuleId === picked.capsuleId) ? prev : [...prev, picked].slice(0, 4),
+    );
+  };
 
   const handlePhoto = async (file: File | undefined) => {
     setPhotoError(null);
@@ -624,7 +663,7 @@ function AddStoryDialog({ open, films, initialFilm, onClose, onShared }: AddProp
 
   const handleSubmit = async () => {
     const content = draft.trim();
-    if (!film) return setHint('Choose the film this story is about.');
+    if (!film) return setHint('Tag the LGN film this story is about.');
     if (!content) return setHint('Write a sentence or two first.');
     if (words > MAX_WORDS) return setHint(`Please keep it to ${MAX_WORDS} words.`);
     if (!agreed) return setHint('Please confirm the last box to add your story.');
@@ -632,15 +671,19 @@ function AddStoryDialog({ open, films, initialFilm, onClose, onShared }: AddProp
     setSubmitting(true);
     setHint(null);
     try {
-      const { name, city } = splitNameCity(nameCity);
+      const author = name.trim() || undefined;
+      const place = city.trim() || undefined;
       const receipt = await submitStory({
         capsule_id: film.id,
         content,
-        author_name: name,
-        author_location: city,
+        author_name: author,
+        author_location: place,
         author_email: email.trim() || undefined,
         consent_to_share: true,
         photo: photo ?? undefined,
+        engagement: engagement ?? undefined,
+        dimension: focus ?? undefined,
+        extra_films: others.map((o) => ({ title: o.title, year: o.year || undefined, capsule_id: o.capsuleId })),
       });
       // The monthly email is Mailchimp's, sent in the background; a failure
       // there shouldn't undo a shared story.
@@ -649,8 +692,8 @@ function AddStoryDialog({ open, films, initialFilm, onClose, onShared }: AddProp
         id: receipt.id,
         token: receipt.token,
         content,
-        author_name: name ?? null,
-        author_location: name ? city ?? null : null,
+        author_name: author ?? null,
+        author_location: author ? place ?? null : null,
         photo,
         created_at: receipt.created_at,
         status: receipt.status,
@@ -658,6 +701,9 @@ function AddStoryDialog({ open, films, initialFilm, onClose, onShared }: AddProp
       setDraft('');
       setPhoto(null);
       setAgreed(false);
+      setEngagement(null);
+      setFocus(null);
+      setOthers([]);
     } catch (err) {
       setHint(`${err instanceof Error ? err.message : 'Could not add your story.'} Your words are still here. Please try again.`);
     } finally {
@@ -665,9 +711,26 @@ function AddStoryDialog({ open, films, initialFilm, onClose, onShared }: AddProp
     }
   };
 
+  const chipToggle = <K extends string>(key: K, label: string, value: K | null, set: (v: K | null) => void) => (
+    <button
+      key={key}
+      type="button"
+      className={`lgn-chip${value === key ? ' is-on' : ''}`}
+      aria-pressed={value === key}
+      onClick={() => set(value === key ? null : key)}
+    >
+      {value === key ? `${label} [x]` : `+ ${label}`}
+    </button>
+  );
+
   return (
     <>
-      <LgnDialog open={open} onClose={onClose} className="storyboard-form-dialog" label={<span className="storyboard-form-title">Add to the Storyboard</span>}>
+      <LgnDialog
+        open={open}
+        onClose={onClose}
+        className="storyboard-form-dialog lgn-dialog--drawer"
+        label={<span className="storyboard-form-title">Add to the Storyboard</span>}
+      >
         <form
           className="storyboard-form"
           noValidate
@@ -676,124 +739,166 @@ function AddStoryDialog({ open, films, initialFilm, onClose, onShared }: AddProp
             void handleSubmit();
           }}
         >
-          <div className="storyboard-form-films lgn-label">
-            {film && !choosingFilm ? (
-              <span className="storyboard-chip">
-                {film.title}
-                <button type="button" aria-label={`Remove ${film.title}`} onClick={() => setFilmId(null)}>
-                  [x]
-                </button>
-              </span>
-            ) : null}
-            {(!film || choosingFilm) && films.length > 0 ? (
-              <span className="storyboard-film-choices">
-                {films.map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() => {
-                      setFilmId(f.id);
-                      setChoosingFilm(false);
-                    }}
-                  >
-                    {f.title}
-                  </button>
-                ))}
-              </span>
-            ) : (
-              films.length > 1 && (
-                <button type="button" className="storyboard-quiet" onClick={() => setChoosingFilm(true)}>
-                  + Change film
-                </button>
-              )
+          <section className="form-section">
+            <p className="form-section-label lgn-label">Film tag</p>
+            <p className="form-prompt">*Find and tag the film you’d like to reference in your post.</p>
+            {(!film || picking) && <FilmPicker films={films} onPick={pick} />}
+            {(film || others.length > 0) && (
+              <>
+                <p className="form-prompt">Your selected films</p>
+                <div className="form-chips">
+                  {film && (
+                    <button type="button" className="lgn-chip is-on" onClick={() => setFilmId(null)} aria-label={`Remove ${film.title}`}>
+                      {film.title} [x]
+                    </button>
+                  )}
+                  {others.map((o, i) => (
+                    <button
+                      key={`${o.title}-${i}`}
+                      type="button"
+                      className="lgn-chip is-on"
+                      onClick={() => setOthers((prev) => prev.filter((_, j) => j !== i))}
+                      aria-label={`Remove ${o.title}`}
+                    >
+                      {o.title}
+                      {o.year ? ` (${o.year})` : ''} [x]
+                    </button>
+                  ))}
+                  {film && !picking && others.length < 4 && (
+                    <button type="button" className="lgn-chip" onClick={() => setPicking(true)}>
+                      + Tag another film
+                    </button>
+                  )}
+                </div>
+              </>
             )}
-          </div>
+          </section>
 
-          <label htmlFor={`${ids}-story`} className="storyboard-form-prompt">
-            How did you take it beyond the screen?
-          </label>
-          <div className="storyboard-form-story">
-            <textarea
-              id={`${ids}-story`}
-              className="lgn-field"
-              placeholder="A sentence is enough."
-              maxLength={MAX_STORY_LENGTH}
-              value={draft}
-              onChange={(e) => {
-                setDraft(e.target.value);
-                if (hint) setHint(null);
-              }}
-            />
-            <span className={`storyboard-form-count lgn-label${words > MAX_WORDS ? ' over' : ''}`}>
-              {words > 0 ? `${words} / ${MAX_WORDS} words` : `Up to ${MAX_WORDS} words`}
-            </span>
-          </div>
+          <section className="form-section">
+            <p className="form-section-label lgn-label">Engagement tag (optional)</p>
+            <p className="form-prompt">Is there a specific level of engagement that impacted you?</p>
+            <div className="form-chips">
+              {ENGAGEMENTS.map((e) => chipToggle(e.key, e.label, engagement, setEngagement))}
+            </div>
+          </section>
 
-          <div className="storyboard-form-extras lgn-label">
-            <button type="button" className="storyboard-quiet" onClick={() => fileRef.current?.click()}>
-              {photo ? 'Change photo' : '+ Add a photo'}
-            </button>
-            {photo && (
-              <button type="button" className="storyboard-quiet" onClick={() => setPhoto(null)}>
-                Remove photo
+          <section className="form-section">
+            <p className="form-section-label lgn-label">Focus tag (optional)</p>
+            <p className="form-prompt">Was there a specific focus for this engagement?</p>
+            <div className="form-chips">{DIMENSIONS.map((d) => chipToggle(d.key, d.label, focus, setFocus))}</div>
+          </section>
+
+          <section className="form-section">
+            <p className="form-section-label lgn-label">Storyboard entry</p>
+            <label htmlFor={`${ids}-story`} className="form-prompt storyboard-form-prompt">
+              *How did you take it beyond the screen?
+            </label>
+            <div className="storyboard-form-story">
+              <textarea
+                id={`${ids}-story`}
+                className="lgn-field lgn-field--quiet"
+                placeholder="A thought, a conversation, a first step. A sentence is enough."
+                maxLength={MAX_STORY_LENGTH}
+                value={draft}
+                onChange={(e) => {
+                  setDraft(e.target.value);
+                  if (hint) setHint(null);
+                }}
+              />
+              <span className={`storyboard-form-count lgn-label${words > MAX_WORDS ? ' over' : ''}`}>
+                {words > 0 ? `${words} / ${MAX_WORDS} words` : `Up to ${MAX_WORDS} words`}
+              </span>
+            </div>
+            <div className="storyboard-form-extras lgn-label">
+              <button type="button" className="storyboard-quiet" onClick={() => fileRef.current?.click()}>
+                {photo ? 'Change photo' : '+ Add a photo (only photos you took, with permission from anyone in them)'}
               </button>
+              {photo && (
+                <button type="button" className="storyboard-quiet" onClick={() => setPhoto(null)}>
+                  Remove photo
+                </button>
+              )}
+              {photo && <img className="storyboard-form-thumb" src={photo} alt="Your photo" />}
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="storyboard-file"
+                tabIndex={-1}
+                aria-hidden="true"
+                onChange={(e) => void handlePhoto(e.target.files?.[0])}
+              />
+            </div>
+            {photoError && (
+              <p className="storyboard-form-error" role="alert">
+                {photoError}
+              </p>
             )}
-            {photo && <img className="storyboard-form-thumb" src={photo} alt="Your photo" />}
+          </section>
+
+          <section className="form-section">
+            <p className="form-section-label lgn-label">Your info</p>
+            <p className="form-prompt">Name and city, or leave blank to stay anonymous</p>
+            <div className="form-row">
+              <input
+                className="lgn-field lgn-field--quiet"
+                type="text"
+                placeholder="Name"
+                aria-label="Name (optional)"
+                autoComplete="off"
+                maxLength={60}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <input
+                className="lgn-field lgn-field--quiet"
+                type="text"
+                placeholder="City"
+                aria-label="City (optional)"
+                autoComplete="off"
+                maxLength={80}
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+              />
+            </div>
+            <p className="form-prompt">Email (optional), only to ask about edits</p>
             <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="storyboard-file"
-              tabIndex={-1}
-              aria-hidden="true"
-              onChange={(e) => void handlePhoto(e.target.files?.[0])}
+              className="lgn-field lgn-field--quiet"
+              type="email"
+              placeholder="Email"
+              aria-label="Email (optional)"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
-          </div>
-          {photoError && <p className="storyboard-form-error" role="alert">{photoError}</p>}
 
-          <p className="storyboard-form-section lgn-label">Your info</p>
-          <input
-            className="lgn-field lgn-field--quiet storyboard-form-field"
-            type="text"
-            placeholder="Name and city, or leave blank to stay anonymous"
-            aria-label="Name and city (optional)"
-            autoComplete="off"
-            maxLength={142}
-            value={nameCity}
-            onChange={(e) => setNameCity(e.target.value)}
-          />
-          <input
-            className="lgn-field lgn-field--quiet storyboard-form-field"
-            type="email"
-            placeholder="Email (optional), only to ask about edits"
-            aria-label="Email (optional)"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+            <label className="storyboard-check lgn-label">
+              <input type="checkbox" checked={monthly} onChange={(e) => setMonthly(e.target.checked)} />
+              <span>Email me when each month&rsquo;s film arrives</span>
+            </label>
+            <label className="storyboard-check lgn-label">
+              <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+              <span>
+                *I&rsquo;m 13 or older, this story is mine to share, and I agree to the{' '}
+                <button type="button" className="storyboard-terms-link" onClick={() => setTermsOpen(true)}>
+                  Storyboard terms.
+                </button>
+              </span>
+            </label>
+          </section>
 
-          <label className="storyboard-check lgn-label">
-            <input type="checkbox" checked={monthly} onChange={(e) => setMonthly(e.target.checked)} />
-            <span>Email me when each month&rsquo;s film arrives</span>
-          </label>
-          <label className="storyboard-check lgn-label">
-            <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
-            <span>
-              I&rsquo;m 13 or older, this story is mine to share, and I agree to the{' '}
-              <button type="button" className="storyboard-terms-link" onClick={() => setTermsOpen(true)}>
-                Storyboard terms.
-              </button>
-              <br />
-              We review every story before it appears
-            </span>
-          </label>
-
+          <p className="storyboard-form-note">
+            Your story will appear publicly on the Storyboard. We review every story before it’s posted.
+          </p>
           <div className="storyboard-form-actions">
             <button type="submit" className="lgn-btn" disabled={submitting} aria-busy={submitting || undefined}>
               {submitting ? 'Adding…' : 'Add your story'}
             </button>
-            <p className="storyboard-form-hint" role="status">{hint}</p>
+            <p className="storyboard-form-hint" role="status">
+              {hint}
+            </p>
           </div>
+          <p className="lgn-label form-required">*Required field</p>
         </form>
       </LgnDialog>
 

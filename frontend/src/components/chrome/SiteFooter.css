@@ -1,29 +1,24 @@
-/* Global footer. Figma v3, measured from the rule (at 1920):
-   - a 1px black rule from x=40 to x=1880; the footer is the page colour;
-   - columns at x = 40 / 503 / 970 / 1435;
-   - the logo (397x44) 34px below the rule;
-   - headings' baselines 51px below the rule, the first line under them 44px
-     further, then 22px leading (20px type, solid);
-   - Join's field is 227x44, 72px below the rule; "Submit" 34px under it;
-   - the bottom row's baselines ~297px below the rule, ~42px above the end.
-   Every line is 20px on 22px, so a baseline sits 18.3px below its line top. */
+/* Global footer. Figma "FOOTER V3" (at 1920):
+   - a 1px rule from x=40 to x=1880; the footer is the page colour;
+   - three columns on the 40 / 660 / 1280 lines (the last two measured from
+     the page's centre, like the rest of the grid), their first lines ~28px
+     below the rule;
+   - the bottom row: the wordmark (497 wide) on the left, the EIN and the
+     copyright on the column lines, sharing the wordmark's baseline. */
 
 .lgn-footer {
   margin: 0 var(--grid-margin);
   border-top: 1px solid var(--rule);
-  /* Rule -> logo top is 34 (the rule's own 1px + 33). */
-  padding: 33px 0 38px;
+  padding: 18px 0 38px;
   color: var(--primary);
   margin-top: auto;
 }
 
 .footer-grid {
   display: grid;
-  /* 463 / 467 / 465 / the rest: the frame's columns are not quite equal. */
-  grid-template-columns:
-    calc(463 * var(--dp)) calc(467 * var(--dp)) calc(465 * var(--dp)) minmax(0, 1fr);
-  /* The footer is 339 tall from the rule: less the rule, 33 above, 38 below. */
-  min-height: 267px;
+  grid-template-columns: calc(50% - 300 * var(--dp)) calc(620 * var(--dp)) minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  row-gap: calc(64 * var(--vdp));
 }
 
 .footer-col {
@@ -31,24 +26,21 @@
   flex-direction: column;
   align-items: flex-start;
   min-width: 0;
-  font-size: var(--text-20);
-  line-height: 22px;
 }
 
 .footer-logo {
   display: block;
-  width: calc(397 * var(--dp));
+  align-self: end;
+  width: calc(497 * var(--dp));
   max-width: 100%;
   height: auto;
 }
 
-/* Heading baseline 51px below the rule: its line top at 32.7, 1.3px above
-   the column's top (34). */
 .footer-heading {
-  margin: -1.3px 0 22px;
+  margin: 0 0 1.1em;
   font-size: var(--text-20);
   font-weight: 400;
-  line-height: 22px;
+  line-height: var(--leading);
 }
 
 .footer-list {
@@ -57,42 +49,38 @@
   padding: 0;
 }
 
+.footer-list--gap {
+  margin-top: 1.1em;
+}
+
 .footer-text {
-  margin: 0 0 22px;
+  margin: 0 0 1.1em;
   font-style: normal;
 }
 
+/* The field and a boxed "Submit" side by side (Figma "HOME" footer); the
+   status line wraps under them. */
 .join-form {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: flex-start;
+  gap: 12px;
   width: 100%;
-  /* The field's top is 72 below the rule; the heading's margin leaves 76.7. */
-  margin-top: -4.7px;
 }
 
 .join-form-field {
   width: 227px;
   max-width: 100%;
-  height: 44px;
-  padding: 0 12px;
 }
 
-/* "Submit": its baseline 34px under the field. */
 .join-form-submit {
-  margin-top: 15.7px;
+  min-width: 112px;
 }
 
-.join-form-submit:disabled {
-  cursor: default;
-  text-decoration: none;
-}
-
-/* The bottom row: pushed to the foot of each column, so all four share a
-   line however tall the columns above are. */
+/* The bottom row's text sits on the wordmark's baseline. */
 .footer-bottom {
-  margin: auto 0 0;
-  padding-top: 22px;
+  align-self: end;
+  margin: 0;
 }
 
 /* Mailchimp's anti-bot field: present in the form, invisible and unreachable. */
@@ -102,9 +90,9 @@
 }
 
 .join-form-status {
-  margin: 8px 0 0;
-  font-size: 16px;
-  line-height: 1.3;
+  flex-basis: 100%;
+  margin: 0;
+  line-height: var(--leading);
 }
 
 .join-form-status:empty {

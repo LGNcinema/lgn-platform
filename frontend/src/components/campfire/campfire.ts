@@ -5,7 +5,7 @@
  * name and only the UI speaks of stories.
  */
 import { API_URL } from '../../api';
-import type { CapsuleSummary, Dimension } from '../../types';
+import type { Dimension } from '../../types';
 
 export type { Dimension };
 
@@ -71,12 +71,6 @@ export function storiesInOrder<T extends { month: string }>(stories: T[]): T[] {
   return [...stories].sort((a, b) => a.month.localeCompare(b.month));
 }
 
-/** 1-based story number for a capsule, from its place in the published list. */
-export function storyNumber(capsuleId: number, stories: CapsuleSummary[]): number {
-  const index = storiesInOrder(stories).findIndex((s) => s.id === capsuleId);
-  return index === -1 ? 1 : index + 1;
-}
-
 /** The next `count` months after `month`, as 'YYYY-MM' -- used for the hub's
  *  "Coming Soon" placeholders. The public API only returns published stories,
  *  so upcoming ones are placeholders derived here, not real data. */
@@ -131,6 +125,10 @@ export interface StoryboardStory {
   /** Path to the author's photo (relative to the API), or null. */
   photo_url: string | null;
   created_at: string | null;
+  dimension?: Dimension | null;
+  engagement?: Engagement | null;
+  /** Other films the author tagged. */
+  extra_films?: { title: string; year?: string | null; capsule_id?: number | null }[];
 }
 
 /** Approved stories, oldest first. The page shows them once the visitor has
@@ -162,7 +160,20 @@ export interface StorySubmission {
   consent_to_share: true;
   /** A small JPEG data URL (see shrinkPhoto), or omitted. */
   photo?: string;
+  /** Optional tags: the level of engagement and the focus. */
+  engagement?: Engagement;
+  dimension?: Dimension;
+  /** Other films the story refers to: LGN's (capsule_id) or typed titles. */
+  extra_films?: { title: string; year?: string; capsule_id?: number }[];
 }
+
+export type Engagement = 'watch' | 'reflect' | 'practice';
+
+export const ENGAGEMENTS: { key: Engagement; label: string }[] = [
+  { key: 'watch', label: 'Watch' },
+  { key: 'reflect', label: 'Reflect' },
+  { key: 'practice', label: 'Practice' },
+];
 
 export interface StoryReceipt {
   id: number;

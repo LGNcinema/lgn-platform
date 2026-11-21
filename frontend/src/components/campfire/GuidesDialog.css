@@ -1,22 +1,52 @@
-/* "How these guides are made". Figma v3, at 1920: a 630px panel; the body
-   starts ~30px under the two-line label; 20px type on 22px; paragraphs one
-   line apart; the tier list a little further down. */
+/* "How these guides are made". Figma popup 2: a 630px panel; the intro, the
+   four tiers each with its dots, the note on affiliation, then "Made a
+   film?" and "For Filmmakers >". */
 .guides-dialog {
   width: 630px;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .guides-dialog-body {
   margin-top: 28px;
-  font-size: var(--text-20);
-  line-height: 22px;
 }
 
-.guides-dialog-body p + p {
-  margin-top: 22px;
+.guides-dialog-body > p + p,
+.guides-dialog-body > ul + p,
+.guides-dialog-body > p + ul {
+  margin-top: 1.1em;
+}
+
+.guides-dialog-body strong {
+  font-weight: var(--weight-display);
 }
 
 .guides-dialog-tiers {
   list-style: none;
-  margin: 34px 0 0;
+  margin: 1.4em 0;
   padding: 0;
+}
+
+.guides-dialog-tiers li {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: baseline;
+}
+
+.guides-dialog-tiers li + li {
+  margin-top: 0.5em;
+}
+
+/* The dot glyph draws large in most fonts: sized down to the frame's. */
+.guides-dialog-dots {
+  font-size: 9px;
+  letter-spacing: 2px;
+}
+
+.guides-dialog-cta {
+  margin-top: 1.8em;
+}
+
+.guides-dialog-cta .lgn-btn {
+  margin-top: 12px;
 }
