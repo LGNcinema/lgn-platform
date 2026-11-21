@@ -1,5 +1,5 @@
 /* Invest. Figma "INVEST", at 1920:
-   - left (x=40): "Invest" in the 48 size (now 36px); ~95px under it the
+   - left (x=40): "Invest" in the 48 size (now 36px); ~44px under it the
      Givebutter widget, 358 wide; ~80px under that the giving details (~340
      wide) and the grey small print;
    - right (from the 660 line): the two-line intro, then Build / Share / Give
@@ -22,10 +22,12 @@
   line-height: var(--leading);
 }
 
+/* Its top just above the bottom of "Build" to the right (Justin, after
+   seeing it live): 44 rather than the frame's ~95. */
 .invest-widget {
   width: calc(358 * var(--dp));
   min-width: 300px;
-  margin-top: calc(95 * var(--vdp));
+  margin-top: calc(44 * var(--vdp));
 }
 
 .invest-side-text {
